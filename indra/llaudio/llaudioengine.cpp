@@ -1473,10 +1473,12 @@ void LLAudioSource::stop()
 
 bool LLAudioSource::play(const LLUUID &audio_uuid)
 {
-  // NaCl - Sound Explorer
-  if(mType != LLAudioEngine::AUDIO_TYPE_UI) //&& mSourceID.notNull())
-    logSoundPlay(mLogID, this, mPositionGlobal, mType, audio_uuid, mOwnerID, mSourceID, mIsTrigger, mLoop);
-  // NaCl End
+    // NaCl - Sound Explorer
+    if (mType != LLAudioEngine::AUDIO_TYPE_UI) //&& mSourceID.notNull())
+    {
+        logSoundPlay(mLogID, this, mPositionGlobal, mType, audio_uuid, mOwnerID, mSourceID, mIsTrigger, mLoop);
+    }
+    // NaCl End
     // Special abuse of play(); don't play a sound, but kill it.
     if (audio_uuid.isNull())
     {
