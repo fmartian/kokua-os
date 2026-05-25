@@ -607,6 +607,8 @@ bool LLTransactionNotificationListItem::postBuild()
 LLSystemNotificationListItem::LLSystemNotificationListItem(const Params& p)
     : LLNotificationListItem(p),
     mSystemNotificationIcon(NULL),
+    mSystemNotificationIconExp(NULL),
+    mButtonPanel(NULL),
     mIsCaution(false)
 {
     buildFromFile("panel_notification_list_item.xml");
@@ -630,5 +632,74 @@ bool LLSystemNotificationListItem::postBuild()
         mSystemNotificationIcon->setVisible(true);
     if (mSystemNotificationIconExp)
         mSystemNotificationIconExp->setVisible(true);
+
+    mNotification = LLNotifications::instance().find(mParams.notification_id);
+    if (mNotification)
+    {
+        LLNotificationFormPtr form = mNotification->getForm();
+        bool hasButtons = false;
+        for (int i = 0; i < form->getNumElements(); ++i)
+        {
+            if ("button" == form->getElement(i)["type"].asString())
+            {
+                hasButtons = true;
+                break;
+            }
+        }
+
+        if (hasButtons)
+        {
+            mButtonPanel = getChild<LLPanel>("button_panel");
+            mButtonPanel->getChild<LLButton>("join_btn")->setVisible(false);
+            mButtonPanel->getChild<LLButton>("decline_btn")->setVisible(false);
+            mButtonPanel->getChild<LLButton>("info_btn")->setVisible(false);
+
+            const int LEFT_PAD = 10;
+            const int BUTTON_HEIGHT = 23;
+            int buttons_width = 0;
+
+            for (int i = 0; i < form->getNumElements(); ++i)
+            {
+                LLSD elem = form->getElement(i);
+                if ("button" != elem["type"].asString()) continue;
+
+                std::string btn_name = elem["name"].asString();
+                LLButton::Params bp;
+                const LLFontGL* font = LLFontGL::getFontSansSerif();
+                bp.name(btn_name);
+                bp.label(elem["text"].asString());
+                bp.layout("topleft");
+                bp.font(font);
+                bp.rect.height(BUTTON_HEIGHT);
+                bp.rect.left = LEFT_PAD + buttons_width;
+                bp.rect.top = 2;
+                bp.rect.width = font->getWidth(elem["text"].asString()) + 20;
+                bp.auto_resize = true;
+                bp.follows.flags(FOLLOWS_LEFT | FOLLOWS_BOTTOM);
+                bp.click_callback.function(boost::bind(
+                    &LLSystemNotificationListItem::onFormButtonClicked, this, btn_name));
+
+                LLButton* button = LLUICtrlFactory::create<LLButton>(bp);
+                button->autoResize();
+                mButtonPanel->addChild(button);
+                buttons_width += button->getRect().getWidth() + LEFT_PAD;
+            }
+            mButtonPanel->setVisible(true);
+            // Account for button panel height in expanded layout
+            mExpandedHeight += mButtonPanel->getRect().getHeight();
+        }
+    }
     return rv;
+}
+
+void LLSystemNotificationListItem::onFormButtonClicked(const std::string& btn_name)
+{
+    if (mNotification)
+    {
+        LLSD response = mNotification->getResponseTemplate();
+        response[btn_name] = true;
+        mNotification->respond(response);
+        mNotification.reset();
+    }
+    onClickCloseBtn();
 }

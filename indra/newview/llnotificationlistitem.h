@@ -36,6 +36,7 @@
 #include "llavatariconctrl.h"
 #include "llchatentry.h"
 #include "llgroupmgr.h"
+#include "llnotifications.h"
 #include "llviewermessage.h"
 
 #include <string>
@@ -241,9 +242,12 @@ private:
     LLSystemNotificationListItem(const Params& p);
     LLSystemNotificationListItem(const LLSystemNotificationListItem&) = delete;
     LLSystemNotificationListItem & operator=(LLSystemNotificationListItem &) = delete;
-    LLIconCtrl* mSystemNotificationIcon;
-    LLIconCtrl* mSystemNotificationIconExp;
-    bool mIsCaution;
+    void onFormButtonClicked(const std::string& btn_name);
+    LLIconCtrl*       mSystemNotificationIcon;
+    LLIconCtrl*       mSystemNotificationIconExp;
+    LLNotificationPtr mNotification;
+    LLPanel*          mButtonPanel;
+    bool              mIsCaution;
 };
 
 #endif // LL_LLNOTIFICATIONLISTITEM_H
