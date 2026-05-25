@@ -1292,8 +1292,14 @@ class Darwin_x86_64_Manifest(ViewerManifest):
         # Generate Velopack update packages if enabled
         # This creates the nupkg and RELEASES files needed for auto-updates
         # Distribution is still via DMG, but updates use Velopack
+		# If Velopack is off we don't do anything about generating a DMG, so plumb that back in...
         if self.args.get('velopack', 'OFF') == 'ON':
             self.velopack_package_finish()
+            return
+
+        # DMG packaging (legacy)
+        self.dmg_package_finish()
+
 
     def velopack_package_finish(self):
         """Generate Velopack update packages for macOS.
@@ -1406,6 +1412,183 @@ class Darwin_x86_64_Manifest(ViewerManifest):
         self.set_github_output('velopack_releases', releases_dir)
         print("Velopack releases directory: %s" % releases_dir)
 
+# this section reinstates the ability to build DMG images
+    def dmg_package_finish(self):
+        global CHANNEL_VENDOR_BASE
+        # MBW -- If the mounted volume name changes, it breaks the .DS_Store's background image and icon positioning.
+        #  If we really need differently named volumes, we'll need to create multiple DS_Store file images, or use some other trick.
+
+        volname=CHANNEL_VENDOR_BASE+" Installer"  # DO NOT CHANGE without understanding comment above
+
+        imagename = self.installer_base_name_mac()
+
+        sparsename = imagename + ".sparseimage"
+        finalname = imagename + ".dmg"
+        # make sure we don't have stale files laying about
+        self.remove(sparsename, finalname)
+
+        self.run_command(['hdiutil', 'create', sparsename,
+                          '-volname', volname, '-fs', 'HFS+',
+                          '-type', 'SPARSE', '-megabytes', '1300',
+                          '-layout', 'SPUD'])
+
+        # mount the image and get the name of the mount point and device node
+        try:
+            hdi_output = subprocess.check_output(['hdiutil', 'attach', '-private', sparsename], text=True)
+        except subprocess.CalledProcessError as err:
+            sys.exit("failed to mount image at '%s'" % sparsename)
+
+        try:
+            devfile = re.search("/dev/disk([0-9]+)[^s]", hdi_output).group(0).strip()
+            volpath = re.search(r"HFS\s+(.+)", hdi_output).group(1).strip()
+
+            # Copy everything in to the mounted .dmg
+
+            app_name = self.app_name()
+
+            # Hack:
+            # Because there is no easy way to coerce the Finder into positioning
+            # the app bundle in the same place with different app names, we are
+            # adding multiple .DS_Store files to svn. There is one for release,
+            # one for release candidate and one for first look. Any other channels
+            # will use the release .DS_Store, and will look broken.
+            # - Ambroff 2008-08-20
+            dmg_template = os.path.join(
+                'installers', 'darwin', '%s-dmg' % self.channel_type())
+
+            if not os.path.exists (self.src_path_of(dmg_template)):
+                dmg_template = os.path.join ('installers', 'darwin', 'release-dmg')
+
+            for s,d in list({self.get_dst_prefix():app_name + ".app",
+                        os.path.join(dmg_template, "_VolumeIcon.icns"): ".VolumeIcon.icns",
+                        os.path.join(dmg_template, "background.jpg"): "background.jpg",
+                        os.path.join(dmg_template, "_DS_Store"): ".DS_Store"}.items()):
+                print("Copying to dmg", s, d)
+                self.copy_action(self.src_path_of(s), os.path.join(volpath, d))
+
+            # Hide the background image, DS_Store file, and volume icon file (set their "visible" bit)
+            for f in ".VolumeIcon.icns", "background.jpg", ".DS_Store":
+                pathname = os.path.join(volpath, f)
+                self.run_command(['SetFile', '-a', 'V', pathname])
+
+            # Create the alias file (which is a resource file) from the .r
+            self.run_command(
+                ['Rez', self.src_path_of("installers/darwin/release-dmg/Applications-alias.r"),
+                 '-o', os.path.join(volpath, "Applications")])
+
+            # Set the alias file's alias and custom icon bits
+            self.run_command(['SetFile', '-a', 'AC', os.path.join(volpath, "Applications")])
+
+            # Set the disk image root's custom icon bit
+            self.run_command(['SetFile', '-a', 'C', volpath])
+
+            # Sign the app if requested;
+            # do this in the copy that's in the .dmg so that the extended attributes used by
+            # the signature are preserved; moving the files using python will leave them behind
+            # and invalidate the signatures.
+            if 'signature' in self.args:
+                app_in_dmg=os.path.join(volpath,self.app_name()+".app")
+                print("Attempting to sign '%s'" % app_in_dmg)
+                identity = self.args['signature']
+                if identity == '':
+                    identity = 'Developer ID Application'
+
+                # Look for an environment variable set via build.sh when running in Team City.
+                try:
+                    build_secrets_checkout = os.environ['build_secrets_checkout']
+                except KeyError:
+                    pass
+                else:
+                    # variable found so use it to unlock keychain followed by codesign
+                    home_path = os.environ['HOME']
+                    keychain_pwd_path = os.path.join(build_secrets_checkout,'code-signing-osx','password.txt')
+                    keychain_pwd = open(keychain_pwd_path).read().rstrip()
+
+                    # Note: As of macOS Sierra, keychains are created with
+                    #       names postfixed with '-db' so for example, the SL
+                    #       Viewer keychain would by default be found in
+                    #       ~/Library/Keychains/viewer.keychain-db instead of
+                    #       just ~/Library/Keychains/viewer.keychain in
+                    #       earlier versions.
+                    #
+                    #       Because we have old OS files from previous
+                    #       versions of macOS on the build hosts, the
+                    #       configurations are different on each host. Some
+                    #       have viewer.keychain, some have viewer.keychain-db
+                    #       and some have both. As you can see in the line
+                    #       below, this script expects the Linden Developer
+                    #       cert/keys to be in viewer.keychain.
+                    #
+                    #       To correctly sign builds you need to make sure
+                    #       ~/Library/Keychains/viewer.keychain exists on the
+                    #       host and that it contains the correct cert/key. If
+                    #       a build host is set up with a clean version of
+                    #       macOS Sierra (or later) then you will need to
+                    #       change this line (and the one for 'codesign'
+                    #       command below) to point to right place or else
+                    #       pull in the cert/key into the default viewer
+                    #       keychain 'viewer.keychain-db' and export it to
+                    #       'viewer.keychain'
+                    viewer_keychain = os.path.join(home_path, 'Library',
+                                                   'Keychains', 'viewer.keychain')
+                    self.run_command(['security', 'unlock-keychain',
+                                      '-p', keychain_pwd, viewer_keychain])
+                    sign_retry_wait=15
+                    resources = app_in_dmg + "/Contents/Resources/"
+                    plain_sign = glob.glob(resources + "llplugin/*.dylib")
+                    deep_sign = [
+                        resources + "updater/SLVersionChecker",
+                        resources + "SLPlugin.app/Contents/MacOS/SLPlugin",
+                        app_in_dmg,
+                        ]
+                    for attempt in range(3):
+                        if attempt: # second or subsequent iteration
+                            print("codesign failed, waiting {:d} seconds before retrying".format(sign_retry_wait),
+                                  file=sys.stderr)
+                            time.sleep(sign_retry_wait)
+                            sign_retry_wait*=2
+
+                        try:
+                            # Note: See blurb above about names of keychains
+                            for signee in plain_sign:
+                                self.run_command(
+                                    ['codesign',
+                                     '--force',
+                                     '--timestamp',
+                                     '--keychain', viewer_keychain,
+                                     '--sign', identity,
+                                     signee])
+                            for signee in deep_sign:
+                                self.run_command(
+                                    ['codesign',
+                                     '--verbose',
+                                     '--deep',
+                                     '--force',
+                                     '--entitlements', self.src_path_of("slplugin.entitlements"),
+                                     '--options', 'runtime',
+                                     '--keychain', viewer_keychain,
+                                     '--sign', identity,
+                                     signee])
+                            break # if no exception was raised, the codesign worked
+                        except ManifestError as err:
+                            # 'err' goes out of scope
+                            sign_failed = err
+                    else:
+                        print("Maximum codesign attempts exceeded; giving up", file=sys.stderr)
+                        raise sign_failed
+                    self.run_command(['spctl', '-a', '-texec', '-vvvv', app_in_dmg])
+                    self.run_command([self.src_path_of("installers/darwin/apple-notarize.sh"), app_in_dmg])
+
+        finally:
+            # Unmount the image even if exceptions from any of the above
+            self.run_command(['hdiutil', 'detach', '-force', devfile])
+
+        print("Converting temp disk image to final disk image")
+        self.run_command(['hdiutil', 'convert', sparsename, '-format', 'UDZO',
+                          '-imagekey', 'zlib-level=9', '-o', finalname])
+        # get rid of the temp file
+        self.package_file = finalname
+        self.remove(sparsename)
 
 class LinuxManifest(ViewerManifest):
     build_data_json_platform = 'lnx'
