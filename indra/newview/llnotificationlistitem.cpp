@@ -692,6 +692,17 @@ bool LLSystemNotificationListItem::postBuild()
     return rv;
 }
 
+bool LLSystemNotificationListItem::showPopup()
+{
+    // If this item has inline action buttons and is already expanded,
+    // don't open the popup, the buttons are visible in the expanded view.
+    if (mButtonPanel && mButtonPanel->getVisible() && mExpanded)
+    {
+        return false;
+    }
+    return true;
+}
+
 void LLSystemNotificationListItem::onFormButtonClicked(const std::string& btn_name)
 {
     if (mNotification)

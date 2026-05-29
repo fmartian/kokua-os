@@ -237,6 +237,7 @@ class LLSystemNotificationListItem : public LLNotificationListItem
 {
 public:
     virtual bool postBuild();
+    /*virtual*/ bool showPopup();
 private:
     friend class LLNotificationListItem;
     LLSystemNotificationListItem(const Params& p);
