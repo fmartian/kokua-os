@@ -93,7 +93,7 @@ public:
     boost::signals2::connection setOnItemClickCallback(item_callback_t cb) { return mOnItemClick.connect(cb); }
 
     virtual bool showPopup() { return true; }
-    void setExpanded(bool value);
+    virtual void setExpanded(bool value);
     virtual bool postBuild();
     void reshapeNotification();
 
@@ -236,14 +236,17 @@ private:
 class LLSystemNotificationListItem : public LLNotificationListItem
 {
 public:
-    virtual bool postBuild();
-    /*virtual*/ bool showPopup();
+    bool postBuild() override;
+    bool showPopup() override;
+    void setExpanded(bool value) override;
 private:
     friend class LLNotificationListItem;
     LLSystemNotificationListItem(const Params& p);
     LLSystemNotificationListItem(const LLSystemNotificationListItem&) = delete;
     LLSystemNotificationListItem & operator=(LLSystemNotificationListItem &) = delete;
     void onFormButtonClicked(const std::string& btn_name);
+    void layoutButtonsForExpanded();
+    void reshapeWithButtons();
     LLIconCtrl*       mSystemNotificationIcon;
     LLIconCtrl*       mSystemNotificationIconExp;
     LLNotificationPtr mNotification;

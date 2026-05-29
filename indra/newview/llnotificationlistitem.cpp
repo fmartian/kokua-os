@@ -656,6 +656,8 @@ bool LLSystemNotificationListItem::postBuild()
 
             const int LEFT_PAD = 10;
             const int BUTTON_HEIGHT = 23;
+            // button_panel height=55, XUI top=2 → LLUI mTop = 55-2 = 53
+            const int BUTTON_TOP_LLUI = 53;
             int buttons_width = 0;
 
             for (int i = 0; i < form->getNumElements(); ++i)
@@ -671,8 +673,6 @@ bool LLSystemNotificationListItem::postBuild()
                 bp.layout("topleft");
                 bp.font(font);
                 bp.rect.height(BUTTON_HEIGHT);
-                bp.rect.left = LEFT_PAD + buttons_width;
-                bp.rect.top = 2;
                 bp.rect.width = font->getWidth(elem["text"].asString()) + 20;
                 bp.auto_resize = true;
                 bp.follows.flags(FOLLOWS_LEFT | FOLLOWS_BOTTOM);
@@ -682,14 +682,81 @@ bool LLSystemNotificationListItem::postBuild()
                 LLButton* button = LLUICtrlFactory::create<LLButton>(bp);
                 button->autoResize();
                 mButtonPanel->addChild(button);
-                buttons_width += button->getRect().getWidth() + LEFT_PAD;
+
+                // setLeftTopAndSize uses LLUI coords (y-up): place button near
+                // visual top of button_panel, matching XML top="2" on group-invite buttons.
+                LLRect rect = button->getRect();
+                rect.setLeftTopAndSize(LEFT_PAD + buttons_width, BUTTON_TOP_LLUI,
+                                       rect.getWidth(), BUTTON_HEIGHT);
+                button->setRect(rect);
+
+                buttons_width += rect.getWidth() + LEFT_PAD;
             }
             mButtonPanel->setVisible(true);
-            // Account for button panel height in expanded layout
-            mExpandedHeight += mButtonPanel->getRect().getHeight();
+
+            // Correct item height: title(30)+time(15)+gap(3)+buttons(55)+padding(2)=105
+            // plus whatever the chat_editor reports as its height.
+            mExpandedHeight = 105;
+
+            // Replace the text-expanded callback so we reposition panels
+            // whenever the chat_editor grows to fit longer content.
+            mNoticeTextExp->setTextExpandedCallback(
+                boost::bind(&LLSystemNotificationListItem::reshapeWithButtons, this));
         }
     }
     return rv;
+}
+
+// Reposition text_panel and button_panel so they never overlap.
+// Called after every expand / text-grow event.
+void LLSystemNotificationListItem::layoutButtonsForExpanded()
+{
+    LLPanel* textPanel = getChild<LLPanel>("notification_text_panel_exp");
+    LLPanel* timePanel = getChild<LLPanel>("sender_time_panel_exp");
+    if (!textPanel || !timePanel || !mButtonPanel) return;
+
+    const S32 GAP = 3; // pixels between text area and button panel
+
+    // timePanel follows top, so its mBottom is always just below the time row.
+    S32 text_top = timePanel->getRect().mBottom;
+    S32 text_h   = mNoticeTextExp->getRect().getHeight();
+    S32 text_bot = text_top - text_h;
+
+    // Pin text panel exactly to the content it contains, stopping it from
+    // stretching down into the button zone (revoke its follows="all").
+    LLRect tr = textPanel->getRect();
+    tr.mTop    = text_top;
+    tr.mBottom = text_bot;
+    textPanel->setRect(tr);
+    textPanel->setFollows(FOLLOWS_LEFT | FOLLOWS_TOP | FOLLOWS_RIGHT);
+
+    // Place button panel immediately below the text, anchored to the top so
+    // it moves together with the text when the editor grows.
+    S32 btn_top = text_bot - GAP;
+    LLRect br = mButtonPanel->getRect();
+    br.setLeftTopAndSize(br.mLeft, btn_top, br.getWidth(), br.getHeight());
+    mButtonPanel->setRect(br);
+    mButtonPanel->setFollows(FOLLOWS_LEFT | FOLLOWS_TOP | FOLLOWS_RIGHT);
+}
+
+// Fired by the chat_editor when its content grows beyond the initial height.
+void LLSystemNotificationListItem::reshapeWithButtons()
+{
+    if (!mExpanded) return;
+    reshape(getRect().getWidth(),
+            mNoticeTextExp->getRect().getHeight() + mExpandedHeight,
+            false);
+    layoutButtonsForExpanded();
+}
+
+// Override so we can reposition panels every time the item is expanded.
+void LLSystemNotificationListItem::setExpanded(bool value)
+{
+    LLNotificationListItem::setExpanded(value);
+    if (value && mButtonPanel && mButtonPanel->getVisible())
+    {
+        layoutButtonsForExpanded();
+    }
 }
 
 bool LLSystemNotificationListItem::showPopup()
