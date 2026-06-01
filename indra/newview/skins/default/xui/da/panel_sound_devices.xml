@@ -3,6 +3,15 @@
 	<panel.string name="default_text">
 		Standard
 	</panel.string>
+    <string name="name_no_device">
+        	No Device
+	</string>
+	<string name="name_default_system_device">
+		Default System Device
+	</string>
+	<string	name="device_not_loaded">
+		Device not loaded
+	</string>
 	<text name="Input">
 		Input
 	</text>

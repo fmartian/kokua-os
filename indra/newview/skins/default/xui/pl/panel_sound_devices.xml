@@ -9,6 +9,9 @@
 	<string name="name_default_system_device">
 		Domyślne systemowe
 	</string>
+	<string	name="device_not_loaded">
+		Device not loaded
+	</string>
 	<text name="Input">
 		Wejście
 	</text>

@@ -9,6 +9,9 @@
 	<string name="name_default_system_device">
 		Dispositivo di sistema predefinito
 	</string>
+	<string	name="device_not_loaded">
+		Device not loaded
+	</string>
 	<text name="Input">
 		Input
 	</text>
