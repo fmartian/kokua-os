@@ -474,8 +474,13 @@ LLSLMMenuUpdater::LLSLMMenuUpdater()
     LLView* me_menu = gMenuHolder->findChild<LLView>("Me");
     if (!me_menu)
     {
+    	// if we're using old style menus, MarketplaceListings is under View instead
+    	me_menu = gMenuHolder->findChild<LLView>("View");
+    }
+    if (!me_menu)
+    {
         LLError::LLUserWarningMsg::showMissingFiles();
-        LL_ERRS() << "Can't find 'Me' menu in 'menu_viewer'" << LL_ENDL;
+        LL_ERRS() << "Can't find 'Me' or 'View' menu in main menu" << LL_ENDL;
         return;
     }
 
@@ -483,7 +488,7 @@ LLSLMMenuUpdater::LLSLMMenuUpdater()
     if (!marketplace_listings)
     {
         LLError::LLUserWarningMsg::showMissingFiles();
-        LL_ERRS() << "Can't find 'MarketplaceListings' in 'Me' menu" << LL_ENDL;
+        LL_ERRS() << "Can't find 'MarketplaceListings' in 'Me' or 'View' menu" << LL_ENDL;
         return;
     }
 
