@@ -215,7 +215,18 @@
         <key>Value</key>
             <integer>1</integer>
     </map> 
-         <key>NavigationBarRatio</key>	
+    <key>KokuaLastPlacesTabType</key>
+        <map>
+        <key>Comment</key>
+            <string>The last tab type selected by the user in the Landmarks button right-click menu (open_favorites_tab, open_landmark_tab, open_visited_tab)</string>
+        <key>Persist</key>
+            <integer>1</integer>
+        <key>Type</key>
+            <string>String</string>
+        <key>Value</key>
+            <string>open_favorites_tab</string>
+        </map>
+         <key>NavigationBarRatio</key>
    	 <map>	
         <key>Comment</key>
             <string>The ratio between the width of Navigation layout panel and the width of whole Navigation layout stack</string>	
