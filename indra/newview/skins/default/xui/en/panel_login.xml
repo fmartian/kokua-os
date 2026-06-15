@@ -234,7 +234,7 @@
            animate="false"
            top_pad="0"
            left="0"
-           height="218"
+           height="318"
            width="300">
             <layout_panel
              auto_resize="false"
@@ -289,7 +289,7 @@
              layout="topleft"
              name="login_panel"
              background_visible="false"
-             height="172"
+             height="272"
              width="300">
               <button
                follows="left|top"
@@ -317,7 +317,7 @@
                height="15"
                name="forgot_password_text"
                left="60"
-               top_pad="9"
+               top_pad="109"
                width="180"
                halign="center">
                Need help logging in?
