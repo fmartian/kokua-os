@@ -592,14 +592,6 @@ class Windows_x86_64_Manifest(ViewerManifest):
             self.path_optional("vcruntime140_1.dll")
             self.path_optional("vcruntime140_threads.dll")
 
-            # SLVoice executable
-            with self.prefix(src=os.path.join(pkgdir, 'bin', 'release')):
-                self.path("SLVoice.exe")
-
-            # Vivox libraries
-            self.path("vivoxsdk_x64.dll")
-            self.path("ortp_x64.dll")
-
             # BugSplat
             if self.args.get('bugsplat'):
                 self.path("BsSndRpt64.exe")
@@ -1189,16 +1181,6 @@ class Darwin_x86_64_Manifest(ViewerManifest):
                 # Need to get the llcommon dll from any of the build directories as well.
                 libfile_parent = self.get_dst_prefix()
                 dylibs=[]
-                # SLVoice executable
-                with self.prefix(src=os.path.join(pkgdir, 'bin', 'release')):
-                    self.path("SLVoice")
-
-                # Vivox libraries
-                for libfile in (
-                                'libortp.dylib',
-                                'libvivoxsdk.dylib',
-                                ):
-                    self.path2basename(relpkgdir, libfile)
 
                 # Fmod studio dylibs (vary based on configuration)
                 if self.args['fmodstudio'] == 'ON':
@@ -1847,13 +1829,6 @@ class Linux_x86_64_Manifest(LinuxManifest):
             #cef plugin
 # already pulled this in earlier
 #            self.path( "libcef.so" )
-
-            # Vivox runtimes
-            with self.prefix(src=os.path.join(pkgdir, 'bin', 'release'), dst="../bin"):
-                    self.path("SLVoice.exe")
-            with self.prefix(src=relpkgdir, dst="../bin"):
-                    self.path("vivoxsdk_x64.dll")
-                    self.path("ortp_x64.dll")
 
             if self.args['buildtype'].lower() == 'debug':
              if self.prefix("../packages/lib/debug", dst="lib"):

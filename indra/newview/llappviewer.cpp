@@ -157,6 +157,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
 #include <boost/throw_exception.hpp>
+#include <chrono>
 
 #if LL_WINDOWS
 #   include <share.h> // For _SH_DENYWR in processMarkerFiles
@@ -1409,7 +1410,11 @@ bool LLAppViewer::frame()
     {
         try
         {
+            const auto start = std::chrono::steady_clock::now();
             ret = doFrame();
+            const auto end = std::chrono::steady_clock::now();
+            const U64 doframe_time_us = (U64)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+            LLTrace::sample(LLStatViewer::DOFRAME_TIME_US, doframe_time_us);
         }
         catch (const LLContinueError&)
         {
@@ -2349,6 +2354,8 @@ bool LLAppViewer::cleanup()
     // deleteSingleton() methods.
     LLSingletonBase::deleteAll();
 
+    LLUICtrlFactory::deleteSingleton();
+
     LLSplashScreen::hide();
 
     LL_INFOS() << "Goodbye!" << LL_ENDL;
@@ -3227,7 +3234,6 @@ bool LLAppViewer::initConfiguration()
     {
         // This is the second instance of SL. Mute voice,
         // but make sure the setting is *not* persisted.
-        // Also see LLVivoxVoiceClient::voiceEnabled()
         LLControlVariable* enable_voice = gSavedSettings.getControl("EnableVoiceChat");
         // <FS:Ansariel> Voice in multiple instances; by Latif Khalifa
         if(enable_voice && !gSavedSettings.getBOOL("VoiceMultiInstance"))

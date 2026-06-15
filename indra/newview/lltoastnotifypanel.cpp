@@ -38,6 +38,7 @@
 #include "llnotifications.h"
 #include "lluiconstants.h"
 #include "llrect.h"
+#include "llstring.h"
 #include "lltrans.h"
 #include "llnotificationsutil.h"
 #include "llviewermessage.h"
@@ -92,8 +93,23 @@ LLButton* LLToastNotifyPanel::createButton(const LLSD& form_element, bool is_opt
     std::string text = form_element["text"].asString();
     bool make_small_btn = index == -1 || index == -2; // for block and ignore buttons in script dialog
     std::string fontSize = (mIsScriptDialog && gSavedSettings.getBOOL("KokuaSmallScriptDialogButtonFont")) ? "Small" : "Medium";
+
+    // Use Emoji font as exception if text contains red heart emoji (10084 U+2764) to ensure proper rendering
+    std::string font_name = mIsScriptDialog ? sFontScript : sFontDefault;
+    if (mIsScriptDialog)
+    {
+        LLWString wtext = utf8str_to_wstring(text);
+        for (llwchar ch : wtext)
+        {
+            if (ch == 0x2764)
+            {
+                font_name = "Emoji";
+                break;
+            }
+        }
+    }
     const LLFontGL* font = LLFontGL::getFont(LLFontDescriptor(
-        mIsScriptDialog ? sFontScript : sFontDefault, make_small_btn ? "Small" : fontSize, 0));
+        font_name, make_small_btn ? "Small" : fontSize, 0));
     p.name = name;
     p.label = text;
     p.tool_tip = text;
@@ -288,7 +304,7 @@ void LLToastNotifyPanel::init( LLRect rect, bool show_images )
     mIsScriptDialog = (notif_name == "ScriptDialog" || notif_name == "ScriptDialogGroup");
 
     static LLCachedControl<S32> btn_width(gSavedSettings, "ToastButtonWidth", 90);
-    static LLCachedControl<S32> script_button_width(gSavedSettings, "ScriptToastButtonWidth", 110);
+    static LLCachedControl<S32> script_button_width(gSavedSettings, "ScriptToastButtonWidth", 127);
     mButtonWidth = mIsScriptDialog ? script_button_width : btn_width;
 
     bool is_content_trusted = (notif_name != "LoadWebPage");
@@ -316,15 +332,16 @@ void LLToastNotifyPanel::init( LLRect rect, bool show_images )
 
     // adjust text options according to the notification type
     // add a caution textbox at the top of a caution notification
+    std::string fontSize = (mIsScriptDialog && gSavedSettings.getBOOL("KokuaSmallScriptDialogTextFont")) ? "Small" : "Medium";
     if (mIsCaution && !mIsTip)
     {
         mTextBox = getChild<LLTextBox>("caution_text_box");
-        mTextBox->setFont(LLFontGL::getFont(LLFontDescriptor(mIsScriptDialog ? sFontScript : sFontDefault, "Medium", LLFontGL::BOLD)));
+        mTextBox->setFont(LLFontGL::getFont(LLFontDescriptor(mIsScriptDialog ? sFontScript : sFontDefault, fontSize, LLFontGL::BOLD)));
     }
     else
     {
         mTextBox = getChild<LLTextEditor>("text_editor_box");
-        mTextBox->setFont(LLFontGL::getFont(LLFontDescriptor(mIsScriptDialog ? sFontScript : sFontDefault, "Medium", 0)));
+        mTextBox->setFont(LLFontGL::getFont(LLFontDescriptor(mIsScriptDialog ? sFontScript : sFontDefault, fontSize, 0)));
     }
 
     mTextBox->setMaxTextLength(LLToastPanel::MAX_TEXT_LENGTH);

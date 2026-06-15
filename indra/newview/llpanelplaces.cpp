@@ -1375,6 +1375,12 @@ static bool is_agent_in_selected_parcel(LLParcel* parcel)
 
 static void onSLURLBuilt(std::string& slurl)
 {
+    if (slurl.empty())
+    {
+        LLNotificationsUtil::add("LandmarkLocationUnknown");
+        return;
+    }
+
     LLView::getWindow()->copyTextToClipboard(utf8str_to_wstring(slurl));
 
     LLSD args;

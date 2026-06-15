@@ -148,7 +148,6 @@
 #include "llviewerstatsrecorder.h"
 #include "llvlcomposition.h"
 #include "llvoavatarself.h"
-#include "llvoicevivox.h"
 #include "llviewerwindow.h"
 #include "llvoavatarself.h"
 #if LL_LINUX

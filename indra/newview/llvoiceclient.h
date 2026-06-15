@@ -107,7 +107,7 @@ struct LLVoiceVersionInfo
 /// @class LLVoiceP2POutgoingCallInterface
 /// @brief Outgoing call interface
 ///
-/// For providers that support P2P signaling (vivox)
+/// For providers that support P2P signaling
 /////////////////////////////////
 
 class LLVoiceP2POutgoingCallInterface
@@ -122,7 +122,7 @@ class LLVoiceP2POutgoingCallInterface
 /// @class LLVoiceP2PIncomingCallInterface
 /// @brief Incoming call interface
 ///
-/// For providers that support P2P signaling (vivox)
+/// For providers that support P2P signaling
 /////////////////////////////////
 class LLVoiceP2PIncomingCallInterface
 {
@@ -181,7 +181,6 @@ public:
     virtual bool deviceSettingsAvailable()=0;
     virtual bool deviceSettingsUpdated() = 0;
 
-    // Requery the vivox daemon for the current list of input/output devices.
     // If you pass true for clearCurrentList, deviceSettingsAvailable() will be false until the query has completed
     // (use this if you want to know when it's done).
     // If you pass false, you'll have no way to know when the query finishes, but the device lists will not appear empty in the interim.
@@ -284,7 +283,6 @@ public:
     virtual void removeObserver(LLVoiceClientParticipantObserver* observer)=0;
     //@}
 
-    virtual std::string sipURIFromID(const LLUUID &id) const=0;
     virtual LLSD getP2PChannelInfoTemplate(const LLUUID& id) const=0;
     //@}
 
@@ -389,7 +387,7 @@ public:
     bool deviceSettingsAvailable();
     bool deviceSettingsUpdated();   // returns true when the device list has been updated recently.
 
-    // Requery the vivox daemon for the current list of input/output devices.
+    // Requery the voice driver for the current list of input/output devices.
     // If you pass true for clearCurrentList, deviceSettingsAvailable() will be false until the query has completed
     // (use this if you want to know when it's done).
     // If you pass false, you'll have no way to know when the query finishes, but the device lists will not appear empty in the interim.
@@ -495,7 +493,6 @@ public:
     static void addObserver(LLVoiceClientParticipantObserver* observer);
     static void removeObserver(LLVoiceClientParticipantObserver* observer);
 
-    std::string sipURIFromID(const LLUUID &id) const;
     LLSD getP2PChannelInfoTemplate(const LLUUID& id) const;
 
     //////////////////////////
@@ -520,7 +517,7 @@ protected:
 
     LLVoiceModuleInterface* mSpatialVoiceModule;
     LLVoiceModuleInterface* mNonSpatialVoiceModule;
-    LLSD                    mSpatialCredentials;  // used to store spatial credentials for vivox
+    LLSD                    mSpatialCredentials;  // used to store spatial credentials for the voice subsystem
                                                   // so they're available when the region voice
                                                   // server is retrieved.
     LLPumpIO *m_servicePump;

@@ -31,8 +31,8 @@
          follows="all"
          layout="topleft"
          halign="center"
-         tab_min_width="81"
-         tab_height="23"
+         tab_min_width="80"
+         tab_height="30"
          tab_position="top"
         >
             <panel
