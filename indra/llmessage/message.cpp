@@ -595,15 +595,21 @@ bool LLMessageSystem::checkMessages(LockMessageChecker&, S64 frame_count )
             {
                 recv_reliable = true;
             }
-            if (buffer[0] & LL_RESENT_FLAG)
+            
+            // Duplicates can be created in the network as well as by resends, so this routine is adjusted to always check for dupes
+            
+            //if (buffer[0] & LL_RESENT_FLAG)
             {
-                recv_resent = true;
+                if (buffer[0] & LL_RESENT_FLAG)
+                {
+                    recv_resent = true;
+                }
                 if (cdp && cdp->isDuplicateResend(mCurrentRecvPacketID))
                 {
                     // We need to ACK here to suppress
                     // further resends of packets we've
                     // already seen.
-                    if (recv_reliable)
+                    if (recv_reliable && recv_resent)
                     {
                         //mAckList.addData(new LLPacketAck(host, mCurrentRecvPacketID));
                         // ***************************************
@@ -620,7 +626,7 @@ bool LLMessageSystem::checkMessages(LockMessageChecker&, S64 frame_count )
                         cdp->collectRAck(mCurrentRecvPacketID);
                     }
 
-                    LL_DEBUGS("Messaging") << "Discarding duplicate resend from " << host << LL_ENDL;
+                    // LL_DEBUGS("Messaging") << "Discarding duplicate resend from " << host << LL_ENDL;
                     if(mVerboseLog)
                     {
                         std::ostringstream str;
@@ -629,11 +635,26 @@ bool LLMessageSystem::checkMessages(LockMessageChecker&, S64 frame_count )
                         tbuf = llformat( "\t%6d\t%6d\t%6d ", receive_size, (mIncomingCompressedSize ? mIncomingCompressedSize : receive_size), mCurrentRecvPacketID);
                         str << tbuf << "(unknown)"
                             << (recv_reliable ? " reliable" : "")
-                            << " resent "
+                            << (recv_resent ? " resent " : "")
                             << ((acks > 0) ? "acks" : "")
-                            << " DISCARD DUPLICATE";
+                            << " DISCARD "
+                            << (recv_resent ? "NON-" : "")
+							<< "RE-SENT DUPLICATE";
                         LL_INFOS("Messaging") << str.str() << LL_ENDL;
                     }
+					else
+					{
+						// if we're not doing verbose logging, keep this fast and simple with a single decision switch and no string operations
+						// also, don't generate this log entry if we're doing verbose logs
+						if (recv_resent)
+						{
+		                    LL_DEBUGS("Messaging") << "Discarding duplicate resend from " << host << LL_ENDL;
+						}
+						else
+						{
+		                    LL_DEBUGS("Messaging") << "Discarding network duplicate from " << host << LL_ENDL;
+						}
+					}
                     mPacketsIn++;
                     valid_packet = false;
                     continue;
