@@ -11972,6 +11972,13 @@ void LLVOAvatar::processComplexityCostChange(const hud_complexity_list_t &hud_co
         LLHUDRenderNotifier::getInstance()->updateNotificationHUD(hud_complexity_list);
     }
 
+    // <FS:Ansariel> Show avatar complexity in appearance floater
+    if (isSelf())
+    {
+        LLSidepanelAppearance::updateAvatarComplexity(mVisualComplexity);
+    }
+    // </FS:Ansariel>
+
     //schedule an update to ART next frame if needed
     if (LLPerfStats::tunables.userAutoTuneEnabled &&
         LLPerfStats::tunables.userFPSTuningStrategy != LLPerfStats::TUNE_SCENE_ONLY &&
