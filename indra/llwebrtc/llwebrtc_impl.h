@@ -181,7 +181,7 @@ private:
 class LLWebRTCAudioDeviceModule : public webrtc::AudioDeviceModule
 {
 public:
-    explicit LLWebRTCAudioDeviceModule(webrtc::scoped_refptr<webrtc::AudioDeviceModule> inner) : inner_(std::move(inner)), tuning_(false)
+    explicit LLWebRTCAudioDeviceModule(webrtc::scoped_refptr<webrtc::AudioDeviceModule> inner) : inner_(inner), tuning_(false)
     {
         RTC_CHECK(inner_);
     }
@@ -198,8 +198,14 @@ public:
     }
 
     int32_t Init() override { return inner_->Init(); }
-    int32_t Terminate() override { return inner_->Terminate(); }
+    int32_t Terminate() override {
+        // libwebrtc attempts to terminate the adm when peer connections go to zero, but we don't want that,
+        // now that we're keeping the adm active throughout the session.
+        return 0;
+    }
     bool    Initialized() const override { return inner_->Initialized(); }
+
+    int32_t ForceTerminate() { return inner_->Terminate(); }
 
     // --- Device enumeration/selection (forward) ---
     int16_t PlayoutDevices() override { return inner_->PlayoutDevices(); }
@@ -326,30 +332,8 @@ public:
     // tuning microphone energy calculations
     float GetMicrophoneEnergy() { return audio_transport_.GetMicrophoneEnergy(); }
     void SetTuningMicGain(float gain) { audio_transport_.SetGain(gain); }
-    void  SetTuning(bool tuning, bool mute)
-    {
-        tuning_ = tuning;
-        if (tuning)
-        {
-            inner_->InitRecording();
-            inner_->StartRecording();
-            inner_->StopPlayout();
-        }
-        else
-        {
-            if (mute)
-            {
-                inner_->StopRecording();
-            }
-            else
-            {
-                inner_->InitRecording();
-                inner_->StartRecording();
-            }
-            inner_->InitPlayout();
-            inner_->StartPlayout();
-        }
-    }
+
+    void  SetTuning(bool tuning, bool mute);
 
 protected:
     ~LLWebRTCAudioDeviceModule() override = default;
@@ -443,7 +427,6 @@ class LLWebRTCImpl : public LLWebRTCDeviceInterface, public webrtc::AudioDeviceO
     //
 
     void setAudioConfig(LLWebRTCDeviceInterface::AudioConfig config = LLWebRTCDeviceInterface::AudioConfig()) override;
-
     void refreshDevices() override;
 
     void setDevicesObserver(LLWebRTCDevicesObserver *observer) override;
@@ -451,6 +434,8 @@ class LLWebRTCImpl : public LLWebRTCDeviceInterface, public webrtc::AudioDeviceO
 
     void setCaptureDevice(const std::string& id) override;
     void setRenderDevice(const std::string& id) override;
+
+    void setVoiceEnabled(bool enable) override;
 
     void setTuningMode(bool enable) override;
     float getTuningAudioLevel() override;
@@ -533,9 +518,23 @@ class LLWebRTCImpl : public LLWebRTCDeviceInterface, public webrtc::AudioDeviceO
     LLWebRTCPeerConnectionInterface* newPeerConnection();
     void freePeerConnection(LLWebRTCPeerConnectionInterface* peer_connection);
 
+    // Start playout once a connection's audio is established (playout is gated
+    // on there being a connection to render).  Capture is not touched here --
+    // it follows voice-enabled state, not connection state.  Safe to call from
+    // any thread (work is posted to the worker thread).
+    void startPlayout();
+
   protected:
 
+    const webrtc::Environment                                  mEnv;
+    void workerStartRecording();
+    void workerStartPlayout();
     void workerDeployDevices();
+    // We always rely on WebRTC's internal (software APM) audio processing, so
+    // any platform/hardware AEC/AGC/NS must be kept disabled.
+    void workerDisableBuiltInAudioProcessing();
+
+
     LLWebRTCLogSink*                                           mLogSink;
 
     // The native webrtc threads
@@ -548,16 +547,16 @@ class LLWebRTCImpl : public LLWebRTCDeviceInterface, public webrtc::AudioDeviceO
 
     webrtc::scoped_refptr<webrtc::AudioProcessing>                mAudioProcessingModule;
 
-    // more native webrtc stuff
-    std::unique_ptr<webrtc::TaskQueueFactory>                     mTaskQueueFactory;
-
-
     // Devices
     void updateDevices();
     void deployDevices();
     std::atomic<int>                                           mDevicesDeploying;
     webrtc::scoped_refptr<LLWebRTCAudioDeviceModule>           mDeviceModule;
     std::vector<LLWebRTCDevicesObserver *>                     mVoiceDevicesObserverList;
+
+    bool mBuiltinNS;
+    bool mBuiltinAGC;
+    bool mBuiltinAEC;
 
     // accessors in native webrtc for devices aren't apparently implemented yet.
     bool                                                       mTuningMode;
@@ -568,6 +567,8 @@ class LLWebRTCImpl : public LLWebRTCDeviceInterface, public webrtc::AudioDeviceO
     LLWebRTCVoiceDeviceList                                    mPlayoutDeviceList;
 
     bool                                                       mMute;
+    // Whether voice is enabled; gates whether the capture/playout devices run.
+    bool                                                       mVoiceEnabled;
     float                                                      mGain;
 
     LLCustomProcessorStatePtr                                  mPeerCustomProcessor;
@@ -591,7 +592,7 @@ class LLWebRTCPeerConnectionImpl : public LLWebRTCPeerConnectionInterface,
 
 {
   public:
-    LLWebRTCPeerConnectionImpl();
+    LLWebRTCPeerConnectionImpl(const webrtc::Environment& env);
     ~LLWebRTCPeerConnectionImpl();
 
     void init(LLWebRTCImpl * webrtc_impl);
@@ -670,7 +671,7 @@ class LLWebRTCPeerConnectionImpl : public LLWebRTCPeerConnectionInterface,
     void gatherConnectionStats() override;
 
   protected:
-
+    const webrtc::Environment mEnv;
     LLWebRTCImpl * mWebRTCImpl;
 
     webrtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> mPeerConnectionFactory;
