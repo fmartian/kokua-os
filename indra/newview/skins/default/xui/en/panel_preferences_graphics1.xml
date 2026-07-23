@@ -557,11 +557,6 @@
         Texture quality:
     </text>
     <combo_box
-      name="MaxTextureResolutionLabel"
-      text_readonly_color="LabelDisabledColor">
-        Maximum LOD resolution:
-    </text>
-    <combo_box
      control_name="RenderMaxTextureResolution"
      height="19"
      layout="topleft"
