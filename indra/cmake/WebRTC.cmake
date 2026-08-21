@@ -18,7 +18,6 @@ target_link_libraries( ll::webrtc INTERFACE ${WEBRTC_LIBRARY} )
 if (DARWIN)
     target_link_libraries( ll::webrtc INTERFACE ll::oslibraries )
 elseif (LINUX)
-    target_compile_definitions(ll::webrtc INTERFACE CM_WEBRTC=1)
     target_link_libraries( ll::webrtc INTERFACE X11 )
 endif ()
 
