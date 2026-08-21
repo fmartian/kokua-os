@@ -2237,6 +2237,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     COMPILE_FLAGS -Wno-array-bounds)
   set_source_files_properties(llinventorygallerymenu.cpp PROPERTIES
     COMPILE_FLAGS -Wno-uninitialized)
+  set_source_files_properties(llpathfindingnavmesh.cpp PROPERTIES
+    COMPILE_FLAGS -Wno-dangling-reference)
 endif ()
 
 if (LINUX)
