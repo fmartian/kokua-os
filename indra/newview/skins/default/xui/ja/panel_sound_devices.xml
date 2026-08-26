@@ -9,9 +9,6 @@
 	<string name="name_default_system_device">
 		デフォルトのシステム機器
 	</string>
-	<string	name="device_not_loaded">
-		Device not loaded
-	</string>
 	<text name="Input">
 		入力
 	</text>
