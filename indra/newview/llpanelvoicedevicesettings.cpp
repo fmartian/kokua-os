@@ -237,6 +237,10 @@ void LLPanelVoiceDeviceSettings::refresh()
     {
         // The combo boxes are disabled, since we can't get the device settings from the daemon just now.
         // Put the currently set default (ONLY) in the box, and select it.
+
+        // CA: KKA-1170 take 2: getString("device_not_loaded") fails if PTT is active for reasons unknown so we work around it by adding a fallback here
+        std::string my_device_not_loaded = hasString("device_not_loaded") ? getString("device_not_loaded") : "Device not loaded";
+
         if(mCtrlInputDevices)
         {
             mCtrlInputDevices->removeall();
@@ -255,7 +259,7 @@ void LLPanelVoiceDeviceSettings::refresh()
                 // But show a readable placeholder.
                 // Combo is disabled so it's safe to show
                 // a placeholder.
-                mCtrlInputDevices->add(getString("device_not_loaded"), mInputDevice, ADD_BOTTOM);
+                mCtrlInputDevices->add(my_device_not_loaded, mInputDevice, ADD_BOTTOM);
             }
             mCtrlInputDevices->setValue(mInputDevice);
         }
@@ -270,7 +274,7 @@ void LLPanelVoiceDeviceSettings::refresh()
             else
             {
                 // Don't change the device, only the label
-                mCtrlOutputDevices->add(getString("device_not_loaded"), mOutputDevice, ADD_BOTTOM);
+                mCtrlOutputDevices->add(my_device_not_loaded, mOutputDevice, ADD_BOTTOM);
             }
             mCtrlOutputDevices->setValue(mOutputDevice);
         }
