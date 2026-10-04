@@ -651,41 +651,46 @@ void LLFavoritesBarCtrl::handleNewFavoriteDragAndDrop(LLInventoryItem *item, con
         return;
 
     LLPointer<LLViewerInventoryItem> viewer_item = new LLViewerInventoryItem(item);
-
-    // Insert the dragged item to the right place
-    if (target_id.notNull())
-    {
-        insertItem(mItems, target_id, viewer_item, insert_before);
-    }
-    else
-    {
-        // This can happen when the item list is empty
-        mItems.push_back(viewer_item);
-    }
-
-    int sortField = 0;
     LLPointer<LLItemCopiedCallback> cb;
 
-    const F64 CALLBACK_WAIT_TIME = 30.f;
-    sWaitingForCallabck = LLTimer::getTotalSeconds() + CALLBACK_WAIT_TIME;
-
-    // current order is saved by setting incremental values (1, 2, 3, ...) for the sort field
-    for (LLInventoryModel::item_array_t::iterator i = mItems.begin(); i != mItems.end(); ++i)
+    // The custom order is only kept for Favorites. In Landmarks mode the bar shows
+    // every landmark, so renumbering them all would flood the server with updates.
+    if (mBarMode == BAR_MODE_FAVORITES)
     {
-        LLViewerInventoryItem* currItem = *i;
-
-        if (currItem->getUUID() == item->getUUID())
+        // Insert the dragged item to the right place
+        if (target_id.notNull())
         {
-            cb = new LLItemCopiedCallback(++sortField);
+            insertItem(mItems, target_id, viewer_item, insert_before);
         }
         else
         {
-            LLFavoritesOrderStorage::instance().setSortIndex(currItem, ++sortField);
+            // This can happen when the item list is empty
+            mItems.push_back(viewer_item);
+        }
 
-            currItem->setComplete(true);
-            currItem->updateServer(false);
+        int sortField = 0;
 
-            gInventory.updateItem(currItem);
+        const F64 CALLBACK_WAIT_TIME = 30.f;
+        sWaitingForCallabck = LLTimer::getTotalSeconds() + CALLBACK_WAIT_TIME;
+
+        // current order is saved by setting incremental values (1, 2, 3, ...) for the sort field
+        for (LLInventoryModel::item_array_t::iterator i = mItems.begin(); i != mItems.end(); ++i)
+        {
+            LLViewerInventoryItem* currItem = *i;
+
+            if (currItem->getUUID() == item->getUUID())
+            {
+                cb = new LLItemCopiedCallback(++sortField);
+            }
+            else
+            {
+                LLFavoritesOrderStorage::instance().setSortIndex(currItem, ++sortField);
+
+                currItem->setComplete(true);
+                currItem->updateServer(false);
+
+                gInventory.updateItem(currItem);
+            }
         }
     }
 
@@ -1191,16 +1196,21 @@ LLUUID LLFavoritesBarCtrl::getBarRootFolderID() const
 
 LLUUID LLFavoritesBarCtrl::getDropDestinationFolderID() const
 {
-    const LLUUID favorites_id = gInventory.findCategoryUUIDForType(LLFolderType::FT_FAVORITE);
+    // Visited mode doesn't show an inventory folder, keep dropping into Favorites
+    if (mBarMode == BAR_MODE_VISITED)
+        return gInventory.findCategoryUUIDForType(LLFolderType::FT_FAVORITE);
 
-    // When a Favorites subfolder is shown, drop into it so the new landmark is visible on the bar
-    if (mBarMode == BAR_MODE_FAVORITES && mFilterFolderID.notNull()
+    // Drop into the folder currently shown so the new landmark is visible on the bar
+    const LLUUID root_id = getBarRootFolderID();
+    if (root_id.isNull())
+        return gInventory.findCategoryUUIDForType(LLFolderType::FT_FAVORITE);
+    if (mFilterFolderID.notNull()
         && gInventory.getCategory(mFilterFolderID)
-        && gInventory.isObjectDescendentOf(mFilterFolderID, favorites_id))
+        && gInventory.isObjectDescendentOf(mFilterFolderID, root_id))
     {
         return mFilterFolderID;
     }
-    return favorites_id;
+    return root_id;
 }
 
 void LLFavoritesBarCtrl::getDirectSubfolders(LLInventoryModel::cat_array_t& cats)
