@@ -586,13 +586,16 @@ bool LLFavoritesBarCtrl::handleDragAndDrop(S32 x, S32 y, MASK mask, bool drop,
             else
             {
                 const LLUUID favorites_id = getDropDestinationFolderID();
-                if (item->getParentUUID() == favorites_id)
+                // Landmarks already shown on the bar are left where they are
+                if (item->getParentUUID() == favorites_id
+                    || gInventory.isObjectDescendentOf(item->getUUID(), favorites_id))
                 {
-                    LL_WARNS("FavoritesBar") << "Attemt to copy a favorite item into the same folder." << LL_ENDL;
+                    LL_DEBUGS("FavoritesBar") << "Landmark is already in the folder shown on the bar." << LL_ENDL;
                     break;
                 }
 
-                *accept = ACCEPT_YES_COPY_MULTI;
+                // Own landmarks are moved like in the inventory, Library ones are copied
+                *accept = isMovableToBar(item) ? ACCEPT_YES_MULTI : ACCEPT_YES_COPY_MULTI;
 
                 showDragMarker(true);
 
@@ -661,6 +664,7 @@ void LLFavoritesBarCtrl::handleNewFavoriteDragAndDrop(LLInventoryItem *item, con
 
     LLPointer<LLViewerInventoryItem> viewer_item = new LLViewerInventoryItem(item);
     LLPointer<LLItemCopiedCallback> cb;
+    const bool move_item = isMovableToBar(item);
 
     // The custom order is only kept for Favorites. In Landmarks mode the bar shows
     // every landmark, so renumbering them all would flood the server with updates.
@@ -679,8 +683,12 @@ void LLFavoritesBarCtrl::handleNewFavoriteDragAndDrop(LLInventoryItem *item, con
 
         int sortField = 0;
 
-        const F64 CALLBACK_WAIT_TIME = 30.f;
-        sWaitingForCallabck = LLTimer::getTotalSeconds() + CALLBACK_WAIT_TIME;
+        if (!move_item)
+        {
+            // A copy gets a new item ID, its sort index is set when the copy arrives
+            const F64 CALLBACK_WAIT_TIME = 30.f;
+            sWaitingForCallabck = LLTimer::getTotalSeconds() + CALLBACK_WAIT_TIME;
+        }
 
         // current order is saved by setting incremental values (1, 2, 3, ...) for the sort field
         for (LLInventoryModel::item_array_t::iterator i = mItems.begin(); i != mItems.end(); ++i)
@@ -689,7 +697,15 @@ void LLFavoritesBarCtrl::handleNewFavoriteDragAndDrop(LLInventoryItem *item, con
 
             if (currItem->getUUID() == item->getUUID())
             {
-                cb = new LLItemCopiedCallback(++sortField);
+                if (move_item)
+                {
+                    // A moved item keeps its ID, the server is updated by the move itself
+                    LLFavoritesOrderStorage::instance().setSortIndex(currItem, ++sortField);
+                }
+                else
+                {
+                    cb = new LLItemCopiedCallback(++sortField);
+                }
             }
             else
             {
@@ -704,7 +720,15 @@ void LLFavoritesBarCtrl::handleNewFavoriteDragAndDrop(LLInventoryItem *item, con
     }
 
     LLToolDragAndDrop* tool_dad = LLToolDragAndDrop::getInstance();
-    if (tool_dad->getSource() == LLToolDragAndDrop::SOURCE_NOTECARD)
+    if (move_item)
+    {
+        change_item_parent(item->getUUID(), favorites_id);
+        if (mBarMode == BAR_MODE_FAVORITES)
+        {
+            LLFavoritesOrderStorage::instance().saveOrder();
+        }
+    }
+    else if (tool_dad->getSource() == LLToolDragAndDrop::SOURCE_NOTECARD)
     {
         viewer_item->setType(LLAssetType::AT_LANDMARK);
         copy_inventory_from_notecard(favorites_id,
@@ -736,7 +760,16 @@ void LLFavoritesBarCtrl::handleNewFavoriteDragAndDrop(LLInventoryItem *item, con
         positionAndShowOverflowMenu();
     }
 
-    LL_INFOS("FavoritesBar") << "Copied inventory item #" << item->getUUID() << " to favorites." << LL_ENDL;
+    LL_INFOS("FavoritesBar") << (move_item ? "Moved" : "Copied") << " inventory item #" << item->getUUID()
+                             << " to folder #" << favorites_id << LL_ENDL;
+}
+
+bool LLFavoritesBarCtrl::isMovableToBar(const LLInventoryItem* item) const
+{
+    // Only items in the agent's own inventory can be moved, Library items are copied
+    return item
+        && LLToolDragAndDrop::getInstance()->getSource() == LLToolDragAndDrop::SOURCE_AGENT
+        && gInventory.isObjectDescendentOf(item->getUUID(), gInventory.getRootFolderID());
 }
 
 bool LLFavoritesBarCtrl::findDragAndDropTarget(LLUUID& target_id, bool& insert_before, S32 x, S32 y)
@@ -2086,10 +2119,21 @@ void LLFavoritesBarCtrl::pasteFromClipboard() const
         LLClipboard::instance().pasteFromClipboard(objects);
         auto count = objects.size();
         LLUUID parent_id(getDropDestinationFolderID());
+        // A cut is pasted by moving the items, like in the inventory
+        const bool cut_mode = LLClipboard::instance().isCutMode();
         for(size_t i = 0; i < count; i++)
         {
             item = model->getItem(objects.at(i));
-            if (item)
+            if (!item)
+            {
+                continue;
+            }
+
+            if (cut_mode && model->isObjectDescendentOf(item->getUUID(), model->getRootFolderID()))
+            {
+                change_item_parent(item->getUUID(), parent_id);
+            }
+            else
             {
                 copy_inventory_item(
                     gAgent.getID(),
@@ -2099,6 +2143,12 @@ void LLFavoritesBarCtrl::pasteFromClipboard() const
                     std::string(),
                     LLPointer<LLInventoryCallback>(NULL));
             }
+        }
+
+        if (cut_mode)
+        {
+            // Change mode to paste for next paste
+            LLClipboard::instance().setCutMode(false);
         }
     }
 }
@@ -2149,9 +2199,16 @@ bool LLFavoritesBarCtrl::handleHover(S32 x, S32 y, MASK mask)
 
         if(LLToolDragAndDrop::getInstance()->isOverThreshold(screenX, screenY))
         {
-            LLToolDragAndDrop::getInstance()->beginDrag(
-                DAD_LANDMARK, mDragItemId,
-                LLToolDragAndDrop::SOURCE_LIBRARY);
+            // Landmarks from the agent's inventory are dragged as such, so dropping them
+            // on a folder moves them like in the inventory. Visited entries are not
+            // inventory items and keep the Library source.
+            LLToolDragAndDrop::ESource source = LLToolDragAndDrop::SOURCE_LIBRARY;
+            if (mBarMode != BAR_MODE_VISITED
+                && gInventory.isObjectDescendentOf(mDragItemId, gInventory.getRootFolderID()))
+            {
+                source = LLToolDragAndDrop::SOURCE_AGENT;
+            }
+            LLToolDragAndDrop::getInstance()->beginDrag(DAD_LANDMARK, mDragItemId, source);
 
             mStartDrag = false;
 

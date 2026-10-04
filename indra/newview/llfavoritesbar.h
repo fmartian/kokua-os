@@ -159,6 +159,9 @@ private:
      */
     void handleNewFavoriteDragAndDrop(LLInventoryItem *item, const LLUUID& favorites_id, S32 x, S32 y);
 
+    // Own landmarks dropped on the bar are moved, Library ones are copied
+    bool isMovableToBar(const LLInventoryItem* item) const;
+
     // finds a control under the specified LOCAL point
     LLUICtrl* findChildByLocalCoords(S32 x, S32 y);
 
