@@ -576,7 +576,7 @@ bool LLFavoritesBarCtrl::handleDragAndDrop(S32 x, S32 y, MASK mask, bool drop,
             }
             else
             {
-                const LLUUID favorites_id = gInventory.findCategoryUUIDForType(LLFolderType::FT_FAVORITE);
+                const LLUUID favorites_id = getDropDestinationFolderID();
                 if (item->getParentUUID() == favorites_id)
                 {
                     LL_WARNS("FavoritesBar") << "Attemt to copy a favorite item into the same folder." << LL_ENDL;
@@ -1187,6 +1187,20 @@ LLUUID LLFavoritesBarCtrl::getBarRootFolderID() const
     if (mBarMode == BAR_MODE_LANDMARKS)
         return gInventory.findCategoryUUIDForType(LLFolderType::FT_LANDMARK);
     return mFavoriteFolderId;
+}
+
+LLUUID LLFavoritesBarCtrl::getDropDestinationFolderID() const
+{
+    const LLUUID favorites_id = gInventory.findCategoryUUIDForType(LLFolderType::FT_FAVORITE);
+
+    // When a Favorites subfolder is shown, drop into it so the new landmark is visible on the bar
+    if (mBarMode == BAR_MODE_FAVORITES && mFilterFolderID.notNull()
+        && gInventory.getCategory(mFilterFolderID)
+        && gInventory.isObjectDescendentOf(mFilterFolderID, favorites_id))
+    {
+        return mFilterFolderID;
+    }
+    return favorites_id;
 }
 
 void LLFavoritesBarCtrl::getDirectSubfolders(LLInventoryModel::cat_array_t& cats)
@@ -1958,7 +1972,7 @@ void LLFavoritesBarCtrl::pasteFromClipboard() const
         std::vector<LLUUID> objects;
         LLClipboard::instance().pasteFromClipboard(objects);
         auto count = objects.size();
-        LLUUID parent_id(mFavoriteFolderId);
+        LLUUID parent_id(getDropDestinationFolderID());
         for(size_t i = 0; i < count; i++)
         {
             item = model->getItem(objects.at(i));

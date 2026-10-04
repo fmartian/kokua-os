@@ -111,6 +111,8 @@ protected:
     void onMoreTextBoxClicked();
 
     LLUUID getBarRootFolderID() const;
+    // Folder where new landmarks dropped on the bar are copied to (KKA-1178)
+    LLUUID getDropDestinationFolderID() const;
     void getDirectSubfolders(LLInventoryModel::cat_array_t& cats);
     void collectAllSubfoldersRecursive(const LLUUID& parent_id, int depth,
         std::vector<std::pair<LLPointer<LLViewerInventoryCategory>, int>>& result);
