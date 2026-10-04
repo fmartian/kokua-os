@@ -766,6 +766,12 @@ void LLNavigationBar::handleLoginComplete()
         }
     }
 
+    // Restore the subfolder shown on the bar in the last session (KKA-1179)
+    if (LLFavoritesBarCtrl* fav_bar = findChild<LLFavoritesBarCtrl>("favorite"))
+    {
+        fav_bar->restoreSavedSubfolder();
+    }
+
     resizeLayoutPanel();
 }
 

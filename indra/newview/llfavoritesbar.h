@@ -51,6 +51,8 @@ public:
 
     void        setBarMode(EBarMode mode);
     EBarMode    getBarMode() const { return mBarMode; }
+    // Shows the saved subfolder of the current mode again, at login or when switching modes (KKA-1179)
+    void        restoreSavedSubfolder();
 
     struct Params : public LLInitParam::Block<Params, LLUICtrl::Params>
     {
@@ -122,6 +124,8 @@ protected:
     void createSubfolderMenu();
     // Landmarks mode follows the Landmarks panel sort order
     void onLandmarksSortOrderChanged();
+    // Per-account setting holding the subfolder of the current mode, empty for Visited
+    std::string getSubfolderSettingName() const;
 
     LLHandle<LLView> mOverflowMenuHandle;
     LLHandle<LLView> mContextMenuHandle;
@@ -188,6 +192,7 @@ private:
 
     LLTextBox* mSubfolderFilterBtn;
     LLUUID      mFilterFolderID;
+    LLUUID      mPendingFilterFolderID; // saved subfolder waiting for its folder to load
     bool        mSubfolderBtnWasVisible;
 
     EBarMode    mBarMode;

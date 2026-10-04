@@ -1266,6 +1266,25 @@ void LLFavoritesBarCtrl::updateSubfolderFilter()
     LLUUID root_id = getBarRootFolderID();
     if (root_id.isNull()) return;
 
+    // Apply the saved subfolder of this mode once its folder is known
+    if (mPendingFilterFolderID.notNull())
+    {
+        if (gInventory.getCategory(mPendingFilterFolderID))
+        {
+            if (gInventory.isObjectDescendentOf(mPendingFilterFolderID, root_id))
+            {
+                mFilterFolderID = mPendingFilterFolderID;
+            }
+            mPendingFilterFolderID.setNull();
+        }
+        else if (gInventory.isInventoryUsable())
+        {
+            // The folder no longer exists, show the root folder
+            mPendingFilterFolderID.setNull();
+            gSavedPerAccountSettings.setString(getSubfolderSettingName(), std::string());
+        }
+    }
+
     LLInventoryModel::cat_array_t subfolders;
     getDirectSubfolders(subfolders);
 
@@ -1320,9 +1339,42 @@ void LLFavoritesBarCtrl::onSubfolderFilterClicked()
     }
 }
 
+std::string LLFavoritesBarCtrl::getSubfolderSettingName() const
+{
+    if (mBarMode == BAR_MODE_FAVORITES)
+        return "KokuaFavoritesBarSubfolder";
+    if (mBarMode == BAR_MODE_LANDMARKS)
+        return "KokuaLandmarksBarSubfolder";
+    return std::string();
+}
+
 void LLFavoritesBarCtrl::onSubfolderSelected(const LLUUID& folder_id)
 {
     mFilterFolderID = folder_id;
+    mPendingFilterFolderID.setNull();
+    const std::string setting_name = getSubfolderSettingName();
+    if (!setting_name.empty())
+    {
+        gSavedPerAccountSettings.setString(setting_name,
+            folder_id.notNull() ? folder_id.asString() : std::string());
+    }
+    updateButtons(true);
+}
+
+void LLFavoritesBarCtrl::restoreSavedSubfolder()
+{
+    const std::string setting_name = getSubfolderSettingName();
+    if (setting_name.empty())
+        return;
+
+    LLUUID saved_id;
+    const std::string saved_str = gSavedPerAccountSettings.getString(setting_name);
+    if (LLUUID::validate(saved_str))
+    {
+        saved_id.set(saved_str);
+    }
+    // Applied by updateSubfolderFilter() once the folder is loaded
+    mPendingFilterFolderID = saved_id;
     updateButtons(true);
 }
 
@@ -1480,7 +1532,18 @@ void LLFavoritesBarCtrl::setBarMode(EBarMode mode)
     if (mBarMode != mode)
     {
         mBarMode = mode;
-        updateButtons(true);
+
+        // Favorites and Landmarks go back to the subfolder they were showing
+        mFilterFolderID.setNull();
+        mPendingFilterFolderID.setNull();
+        if (mode == BAR_MODE_VISITED)
+        {
+            updateButtons(true);
+        }
+        else
+        {
+            restoreSavedSubfolder();
+        }
     }
 }
 
