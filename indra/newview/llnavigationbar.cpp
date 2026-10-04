@@ -59,6 +59,7 @@
 #include "llhints.h"
 
 #include "llfloatersidepanelcontainer.h"
+#include "llpanelplaces.h"
 #include "llinventorymodel.h"
 #include "lllandmarkactions.h"
 
@@ -422,8 +423,25 @@ void LLNavigationBar::onHomeButtonClicked()
 
 void LLNavigationBar::onLandmarksButtonClicked()
 {
+    // If Places is on top but shows another tab than the one selected for the bar,
+    // switch to that tab instead of closing it
+    LLFloater* places = LLFloaterReg::findInstance("places");
+    if (places && places->isShown() && !places->isMinimized() && places->isFrontmost())
+    {
+        LLPanelPlaces* panel = LLFloaterSidePanelContainer::getPanel<LLPanelPlaces>("places");
+        if (panel && panel->getShownTabType() != mLastPlacesTabType)
+        {
+            LLFloaterSidePanelContainer::showPanel("places", LLSD().with("type", mLastPlacesTabType));
+            return;
+        }
+    }
+
     LLFloaterReg::toggleInstanceOrBringToFront("places");
-    LLFloaterSidePanelContainer::showPanel("places", LLSD().with("type", mLastPlacesTabType));
+    // showPanel() reopens a hidden floater, so only select the tab if the toggle left Places open
+    if (LLFloaterReg::instanceVisible("places"))
+    {
+        LLFloaterSidePanelContainer::showPanel("places", LLSD().with("type", mLastPlacesTabType));
+    }
 }
 
 void LLNavigationBar::onLandmarksButtonRightClick(LLUICtrl* ctrl, S32 x, S32 y, MASK mask)
