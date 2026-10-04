@@ -120,6 +120,8 @@ protected:
     void onSubfolderFilterClicked();
     void onSubfolderSelected(const LLUUID& folder_id);
     void createSubfolderMenu();
+    // Landmarks mode follows the Landmarks panel sort order
+    void onLandmarksSortOrderChanged();
 
     LLHandle<LLView> mOverflowMenuHandle;
     LLHandle<LLView> mContextMenuHandle;
@@ -189,6 +191,7 @@ private:
     bool        mSubfolderBtnWasVisible;
 
     EBarMode    mBarMode;
+    boost::signals2::connection mLandmarksSortConnection;
     std::map<LLUUID, LLVector3d> mVisitedPositions;
     std::map<LLUUID, S32>        mVisitedIndices;
 

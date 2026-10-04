@@ -460,6 +460,9 @@ LLFavoritesBarCtrl::LLFavoritesBarCtrl(const LLFavoritesBarCtrl::Params& p)
     mSubfolderFilterBtn->setVisible(false);
     addChild(mSubfolderFilterBtn);
 
+    mLandmarksSortConnection = gSavedSettings.getControl("LandmarksSortedByDate")->getSignal()->connect(
+        boost::bind(&LLFavoritesBarCtrl::onLandmarksSortOrderChanged, this));
+
     mDropDownItemsCount = 0;
 
 
@@ -468,6 +471,7 @@ LLFavoritesBarCtrl::LLFavoritesBarCtrl(const LLFavoritesBarCtrl::Params& p)
 LLFavoritesBarCtrl::~LLFavoritesBarCtrl()
 {
     gInventory.removeObserver(this);
+    mLandmarksSortConnection.disconnect();
 
     if (mOverflowMenuHandle.get())
         mOverflowMenuHandle.get()->die();
@@ -563,7 +567,12 @@ bool LLFavoritesBarCtrl::handleDragAndDrop(S32 x, S32 y, MASK mask, bool drop,
                 }
             }
 
-            if (existing_item)
+            if (existing_item && mBarMode == BAR_MODE_LANDMARKS)
+            {
+                // Landmarks follow the Landmarks panel sort order, they can't be reordered here
+                break;
+            }
+            else if (existing_item)
             {
                 *accept = ACCEPT_YES_SINGLE;
 
@@ -1393,7 +1402,30 @@ bool LLFavoritesBarCtrl::collectFavoriteItems(LLInventoryModel::item_array_t &it
     LLIsType is_type(LLAssetType::AT_LANDMARK);
     gInventory.collectDescendentsIf(search_root, cats, items, LLInventoryModel::EXCLUDE_TRASH, is_type);
 
-    std::sort(items.begin(), items.end(), LLFavoritesSort());
+    if (mBarMode == BAR_MODE_LANDMARKS)
+    {
+        // Same order as the Landmarks panel: newest first, or by name
+        if (gSavedSettings.getBOOL("LandmarksSortedByDate"))
+        {
+            std::sort(items.begin(), items.end(),
+                [](const LLViewerInventoryItem* a, const LLViewerInventoryItem* b)
+                {
+                    return a->getCreationDate() > b->getCreationDate();
+                });
+        }
+        else
+        {
+            std::sort(items.begin(), items.end(),
+                [](const LLViewerInventoryItem* a, const LLViewerInventoryItem* b)
+                {
+                    return LLStringUtil::compareDict(a->getName(), b->getName()) < 0;
+                });
+        }
+    }
+    else
+    {
+        std::sort(items.begin(), items.end(), LLFavoritesSort());
+    }
 
     if (mBarMode == BAR_MODE_FAVORITES && needToSaveItemsOrder(items))
     {
@@ -1433,6 +1465,14 @@ bool LLFavoritesBarCtrl::collectVisitedItems(LLInventoryModel::item_array_t &ite
         items.push_back(item);
     }
     return true;
+}
+
+void LLFavoritesBarCtrl::onLandmarksSortOrderChanged()
+{
+    if (mBarMode == BAR_MODE_LANDMARKS)
+    {
+        updateButtons(true);
+    }
 }
 
 void LLFavoritesBarCtrl::setBarMode(EBarMode mode)
