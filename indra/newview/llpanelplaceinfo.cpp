@@ -277,14 +277,16 @@ void LLPanelPlaceInfo::reshape(S32 width, S32 height, bool called_from_parent)
 
     static LLUICachedControl<S32> scrollbar_size ("UIScrollbarSize", 0);
 
+    // Follow the width of the floater, never narrower than the layout in the xml
+    S32 scroll_width = llmax(mScrollingPanelWidth, mScrollContainer->getRect().getWidth() - scrollbar_size);
     S32 scroll_height = mScrollContainer->getRect().getHeight();
     if (mScrollingPanelMinHeight > scroll_height)
     {
-        mScrollingPanel->reshape(mScrollingPanelWidth, mScrollingPanelMinHeight);
+        mScrollingPanel->reshape(scroll_width, mScrollingPanelMinHeight);
     }
     else
     {
-        mScrollingPanel->reshape(mScrollingPanelWidth + scrollbar_size, scroll_height);
+        mScrollingPanel->reshape(scroll_width + scrollbar_size, scroll_height);
     }
 }
 
