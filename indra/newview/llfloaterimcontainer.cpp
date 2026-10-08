@@ -1318,7 +1318,7 @@ void LLFloaterIMContainer::doToParticipants(const std::string& command, uuid_vec
         }
         else if ("zoom_in" == command)
         {
-            handle_zoom_to_object(userID);
+            kokua_zoom_to_object(userID, "KokuaZoomChat");
         }
         else if ("map" == command)
         {

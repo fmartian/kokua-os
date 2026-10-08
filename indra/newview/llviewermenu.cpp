@@ -7540,6 +7540,17 @@ bool handle_zoom_to_object_framed(const LLUUID& object_id)
     return true;
 }
 
+bool kokua_zoom_to_object(const LLUUID& object_id, const std::string& mode_setting)
+{
+    const S32 FAST_ZOOM = 1;
+    if (gSavedPerAccountSettings.controlExists(mode_setting)
+        && gSavedPerAccountSettings.getS32(mode_setting) == FAST_ZOOM)
+    {
+        return handle_zoom_to_object_framed(object_id);
+    }
+    return handle_zoom_to_object(object_id);
+}
+
 class LLAvatarInviteToGroup : public view_listener_t
 {
     bool handleEvent(const LLSD& userdata)
@@ -8412,7 +8423,7 @@ class LLZoomOwnerParticle : public view_listener_t
         LLUUID id = LLToolPie::getInstance()->getPick().mParticleOwnerID;
 
         if (id.notNull()) {
-            handle_zoom_to_object(id);
+            kokua_zoom_to_object(id, "KokuaZoomParticleOwner");
         }
         return true;
     }

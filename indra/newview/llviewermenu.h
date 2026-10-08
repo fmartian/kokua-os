@@ -90,6 +90,9 @@ bool handle_zoom_to_object(const LLUUID& object_id);
 bool save_object_back_to_contents(LLViewerObject* object, const LLUUID& source_task_id);
 // Avatars are seen from the front of their face, objects are framed like in Area Search
 bool handle_zoom_to_object_framed(const LLUUID& object_id);
+// Uses Fast Zoom (handle_zoom_to_object_framed) or Standard Zoom (handle_zoom_to_object)
+// depending on the per-account setting of the feature asking for it, e.g. "KokuaZoomPeople"
+bool kokua_zoom_to_object(const LLUUID& object_id, const std::string& mode_setting);
 void handle_object_return();
 void handle_object_delete();
 void handle_object_edit();

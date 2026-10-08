@@ -261,7 +261,7 @@ void LLFloaterBump::payAvatar()
 
 void LLFloaterBump::zoomInAvatar()
 {
-    handle_zoom_to_object(mItemUUID);
+    kokua_zoom_to_object(mItemUUID, "KokuaZoomBump");
 }
 
 bool LLFloaterBump::enableMute()

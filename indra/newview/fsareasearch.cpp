@@ -1652,7 +1652,7 @@ bool FSPanelAreaSearchList::onContextMenuItemClick(const LLSD& userdata)
                     gAgent.teleportViaLocation(objectp->getPositionGlobal());
                     break;
                 case 'q': // q_zoom
-                    handle_zoom_to_object_framed(object_id);
+                    kokua_zoom_to_object(object_id, "KokuaZoomAreaSearch");
                     break;
                 default:
                     break;
