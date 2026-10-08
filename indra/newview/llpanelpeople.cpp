@@ -1532,7 +1532,7 @@ void LLPanelPeople::onNearbyAvatarListDoubleClicked(LLUICtrl* ctrl)
                     LLAvatarActions::startIM(clicked_id);
                     break;
             case EDoubleClickAction::E_DCLICK_ZOOMIN:
-                    kokua_zoom_to_object(clicked_id, "KokuaZoomPeople");
+                    kokua_zoom_to_object(clicked_id, "KokuaZoomPeople", true);
                     break;
             case EDoubleClickAction::E_DCLICK_PROFILE:
                     LLAvatarActions::showProfile(clicked_id);

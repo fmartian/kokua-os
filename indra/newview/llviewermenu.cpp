@@ -7589,6 +7589,20 @@ void kokua_zoom_to_position(const LLVector3d& target_global)
     gAgentCamera.setCameraPosAndFocusGlobal(camera_pos, target_global, LLUUID::null, ZOOM_MAX_ANIM_SECONDS);
 }
 
+// The camera can't go further than the draw distance from the avatar, tell why it stops short
+static void report_if_beyond_draw_distance(const LLVector3d& target_global)
+{
+    static LLCachedControl<bool> sDisableCameraConstraints(gSavedSettings, "DisableCameraConstraints", false);
+    F32 distance = (F32)(target_global - gAgent.getPositionGlobal()).magVec();
+    if (!sDisableCameraConstraints && distance > gAgentCamera.mDrawDistance)
+    {
+        LLStringUtil::format_map_t args;
+        args["DISTANCE"] = llformat("%.0f", distance);
+        args["DRAW_DISTANCE"] = llformat("%.0f", gAgentCamera.mDrawDistance);
+        report_to_nearby_chat(LLTrans::getString("KokuaCmdLineZoomToTooFar", args));
+    }
+}
+
 void kokua_zoom_to_region_coords(const std::string& coords)
 {
     LLViewerRegion* regionp = gAgent.getRegion();
@@ -7615,28 +7629,67 @@ void kokua_zoom_to_region_coords(const std::string& coords)
     }
     LLVector3d target_global = regionp->getPosGlobalFromRegion(LLVector3(x, y, z));
 
-    static LLCachedControl<bool> sDisableCameraConstraints(gSavedSettings, "DisableCameraConstraints", false);
-    F32 distance = (F32)(target_global - gAgent.getPositionGlobal()).magVec();
-    if (!sDisableCameraConstraints && distance > gAgentCamera.mDrawDistance)
-    {
-        LLStringUtil::format_map_t args;
-        args["DISTANCE"] = llformat("%.0f", distance);
-        args["DRAW_DISTANCE"] = llformat("%.0f", gAgentCamera.mDrawDistance);
-        report_to_nearby_chat(LLTrans::getString("KokuaCmdLineZoomToTooFar", args));
-    }
-
+    report_if_beyond_draw_distance(target_global);
     kokua_zoom_to_position(target_global);
 }
 
-bool kokua_zoom_to_object(const LLUUID& object_id, const std::string& mode_setting)
+bool kokua_get_avatar_position(const LLUUID& avatar_id, LLVector3d& pos_global)
+{
+    // Same source as the radar: exact position for loaded avatars, coarse location
+    // (1 m in x and y, 4 m steps in z) for the others
+    uuid_vec_t avatar_ids;
+    std::vector<LLVector3d> positions;
+    LLWorld::getInstance()->getAvatars(&avatar_ids, &positions);
+    for (size_t i = 0; i < avatar_ids.size() && i < positions.size(); ++i)
+    {
+        if (avatar_ids[i] == avatar_id)
+        {
+            pos_global = positions[i];
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool is_fast_zoom(const std::string& mode_setting)
 {
     const S32 FAST_ZOOM = 1;
-    if (gSavedPerAccountSettings.controlExists(mode_setting)
-        && gSavedPerAccountSettings.getS32(mode_setting) == FAST_ZOOM)
+    return gSavedPerAccountSettings.controlExists(mode_setting)
+        && gSavedPerAccountSettings.getS32(mode_setting) == FAST_ZOOM;
+}
+
+bool kokua_can_zoom_to_object(const LLUUID& object_id, const std::string& mode_setting, bool radar_fallback)
+{
+    if (gObjectList.findObject(object_id))
     {
-        return handle_zoom_to_object_framed(object_id);
+        return true;
     }
-    return handle_zoom_to_object(object_id);
+    LLVector3d pos_global;
+    return radar_fallback && is_fast_zoom(mode_setting) && kokua_get_avatar_position(object_id, pos_global);
+}
+
+bool kokua_zoom_to_object(const LLUUID& object_id, const std::string& mode_setting, bool radar_fallback)
+{
+    if (!is_fast_zoom(mode_setting))
+    {
+        return handle_zoom_to_object(object_id);
+    }
+
+    if (handle_zoom_to_object_framed(object_id))
+    {
+        return true;
+    }
+
+    // The avatar isn't loaded, e.g. it is far away: zoom to its position in the radar
+    LLVector3d pos_global;
+    if (radar_fallback && kokua_get_avatar_position(object_id, pos_global))
+    {
+        pos_global.mdV[VZ] += gSavedSettings.getF32("CameraZoomFocusZOffset");
+        report_if_beyond_draw_distance(pos_global);
+        kokua_zoom_to_position(pos_global);
+        return true;
+    }
+    return false;
 }
 
 class LLAvatarInviteToGroup : public view_listener_t
