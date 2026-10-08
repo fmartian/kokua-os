@@ -93,6 +93,8 @@ bool handle_zoom_to_object_framed(const LLUUID& object_id);
 // Uses Fast Zoom (handle_zoom_to_object_framed) or Standard Zoom (handle_zoom_to_object)
 // depending on the per-account setting of the feature asking for it, e.g. "KokuaZoomPeople"
 bool kokua_zoom_to_object(const LLUUID& object_id, const std::string& mode_setting);
+// Fast Zoom on a position, used by the zoom to position chat command
+void kokua_zoom_to_position(const LLVector3d& target_global);
 void handle_object_return();
 void handle_object_delete();
 void handle_object_edit();

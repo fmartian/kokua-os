@@ -19538,6 +19538,17 @@
 			<key>Value</key>
 			<string>tp2cam</string>
 		</map>
+		<key>KokuaCmdLineZoomTo</key>
+		<map>
+			<key>Comment</key>
+			<string>Zoom the camera to a position in the current region, followed by x y and an optional z</string>
+			<key>Persist</key>
+			<integer>1</integer>
+			<key>Type</key>
+			<string>String</string>
+			<key>Value</key>
+			<string>zoomto</string>
+		</map>
 		<key>FSCmdLineKeyToName</key>
 		<map>
 			<key>Comment</key>

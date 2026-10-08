@@ -7396,16 +7396,12 @@ bool handle_zoom_to_object(const LLUUID& object_id)
     return false;
 }
 
-// Zooms the camera on an avatar's face, or so an object fills most of the screen without going
-// inside the near clip. The object framing was moved here from FSAreaSearch to share it.
-bool handle_zoom_to_object_framed(const LLUUID& object_id)
-{
-    LLViewerObject* objectp = gObjectList.findObject(object_id);
-    if (!objectp)
-    {
-        return false;
-    }
+// The default camera animation moves at 10 m/s for up to 10 seconds, far too slow
+// for avatars, objects or positions hundreds of meters away
+static const F64 ZOOM_MAX_ANIM_SECONDS = 1.0;
 
+static void disable_flycam_for_zoom()
+{
     // Disable flycam if active.  Without this, the requested look-at doesn't happen because the flycam code overrides all other camera motion.
     bool fly_cam_status(LLViewerJoystick::getInstance()->getOverrideCamera());
     if (fly_cam_status)
@@ -7416,12 +7412,21 @@ bool handle_zoom_to_object_framed(const LLUUID& object_id)
     }
 
     LLViewerJoystick::getInstance()->setCameraNeedsUpdate(true); // Fixes an edge case where if the user has JUST disabled flycam themselves, the camera gets stuck waiting for input.
+}
+
+// Zooms the camera on an avatar's face, or so an object fills most of the screen without going
+// inside the near clip. The object framing was moved here from FSAreaSearch to share it.
+bool handle_zoom_to_object_framed(const LLUUID& object_id)
+{
+    LLViewerObject* objectp = gObjectList.findObject(object_id);
+    if (!objectp)
+    {
+        return false;
+    }
+
+    disable_flycam_for_zoom();
 
     gAgentCamera.setFocusOnAvatar(false, ANIMATE);
-
-    // The default camera animation moves at 10 m/s for up to 10 seconds, far too slow
-    // for avatars or objects hundreds of meters away
-    const F64 ZOOM_MAX_ANIM_SECONDS = 1.0;
 
     if (objectp->isAvatar())
     {
@@ -7538,6 +7543,31 @@ bool handle_zoom_to_object_framed(const LLUUID& object_id)
     //  LLViewerJoystick::getInstance()->toggleFlycam();
     //}
     return true;
+}
+
+void kokua_zoom_to_position(const LLVector3d& target_global)
+{
+    disable_flycam_for_zoom();
+
+    gAgentCamera.setFocusOnAvatar(false, ANIMATE);
+
+    // Look at the position from the side of the current camera, at the same distance and
+    // height as Fast Zoom on avatars, so the camera doesn't end up above the roofs
+    LLVector3d camera_dir(gAgentCamera.getCameraPositionGlobal() - target_global);
+    camera_dir.mdV[VZ] = 0.0;
+    if (camera_dir.magVec() < 0.01)
+    {
+        // The camera is straight above or below the position, look at it from behind the avatar
+        camera_dir = LLVector3d(-gAgent.getAtAxis());
+        camera_dir.mdV[VZ] = 0.0;
+    }
+    camera_dir.normalize();
+
+    F32 eye_distance = gSavedSettings.getF32("CameraZoomDistance");
+    F32 eye_z_offset = gSavedSettings.getF32("CameraZoomEyeZOffset");
+    LLVector3d camera_pos = target_global + camera_dir * eye_distance + LLVector3d(0.0, 0.0, eye_z_offset);
+
+    gAgentCamera.setCameraPosAndFocusGlobal(camera_pos, target_global, LLUUID::null, ZOOM_MAX_ANIM_SECONDS);
 }
 
 bool kokua_zoom_to_object(const LLUUID& object_id, const std::string& mode_setting)

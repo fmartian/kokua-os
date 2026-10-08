@@ -4409,6 +4409,9 @@ Try enclosing path to the editor with double quotes.
 <!--Draw distance set from command line dd x response chat-->
   <string name="FSCmdLineDrawDistanceSet">Draw Distance set to [DISTANCE]m.</string>
   <string name="FSCmdLineTpOffered">Offered teleport to [NAME].</string>
+<!--Zoom to position command line zoomto x y [z] response chat-->
+  <string name="KokuaCmdLineZoomToUsage">Usage: [COMMAND] x y [z], with x and y between 0 and [WIDTH] in this region. Without z the camera looks at the ground.</string>
+  <string name="KokuaCmdLineZoomToTooFar">That position is [DISTANCE]m away, beyond your draw distance of [DRAW_DISTANCE]m. The camera stops at your draw distance.</string>
 
   <!-- Experience Tools strings -->
   <string name="experience_tools_experience">Experience</string>
