@@ -161,6 +161,7 @@
 #include "llworldmap.h"
 #include "pipeline.h"
 #include "llviewerjoystick.h"
+#include "llviewermediafocus.h"
 #include "llfloatercamera.h"
 #include "lluilistener.h"
 #include "llappearancemgr.h"
@@ -7393,6 +7394,150 @@ bool handle_zoom_to_object(const LLUUID& object_id)
         return true;
     }
     return false;
+}
+
+// Zooms the camera on an avatar's face, or so an object fills most of the screen without going
+// inside the near clip. The object framing was moved here from FSAreaSearch to share it.
+bool handle_zoom_to_object_framed(const LLUUID& object_id)
+{
+    LLViewerObject* objectp = gObjectList.findObject(object_id);
+    if (!objectp)
+    {
+        return false;
+    }
+
+    // Disable flycam if active.  Without this, the requested look-at doesn't happen because the flycam code overrides all other camera motion.
+    bool fly_cam_status(LLViewerJoystick::getInstance()->getOverrideCamera());
+    if (fly_cam_status)
+    {
+        LLViewerJoystick::getInstance()->setOverrideCamera(false);
+        LLPanelStandStopFlying::clearStandStopFlyingMode(LLPanelStandStopFlying::SSFM_FLYCAM);
+        // *NOTE: Above may not be the proper way to disable flycam.  What I really want to do is just be able to move the camera and then leave the flycam in the the same state it was in, just moved to the new location. ~Cron
+    }
+
+    LLViewerJoystick::getInstance()->setCameraNeedsUpdate(true); // Fixes an edge case where if the user has JUST disabled flycam themselves, the camera gets stuck waiting for input.
+
+    gAgentCamera.setFocusOnAvatar(false, ANIMATE);
+
+    // The default camera animation moves at 10 m/s for up to 10 seconds, far too slow
+    // for avatars or objects hundreds of meters away
+    const F64 ZOOM_MAX_ANIM_SECONDS = 1.0;
+
+    if (objectp->isAvatar())
+    {
+        // Look at the avatar's face from the front, a framing based on the bounding box
+        // ends up outside of buildings. Same approach and settings as Firestorm.
+        LLVector3d object_center_global = objectp->getPositionGlobal();
+
+        F32 eye_distance = gSavedSettings.getF32("CameraZoomDistance");
+        F32 eye_z_offset = gSavedSettings.getF32("CameraZoomEyeZOffset");
+        LLVector3d focus_z_offset(0.0, 0.0, gSavedSettings.getF32("CameraZoomFocusZOffset"));
+
+        LLVector3d eye_offset(eye_distance, 0.0, eye_z_offset);
+        eye_offset = eye_offset * objectp->getRotationRegion();
+
+        gAgentCamera.setCameraPosAndFocusGlobal(object_center_global + eye_offset,
+                                                object_center_global + focus_z_offset,
+                                                object_id, ZOOM_MAX_ANIM_SECONDS);
+        return true;
+    }
+
+    gAgentCamera.setLookAt(LOOKAT_TARGET_SELECT, objectp);
+
+    // Place the camera looking at the object, along the line from the camera to the object,
+    //  and sufficiently far enough away for the object to fill 3/4 of the screen,
+    //  but not so close that the bbox's nearest possible vertex goes inside the near clip.
+    // Logic C&P'd from LLViewerMediaFocus::setCameraZoom() and then edited as needed
+
+    LLBBox bbox = objectp->getBoundingBoxAgent();
+    LLVector3d center(gAgent.getPosGlobalFromAgent(bbox.getCenterAgent()));
+    F32 height;
+    F32 width;
+    F32 depth;
+    F32 angle_of_view;
+    F32 distance;
+
+    LLVector3d target_pos(center);
+    LLVector3d camera_dir(gAgentCamera.getCameraPositionGlobal() - target_pos);
+    camera_dir.normalize();
+
+    // We need the aspect ratio, and the 3 components of the bbox as height, width, and depth.
+    F32 aspect_ratio(LLViewerMediaFocus::getBBoxAspectRatio(bbox, LLVector3(camera_dir), &height, &width, &depth));
+    F32 camera_aspect(LLViewerCamera::getInstance()->getAspect());
+
+    // We will normally use the side of the volume aligned with the short side of the screen (i.e. the height for
+    // a screen in a landscape aspect ratio), however there is an edge case where the aspect ratio of the object is
+    // more extreme than the screen.  In this case we invert the logic, using the longer component of both the object
+    // and the screen.
+    bool invert((camera_aspect > 1.0f && aspect_ratio > camera_aspect) || (camera_aspect < 1.0f && aspect_ratio < camera_aspect));
+
+    // To calculate the optimum viewing distance we will need the angle of the shorter side of the view rectangle.
+    // In portrait mode this is the width, and in landscape it is the height.
+    // We then calculate the distance based on the corresponding side of the object bbox (width for portrait, height for landscape)
+    // We will add half the depth of the bounding box, as the distance projection uses the center point of the bbox.
+    if (camera_aspect < 1.0f || invert)
+    {
+        angle_of_view = llmax(0.1f, LLViewerCamera::getInstance()->getView() * LLViewerCamera::getInstance()->getAspect());
+        distance = (F32)(width * 0.5 * 1.1 / tanf(angle_of_view * 0.5f));
+    }
+    else
+    {
+        angle_of_view = llmax(0.1f, LLViewerCamera::getInstance()->getView());
+        distance = (F32)(height * 0.5 * 1.1 / tanf(angle_of_view * 0.5f));
+    }
+
+    distance += (F32)(depth * 0.5);
+
+
+    // Verify that the bounding box isn't inside the near clip.  Using OBB-plane intersection to check if the
+    // near-clip plane intersects with the bounding box, and if it does, adjust the distance such that the
+    // object doesn't clip.
+    LLVector3d bbox_extents(bbox.getExtentLocal());
+    LLVector3d axis_x = LLVector3d(1, 0, 0) * bbox.getRotation();
+    LLVector3d axis_y = LLVector3d(0, 1, 0) * bbox.getRotation();
+    LLVector3d axis_z = LLVector3d(0, 0, 1) * bbox.getRotation();
+    //Normal of nearclip plane is camera_dir.
+    F32 min_near_clip_dist = (F32)(bbox_extents.mdV[0] * (camera_dir * axis_x) + bbox_extents.mdV[1] * (camera_dir * axis_y) + bbox_extents.mdV[2] * (camera_dir * axis_z)); // http://www.gamasutra.com/view/feature/131790/simple_intersection_tests_for_games.php?page=7
+    F32 camera_to_near_clip_dist(LLViewerCamera::getInstance()->getNear());
+    F32 min_camera_dist(min_near_clip_dist + camera_to_near_clip_dist);
+    if (distance < min_camera_dist)
+    {
+        // Camera is too close to object, some parts MIGHT clip.  Move camera away to the position where clipping barely doesn't happen.
+        distance = min_camera_dist;
+    }
+
+
+    LLVector3d camera_pos(target_pos + camera_dir * distance);
+
+    if (camera_dir == LLVector3d::z_axis || camera_dir == LLVector3d::z_axis_neg)
+    {
+        // If the direction points directly up, the camera will "flip" around.
+        // We try to avoid this by adjusting the target camera position a
+        // smidge towards current camera position
+        // *NOTE: this solution is not perfect.  All it attempts to solve is the
+        // "looking down" problem where the camera flips around when it animates
+        // to that position.  You still are not guaranteed to be looking at the
+        // object in the correct orientation.  What this solution does is it will
+        // put the camera into position keeping as best it can the current
+        // orientation with respect to the direction wanted.  In other words, if
+        // before zoom the object appears "upside down" from the camera, after
+        /// zooming it will still be upside down, but at least it will not flip.
+        LLVector3d cur_camera_pos = LLVector3d(gAgentCamera.getCameraPositionGlobal());
+        LLVector3d delta = (cur_camera_pos - camera_pos);
+        F64 len = delta.length();
+        delta.normalize();
+        // Move 1% of the distance towards original camera location
+        camera_pos += 0.01 * len * delta;
+    }
+
+    gAgentCamera.setCameraPosAndFocusGlobal(camera_pos, target_pos, objectp->getID(), ZOOM_MAX_ANIM_SECONDS);
+
+    // *TODO: Re-enable joystick flycam if we disabled it earlier...  Have to find some form of callback as re-enabling at this point causes the camera motion to not happen. ~Cron
+    //if (fly_cam_status)
+    //{
+    //  LLViewerJoystick::getInstance()->toggleFlycam();
+    //}
+    return true;
 }
 
 class LLAvatarInviteToGroup : public view_listener_t
