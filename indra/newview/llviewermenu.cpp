@@ -2338,6 +2338,25 @@ class LLAdvancedCmdLineTeleportPos : public view_listener_t
 };
 
 //////////////////////////////
+// CMDLINE ZOOM TO POSITION //
+//////////////////////////////
+
+class LLAdvancedCmdLineZoomTo : public view_listener_t
+{
+    bool handleEvent(const LLSD& userdata)
+    {
+        LLNotificationsUtil::add("CmdLineZoomTo", LLSD(), LLSD(),
+            [](const LLSD& notification, const LLSD& response)
+            {
+                if (LLNotificationsUtil::getSelectedOption(notification, response) != 0) return false;
+                kokua_zoom_to_region_coords(response["coords"].asString());
+                return false;
+            });
+        return true;
+    }
+};
+
+//////////////////////////////
 // CMDLINE TELEPORT HEIGHT  //
 //////////////////////////////
 
@@ -7570,6 +7589,45 @@ void kokua_zoom_to_position(const LLVector3d& target_global)
     gAgentCamera.setCameraPosAndFocusGlobal(camera_pos, target_global, LLUUID::null, ZOOM_MAX_ANIM_SECONDS);
 }
 
+void kokua_zoom_to_region_coords(const std::string& coords)
+{
+    LLViewerRegion* regionp = gAgent.getRegion();
+    if (!regionp)
+    {
+        return;
+    }
+
+    // Only positions in the current region: other regions may not be loaded at all
+    const F32 width = regionp->getWidth();
+    std::istringstream ss(coords);
+    F32 x, y, z;
+    if (!(ss >> x && ss >> y && x >= 0.f && x <= width && y >= 0.f && y <= width))
+    {
+        LLStringUtil::format_map_t args;
+        args["COMMAND"] = gSavedSettings.getString("KokuaCmdLineZoomTo");
+        args["WIDTH"] = llformat("%.0f", width);
+        report_to_nearby_chat(LLTrans::getString("KokuaCmdLineZoomToUsage", args));
+        return;
+    }
+    if (!(ss >> z))
+    {
+        z = regionp->getLandHeightRegion(LLVector3(x, y, 0.f));
+    }
+    LLVector3d target_global = regionp->getPosGlobalFromRegion(LLVector3(x, y, z));
+
+    static LLCachedControl<bool> sDisableCameraConstraints(gSavedSettings, "DisableCameraConstraints", false);
+    F32 distance = (F32)(target_global - gAgent.getPositionGlobal()).magVec();
+    if (!sDisableCameraConstraints && distance > gAgentCamera.mDrawDistance)
+    {
+        LLStringUtil::format_map_t args;
+        args["DISTANCE"] = llformat("%.0f", distance);
+        args["DRAW_DISTANCE"] = llformat("%.0f", gAgentCamera.mDrawDistance);
+        report_to_nearby_chat(LLTrans::getString("KokuaCmdLineZoomToTooFar", args));
+    }
+
+    kokua_zoom_to_position(target_global);
+}
+
 bool kokua_zoom_to_object(const LLUUID& object_id, const std::string& mode_setting)
 {
     const S32 FAST_ZOOM = 1;
@@ -11628,6 +11686,7 @@ void initialize_menus()
     view_listener_t::addMenu(new LLAdvancedRebakeTextures(), "Advanced.RebakeTextures");
     view_listener_t::addMenu(new LLAdvancedTPToGround(), "Advanced.TPToGround");
     view_listener_t::addMenu(new LLAdvancedCmdLineTeleportPos(),    "Advanced.CmdLineTeleportPos");
+    view_listener_t::addMenu(new LLAdvancedCmdLineZoomTo(),         "Advanced.CmdLineZoomTo");
     view_listener_t::addMenu(new LLAdvancedCmdLineTeleportHeight(), "Advanced.CmdLineTeleportHeight");
     view_listener_t::addMenu(new LLAdvancedCmdLineDrawDistance(),   "Advanced.CmdLineDrawDistance");
     view_listener_t::addMenu(new LLAdvancedCmdLineMapTo(),         "Advanced.CmdLineMapTo");

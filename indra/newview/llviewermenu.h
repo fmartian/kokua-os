@@ -95,6 +95,8 @@ bool handle_zoom_to_object_framed(const LLUUID& object_id);
 bool kokua_zoom_to_object(const LLUUID& object_id, const std::string& mode_setting);
 // Fast Zoom on a position, used by the zoom to position chat command
 void kokua_zoom_to_position(const LLVector3d& target_global);
+// Parses "x y [z]" in the current region, reports problems to nearby chat and zooms there
+void kokua_zoom_to_region_coords(const std::string& coords);
 void handle_object_return();
 void handle_object_delete();
 void handle_object_edit();

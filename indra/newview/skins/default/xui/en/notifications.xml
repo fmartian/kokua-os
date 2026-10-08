@@ -13750,6 +13750,16 @@ are wearing now.
       </form>
   </notification>
 
+  <notification name="CmdLineZoomTo" type="alertmodal">
+      Zoom the camera to a position in region.
+      Enter X Y coordinates and optionally Z (e.g. 128 128 50):
+      <form name="form">
+        <input name="coords" type="text"/>
+        <button default="true" index="0" name="OK" text="OK"/>
+        <button index="1" name="Cancel" text="Cancel"/>
+      </form>
+  </notification>
+
   <notification name="CmdLineTeleportHeight" type="alertmodal">
       Teleport to altitude.
       Enter Z height (e.g. 50):

@@ -50,7 +50,6 @@
 #include "llurldispatcher.h"
 #include "llviewermenu.h"
 #include "llviewerobjectlist.h"
-#include "llviewerregion.h"
 #include "llvolumemessage.h"
 #include "llworld.h"
 #include "llworldmap.h"
@@ -494,40 +493,9 @@ bool cmd_line_chat(std::string revised_text, EChatType type, bool from_gesture)
             }
             else if (command == std::string(sKokuaCmdLineZoomTo))
             {
-                LLViewerRegion* regionp = gAgent.getRegion();
-                if (regionp)
-                {
-                    // Only positions in the current region: other regions may not be loaded at all
-                    const F32 width = regionp->getWidth();
-                    F32 x, y, z;
-                    if (i >> x && i >> y && x >= 0.f && x <= width && y >= 0.f && y <= width)
-                    {
-                        if (!(i >> z))
-                        {
-                            z = regionp->getLandHeightRegion(LLVector3(x, y, 0.f));
-                        }
-                        LLVector3d target_global = regionp->getPosGlobalFromRegion(LLVector3(x, y, z));
-
-                        static LLCachedControl<bool> sDisableCameraConstraints(gSavedSettings, "DisableCameraConstraints", false);
-                        F32 distance = (F32)(target_global - gAgent.getPositionGlobal()).magVec();
-                        if (!sDisableCameraConstraints && distance > gAgentCamera.mDrawDistance)
-                        {
-                            LLStringUtil::format_map_t args;
-                            args["DISTANCE"] = llformat("%.0f", distance);
-                            args["DRAW_DISTANCE"] = llformat("%.0f", gAgentCamera.mDrawDistance);
-                            report_to_nearby_chat(LLTrans::getString("KokuaCmdLineZoomToTooFar", args));
-                        }
-
-                        kokua_zoom_to_position(target_global);
-                    }
-                    else
-                    {
-                        LLStringUtil::format_map_t args;
-                        args["COMMAND"] = std::string(sKokuaCmdLineZoomTo);
-                        args["WIDTH"] = llformat("%.0f", width);
-                        report_to_nearby_chat(LLTrans::getString("KokuaCmdLineZoomToUsage", args));
-                    }
-                }
+                std::string coords;
+                std::getline(i, coords);
+                kokua_zoom_to_region_coords(coords);
                 return false;
             }
             else if (command == std::string(sFSCmdLineAO))
