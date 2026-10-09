@@ -70,6 +70,14 @@ protected:
     void onScrollListRightClicked(LLUICtrl* ctrl, S32 x, S32 y);
     LLContextMenu   *mPopupMenu;
 
+    // Edit from the context menu: a child prim is edited as with "Edit linked"
+    void onEditPrim();
+    // Prim of the row the context menu was opened on
+    LLUUID mContextMenuObjectID;
+    // Root of the linkset kept in the list while one of its prims is edited
+    LLUUID mKeptLinksetRootID;
+    bool keepListForSelection();
+
 // [RLVa:KB] - Checked: RLVa-2.0.1
     const LLSelectNode* getSelectedNode() /*const*/;
 // [/RLVa:KB]

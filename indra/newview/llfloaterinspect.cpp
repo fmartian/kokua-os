@@ -176,17 +176,15 @@ void LLFloaterInspect::onScrollListRightClicked(LLUICtrl* ctrl, S32 x, S32 y)
         if (! uuid.isNull())
         {
             mObjectList->selectByID(uuid);
-            LLViewerObject* objectp = gObjectList.findObject(uuid);
-            // if we arrived here with a child prim, switch to its root
-            if (objectp != objectp->getRootEdit())
-            {
-                objectp = objectp->getRootEdit();
-                uuid = objectp->getID();
-            }
+            // Keep the prim of the row, Edit works on it even if it is a child prim
+            mContextMenuObjectID = uuid;
+
             // create the context menu from the XUI file and display it
             std::string menu_name = "menu_floater_inspect_list.xml";
             delete mPopupMenu;
             llassert(LLMenuGL::sMenuContainer != NULL);
+            LLUICtrl::CommitCallbackRegistry::ScopedRegistrar registrar;
+            registrar.add("Inspect.EditPrim", boost::bind(&LLFloaterInspect::onEditPrim, this));
             mPopupMenu = LLUICtrlFactory::getInstance()->createFromFile<LLContextMenu>(
                 menu_name, LLMenuGL::sMenuContainer, LLMenuHolderGL::child_registry_t::instance());
             mPopupMenu->show(x, y);
@@ -196,8 +194,63 @@ void LLFloaterInspect::onScrollListRightClicked(LLUICtrl* ctrl, S32 x, S32 y)
     }
 }
 
+void LLFloaterInspect::onEditPrim()
+{
+    LLViewerObject* objectp = gObjectList.findObject(mContextMenuObjectID);
+    // A child prim, or any prim when "Edit linked" is already ticked: edit only that prim,
+    // as when ticking "Edit linked" and clicking it, but keep listing its whole linkset.
+    // The root without "Edit linked" edits the whole linkset as before.
+    if (objectp && (objectp != objectp->getRootEdit() || gSavedSettings.getBOOL("EditLinkedParts")))
+    {
+        mKeptLinksetRootID = objectp->getRootEdit()->getID();
+        gSavedSettings.setBOOL("EditLinkedParts", true);
+        LLSelectMgr::getInstance()->deselectAll();
+        LLSelectMgr::getInstance()->selectObjectOnly(objectp);
+    }
+    handle_object_edit();
+}
+
+// While a prim of the listed linkset is edited, keep all its rows and only move the focus
+bool LLFloaterInspect::keepListForSelection()
+{
+    if (mKeptLinksetRootID.isNull())
+    {
+        return false;
+    }
+
+    // All nodes, not only valid ones: a newly selected prim stays invalid until
+    // the server sends its properties
+    LLUUID selected_id;
+    S32 selected_count = 0;
+    for (LLObjectSelection::iterator iter = mObjectSelection->begin();
+         iter != mObjectSelection->end(); iter++)
+    {
+        LLViewerObject* objectp = (*iter)->getObject();
+        if (!objectp)
+        {
+            continue;
+        }
+        if (objectp->getRootEdit()->getID() != mKeptLinksetRootID)
+        {
+            // Something else is selected now, list it as usual
+            mKeptLinksetRootID.setNull();
+            return false;
+        }
+        selected_id = objectp->getID();
+        ++selected_count;
+    }
+
+    // Nothing selected, e.g. while switching prims: keep the list as it is
+    if (selected_count == 1 && mObjectList->selectByID(selected_id))
+    {
+        mObjectList->scrollToShowSelected();
+    }
+    return true;
+}
+
 void LLFloaterInspect::onOpen(const LLSD& key)
 {
+    mKeptLinksetRootID.setNull();
     bool forcesel = LLSelectMgr::getInstance()->setForceSelection(true);
     LLToolMgr::getInstance()->setTransientTool(LLToolCompInspect::getInstance());
     LLSelectMgr::getInstance()->setForceSelection(forcesel);    // restore previouis value
@@ -306,6 +359,12 @@ LLUUID LLFloaterInspect::getSelectedUUID()
 
 void LLFloaterInspect::refresh()
 {
+    if (keepListForSelection())
+    {
+        onSelectObject();
+        return;
+    }
+
     LLUUID creator_id;
     std::string creator_name;
     S32 pos = mObjectList->getScrollPos();
