@@ -270,7 +270,19 @@
      left="30"
      name="UsePieMenu"
      top_pad="5"
-     width="256" />
+     width="130" />
+    <check_box
+     control_name="KokuaPieMenuCenterGoesBack"
+     enabled_control="UsePieMenu"
+     follows="top|left"
+     height="15"
+     label="Center click goes back in submenus"
+     layout="topleft"
+     left_pad="10"
+     name="KokuaPieMenuCenterGoesBack"
+     tool_tip="Clicking the center of a pie submenu goes back to the previous pie menu instead of closing it"
+     top_delta="0"
+     width="260" />
     <check_box
      top_pad="5"
      follows="left|top"
