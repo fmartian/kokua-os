@@ -91,6 +91,7 @@ LLFloaterInspect::LLFloaterInspect(const LLSD& key)
     mColumnBits["tramcount"] = 128;
     mColumnBits["vramcount"] = 256;
     mColumnBits["creation_date"] = 512;
+    mColumnBits["object_uuid"] = 1024;
     // </FS:Ansariel>
 }
 
@@ -569,6 +570,10 @@ void LLFloaterInspect::refresh()
         row["columns"][15]["column"] = "vramcount_sort";
         row["columns"][15]["type"] = "text";
         row["columns"][15]["value"] = LLSD::Integer(vram_memory / 1024);
+
+        row["columns"][16]["column"] = "object_uuid";
+        row["columns"][16]["type"] = "text";
+        row["columns"][16]["value"] = obj->getObject()->getID().asString();
 
         primcount = sel_mgr.getSelection()->getObjectCount();
         objcount = sel_mgr.getSelection()->getRootObjectCount();
