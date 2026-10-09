@@ -9031,7 +9031,7 @@ void handle_object_scripts(std::string action)
             name = "locate_queue";
             full = true;
             msg = "Locate";
-            title = LLTrans::getString("LocateQueueTitle");
+            title = LLTrans::getString("DetailQueueTitle");
         }
         else if (action == "delete")
         {
