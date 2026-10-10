@@ -121,7 +121,12 @@
                 <pie_slice.on_click
                     function="Avatar.Debug" />
             </pie_slice>
-            <pie_separator name="script count placeholder" />
+            <pie_slice
+                label="Attachments"
+                name="Attachment List">
+                <pie_slice.on_click
+                    function="Avatar.AttachmentList" />
+            </pie_slice>
             <pie_slice
                 label="Call"
                 name="Call">

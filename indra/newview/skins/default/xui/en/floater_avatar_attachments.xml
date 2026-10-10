@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<floater
+ legacy_header_height="18"
+ can_resize="true"
+ height="300"
+ layout="topleft"
+ min_height="150"
+ min_width="400"
+ name="avatar_attachments"
+ save_rect="true"
+ title="ATTACHMENTS"
+ width="520">
+    <floater.string
+     name="title_with_name">
+        ATTACHMENTS: [NAME]
+    </floater.string>
+    <floater.string
+     name="avatar_not_found">
+        This avatar is no longer nearby.
+    </floater.string>
+    <floater.string
+     name="no_attachments">
+        This avatar isn't wearing any attachments.
+    </floater.string>
+    <scroll_list
+     top="24"
+     height="243"
+     column_padding="0"
+     draw_heading="true"
+     follows="all"
+     layout="topleft"
+     left="5"
+     name="attachment_list"
+     right="-6"
+     sort_column="2">
+        <scroll_list.columns
+         dynamic_width="true"
+         label="Item Name"
+         name="name" />
+        <scroll_list.columns
+         dynamic_width="true"
+         label="Creator"
+         name="creator" />
+        <scroll_list.columns
+         label="Attachment Point"
+         name="attach_point"
+         width="140" />
+    </scroll_list>
+    <button
+     follows="left|bottom"
+     height="23"
+     label="Refresh"
+     layout="topleft"
+     left="5"
+     name="refresh_btn"
+     tool_tip="Read the attachments of this avatar again"
+     top_pad="5"
+     width="100" />
+    <button
+     enabled="false"
+     follows="left|bottom"
+     height="23"
+     label="Creator Profile"
+     layout="topleft"
+     left_pad="5"
+     name="creator_profile_btn"
+     tool_tip="See the profile of the highlighted attachment&apos;s creator"
+     top_delta="0"
+     width="130" />
+    <button
+     enabled="false"
+     follows="left|bottom"
+     height="23"
+     label="Object Profile"
+     layout="topleft"
+     left_pad="5"
+     name="object_profile_btn"
+     tool_tip="See the object profile of the highlighted attachment"
+     top_delta="0"
+     width="130" />
+</floater>

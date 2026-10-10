@@ -131,6 +131,7 @@
 #include "llfloaterreg.h"
 #include "fsmoneytracker.h"
 #include "fsareasearch.h"
+#include "kokuafloateravatarattachments.h"
 
 #include "animationexplorer.h"      // <FS:Zi> Animation Explorer
 #include "NACLfloaterexploresounds.h" // KKA-796 adding Block to Sound Explorer
@@ -4081,6 +4082,8 @@ void process_object_properties(LLMessageSystem *msg, void **user_data)
     {
         soundexplorer->requestNameCallback(msg);
     }
+
+    KokuaFloaterAvatarAttachments::processObjectProperties(msg);
 }
 
 void process_time_synch(LLMessageSystem *mesgsys, void **user_data)

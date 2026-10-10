@@ -7434,6 +7434,19 @@ class LLAvatarCopyUUID : public view_listener_t
     }
 };
 
+class LLAvatarAttachmentList : public view_listener_t
+{
+    bool handleEvent(const LLSD &userdata)
+    {
+        LLVOAvatar *avatar = find_avatar_from_object(LLSelectMgr::getInstance()->getSelection()->getPrimaryObject());
+
+        if (avatar) {
+            LLFloaterReg::showInstance("avatar_attachments", LLSD(avatar->getID()));
+        }
+        return true;
+    }
+};
+
 class LLAvatarCheckItem : public view_listener_t
 {
     bool handleEvent(const LLSD &userdata)
@@ -11554,6 +11567,7 @@ void initialize_menus()
     view_listener_t::addMenu(new LLAvatarInviteToGroup(), "Avatar.InviteToGroup");
     view_listener_t::addMenu(new LLAvatarCopyName(), "Avatar.CopyName");
     view_listener_t::addMenu(new LLAvatarCopyUUID(), "Avatar.CopyUUID");
+    view_listener_t::addMenu(new LLAvatarAttachmentList(), "Avatar.AttachmentList");
     view_listener_t::addMenu(new LLAvatarCopyProfileSLURL(), "Avatar.CopyProfileSLURL");
     view_listener_t::addMenu(new LLAvatarToggleRights(), "Avatar.ToggleRights");
     enable.add("Avatar.EnableFreezeEject", boost::bind(&enable_freeze_eject, _2));

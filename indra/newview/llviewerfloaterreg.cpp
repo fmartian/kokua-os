@@ -202,6 +202,7 @@
 #include "fsfloatercontactsetconfiguration.h"
 #include "fsfloaterimport.h"
 #include "kokuachatbar.h"
+#include "kokuafloateravatarattachments.h"
 #include "kokuafloaterbulkrename.h"
 #include "kokuafloaterstreaminfo.h"
 // NaCl - Sound explorer
@@ -367,6 +368,7 @@ void LLViewerFloaterReg::registerFloaters()
     LLFloaterReg::add("avatar_picker", "floater_avatar_picker.xml", (LLFloaterBuildFunc)&LLFloaterReg::build<LLFloaterAvatarPicker>);
     LLFloaterReg::add("avatar_welcome_pack", "floater_avatar_welcome_pack.xml", (LLFloaterBuildFunc)&LLFloaterReg::build<LLFloaterAvatarWelcomePack>);
 //  LLFloaterReg::add("avatar_render_settings", "floater_avatar_render_settings.xml", (LLFloaterBuildFunc)&LLFloaterReg::build<LLFloaterAvatarRenderSettings>);
+    LLFloaterReg::add("avatar_attachments", "floater_avatar_attachments.xml", (LLFloaterBuildFunc)&LLFloaterReg::build<KokuaFloaterAvatarAttachments>);
     LLFloaterReg::add("avatar_textures", "floater_avatar_textures.xml", (LLFloaterBuildFunc)&LLFloaterReg::build<LLFloaterAvatarTextures>);
 
     LLFloaterReg::add("ban_duration", "floater_ban_duration.xml", &LLFloaterReg::build<LLFloaterBanDuration>);
