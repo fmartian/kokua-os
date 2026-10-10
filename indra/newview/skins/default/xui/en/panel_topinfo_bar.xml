@@ -9,24 +9,12 @@
  layout="topleft"
  name="topinfo_bar"
  width="1024">
-  <button
-    follows="left|top"
-    height="16"
-    hover_glow_amount="0.15"
-    image_disabled="Info_Off"
-    image_disabled_selected="Info_Off"
-    image_selected="Info_Off"
-    image_unselected="Info_Off"
-    left="11"
-    name="place_info_btn"
-    top="1"
-    width="16"/>
    <text
      follows="left|top|right"
      font="DejaVu"
      height="16"
      layout="topleft"
-     left_pad="11"
+     left="11"
      length="1"
      name="parcel_info_text"
      top="1"
