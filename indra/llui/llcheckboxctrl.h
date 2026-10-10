@@ -136,9 +136,10 @@ public:
         return mCheckSignal.connect(cb);
     }
 
-private:
-    enable_signal_t mCheckSignal;
-// </FS:Ansariel>
+    LLTextBox* getTextBox() // Provide direct access to label textbox control
+    {
+        return mLabel;
+    }
 
 protected:
     virtual std::string _getSearchText() const
@@ -162,6 +163,10 @@ protected:
     LLUIColor       mTextDisabledColor;
 
     EWordWrap       mWordWrap; // off, shifts text up, shifts text down
+
+private:
+    enable_signal_t mCheckSignal;
+// </FS:Ansariel>
 };
 
 // Build time optimization, generate once in .cpp file

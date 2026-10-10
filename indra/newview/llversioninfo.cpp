@@ -35,6 +35,7 @@
 // This brings in the version information instead of the cmake mechanism
 // which rebuilds the whole of newbuild for each hg commit
 #include "kokuabuildversion.h"
+#include "llversioninfovars.h"
 
 #if ! defined(LL_VIEWER_CHANNEL)       \
  || ! defined(LL_VIEWER_VERSION_MAJOR) \
@@ -56,7 +57,6 @@ LLVersionInfo::LLVersionInfo():
     // macro expands to the string name of the channel, but without quotes. We
     // need to turn it into a quoted string. LL_TO_STRING() does that.
     mWorkingChannelName(LL_TO_STRING(LL_VIEWER_CHANNEL)),
-    build_configuration(LLBUILD_CONFIG), // set in indra/cmake/BuildVersion.cmake
     // instantiate an LLEventMailDrop with canonical name to listen for news
     // from the Viewer Version Manager
     mPump{new LLEventMailDrop("relnotes")},
@@ -207,7 +207,15 @@ std::string LLVersionInfo::getBuildPlatform()
 
 std::string LLVersionInfo::getBuildConfig() const
 {
-    return build_configuration;
+#if LL_DEBUG
+    return "Debug";
+#elif LL_RELEASE_WITH_DEBUG_INFO
+    return "RelWithDebInfo";
+#elif LL_RELEASE_FOR_DOWNLOAD
+    return "Release";
+#else
+    return "Unknown";
+#endif
 }
 
 std::string LLVersionInfo::getReleaseNotes() const

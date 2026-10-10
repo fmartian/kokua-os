@@ -45,25 +45,30 @@ protected:
 };
 
 /**
-* @brief A singleton class to manage the grids available to the viewer.
-*
-* This class maintains several properties for each known grid, and provides
-* interfaces for obtaining each of these properties given a specified
-* grid.  Grids are specified by either of two identifiers, each of which
-* must be unique among all known grids:
-* - grid name : DNS name for the grid
-* - grid id   : a short form (conventionally a single word)
-*
-* This class maintains the currently selected grid, and provides short
-* form accessors for each of the properties of the selected grid.
-**/
-class LLGridManager : public LLSingleton<LLGridManager>
+ * @brief A singleton class to manage the grids available to the viewer.
+ *
+ * This class maintains several properties for each known grid, and provides
+ * interfaces for obtaining each of these properties given a specified
+ * grid.  Grids are specified by either of two identifiers, each of which
+ * must be unique among all known grids:
+ * - grid name : DNS name for the grid
+ * - grid id   : a short form (conventionally a single word)
+ *
+ * This class maintains the currently selected grid, and provides short
+ * form accessors for each of the properties of the selected grid.
+ **/
+class LLGridManager : public LLSimpleton<LLGridManager>
 {
+public:
     /// Instantiate the grid manager, load default grids, selects the default grid
-    LLSINGLETON(LLGridManager);
+    LLGridManager();
     ~LLGridManager();
 
-public:
+    LLGridManager(const LLGridManager&) = delete;
+    LLGridManager(LLGridManager&&) = delete;
+    LLGridManager& operator=(const LLGridManager&) = delete;
+    LLGridManager& operator=(LLGridManager&&) = delete;
+
     /* ================================================================
     * @name Initialization and Configuration
     * @{

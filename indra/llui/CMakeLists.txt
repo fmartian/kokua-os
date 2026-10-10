@@ -41,6 +41,7 @@ set(llui_SOURCE_FILES
     llfloaterreglistener.cpp
     llflyoutbutton.cpp 
     llfocusmgr.cpp
+    llgestureautocompletehelper.cpp
     llfolderview.cpp
     llfolderviewitem.cpp
     llfolderviewmodel.cpp
@@ -154,6 +155,7 @@ set(llui_HEADER_FILES
     llfloaterreglistener.h
     llflyoutbutton.h 
     llfocusmgr.h
+    llgestureautocompletehelper.h
     llfolderview.h
     llfolderviewitem.h
     llfolderviewmodel.h
@@ -272,9 +274,8 @@ target_link_libraries(llui
         llcommon
     )
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-  set_source_files_properties(llscrollingpanellist.cpp PROPERTIES
-    COMPILE_FLAGS -Wno-unused-variable)
+if (USE_PRECOMPILED_HEADERS)
+  target_precompile_headers(llui REUSE_FROM llprecompiled)
 endif ()
 
 # Add tests
@@ -287,10 +288,8 @@ if(LL_TESTS)
       )
   set_property( SOURCE ${llui_TEST_SOURCE_FILES} PROPERTY LL_TEST_ADDITIONAL_LIBRARIES ${test_libs})
   LL_ADD_PROJECT_UNIT_TESTS(llui "${llui_TEST_SOURCE_FILES}")
-  # INTEGRATION TESTS
 
-  if(NOT LINUX)
-    set(test_libs llui llmessage llcorehttp llxml llrender llcommon ll::hunspell )
-    LL_ADD_INTEGRATION_TEST(llurlentry llurlentry.cpp "${test_libs}")
-  endif(NOT LINUX)
+  # INTEGRATION TESTS
+  set(test_libs llui llmessage llcorehttp llxml llrender llcommon ll::hunspell )
+  LL_ADD_INTEGRATION_TEST(llurlentry llurlentry.cpp "${test_libs}")
 endif(LL_TESTS)

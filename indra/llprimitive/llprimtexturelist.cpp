@@ -141,7 +141,7 @@ S32 LLPrimTextureList::copyTexture(const U8 index, const LLTextureEntry& te)
     //<FS:ND> The compiler will assume te being valid as it is passed by reference and thus else will never be executed.
     // If someone really passed *nullptr in here, this will be undefined behaviour
 
-    // if  (&te)
+    // if  (te != LLTextureEntry::null)
     // {
     //  mEntryList[index] = te.newCopy();
     // }

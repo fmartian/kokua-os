@@ -44,7 +44,6 @@
 #include "llmultigesture.h"
 #include "llnotificationsutil.h"
 #include "llparcel.h"
-#include "llprimlinkinfo.h"
 #include "llsdserialize.h"
 #include "llsdutil_math.h"
 #include "llsdutil.h"
@@ -68,6 +67,7 @@
 #include "llcoproceduremanager.h"
 #include "llsdutil.h"
 
+const S32 MAX_PRIMS_PER_OBJECT = 256;
 
 struct FSResourceData
 {

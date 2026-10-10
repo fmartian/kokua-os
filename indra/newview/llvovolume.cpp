@@ -4657,6 +4657,11 @@ U32 LLVOVolume::getLODTriangleCount(S32 lod)
 //</FS:Beq>
 
 
+U32 LLVOVolume::getHighLODTriangleCount()
+{
+    return getLODTriangleCount(LLModel::LOD_HIGH);
+}
+
 //static
 void LLVOVolume::preUpdateGeom()
 {

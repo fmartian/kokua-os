@@ -109,6 +109,6 @@ private:
     static LLFloaterDirectory *sInstance;
 };
 
-//extern BOOL gDisplayEventHack;
+//extern bool gDisplayEventHack;
 
 #endif  // LL_LLDIRECTORYFLOATER_H

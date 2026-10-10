@@ -63,9 +63,8 @@ target_link_libraries(llimage
         ll::libjpeg
     )
 
-if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
-  set_source_files_properties(llimagefilter.cpp PROPERTIES
-    COMPILE_FLAGS -Wno-stringop-overflow)
+if (USE_PRECOMPILED_HEADERS)
+  target_precompile_headers(llimage REUSE_FROM llprecompiled)
 endif ()
 
 # Add tests

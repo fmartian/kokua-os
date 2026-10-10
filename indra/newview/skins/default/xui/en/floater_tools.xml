@@ -1657,9 +1657,7 @@ even though the user gets a free copy.
              left_delta="0"
              name="object_horizontal"
              top_pad="10"
-             width="95"
-             font="DejaVu"
-             font.size="LSmall" />
+             width="95" />
             <menu_button
              menu_filename="menu_copy_paste_pos.xml"
              follows="top|left"
@@ -2755,9 +2753,7 @@ even though the user gets a free copy.
              left="8"
              name="object_horizontal"
              top_pad="10"
-             width="278"
-             font="DejaVu"
-             font.size="LSmall" />
+             width="278" />
             <check_box
              height="16"
              label="Light"
@@ -3162,28 +3158,51 @@ even though the user gets a free copy.
          name="Contents"
          top_delta="0"
          width="295">
-            <button
+            <flyout_button
              follows="left|top"
              height="23"
              label="New Script"
-             label_selected="New Script"
              layout="topleft"
-             left="8"
+             left="7"
              name="button new script"
              top="8"
-             width="80"
-             font="DejaVu"
-             font.size="LSmall"
-             pad_bottom="1" />
+             width="83">
+                <flyout_button.item
+                 label="New LSL Script"
+                 name="new_lsl_script"
+                 value="lsl" />
+                <flyout_button.item
+                 label="New Lua Script"
+                 name="new_lua_script"
+                 value="lua" />
+            </flyout_button>
+            <button
+             follows="left|top"
+             height="23"
+             label="New Notecard"
+             layout="topleft"
+             left_pad="7"
+             name="button new notecard"
+             width="137" />
             <button
              follows="left|top"
              height="20"
              label="Permissions"
              layout="topleft"
-             left_pad="5"
+             left="7"
+             top="37"
              name="button permissions"
-             top="8"
-             width="90" />
+             width="93" />
+            <button
+             follows="left|top"
+             height="23"
+             is_toggle="true"
+             label="Explore in IDE"
+             label_selected="Stop Exploring"
+             layout="topleft"
+             left_pad="7"
+             name="button publish"
+             width="137" />
             <button
              follows="left|top"
              height="20"
@@ -3217,7 +3236,7 @@ even though the user gets a free copy.
              follows="left|top|right"
              label="Enter filter text"
              layout="topleft"
-             top_pad="8"
+             top_pad="35"
              left="10"
              text_pad_left="10"
              max_length_chars="300"
@@ -3230,11 +3249,11 @@ even though the user gets a free copy.
              border_visible="true"
              bevel_style="in"
              follows="left|top|right"
-             height="380"
+             height="353"
              layout="topleft"
              left="10"
              name="contents_inventory"
-             top_pad="4"
+             top_pad="31"
              width="275" />
 		</panel>
         </tab_container>

@@ -28,8 +28,13 @@ ca_*.sh
 *.diff
 
 # Specific folders (use leading / to reference from .gitignore's location)
+/.autobuild-installables/
+/.build-variables/
+/.logs/
+.venv
 CMakeCache.txt
 cmake_install.cmake
+LICENSES
 /build-*
 /debian/files
 /debian/secondlife-appearance-utility*
@@ -115,6 +120,10 @@ configure-stamp
 web/config.*
 web/locale.*
 web/secondlife.com.*
+
+# Auto-generated from lsl_definitions package
+indra/newview/app_settings/keywords_lsl_default.xml
+indra/newview/app_settings/keywords_lua_default.xml
 
 .env
 .vscode

@@ -161,6 +161,7 @@ public:
     void setBackupable(bool state);     // <FS:Zi> Backup Settings
     void setHiddenFromSettingsEditor(bool hide);
     void setComment(const std::string& comment);
+    bool setValueFromNotation(const std::string& notation, bool saved_value = true);
 
 private:
     void firePropertyChanged(const LLSD &pPreviousValue)

@@ -85,6 +85,9 @@ if(WINDOWS)
     elseif (MSVC_VERSION GREATER_EQUAL 1930 AND MSVC_VERSION LESS 1950) # Visual Studio 2022
         set(MSVC_VER 140)
         set(MSVC_TOOLSET_VER 143)
+    elseif (MSVC_VERSION GREATER_EQUAL 1950 AND MSVC_VERSION LESS 1970) # Visual Studio 2026
+        set(MSVC_VER 140)
+        set(MSVC_TOOLSET_VER 145)
     else (MSVC80)
         MESSAGE(WARNING "New MSVC_VERSION ${MSVC_VERSION} of MSVC: adapt Copy3rdPartyLibs.cmake")
     endif (MSVC80)
@@ -122,6 +125,7 @@ if(WINDOWS)
             msvcp${MSVC_VER}_atomic_wait.dll
             msvcp${MSVC_VER}_codecvt_ids.dll
             msvcr${MSVC_VER}.dll
+            vccorlib${MSVC_VER}.dll
             vcruntime${MSVC_VER}.dll
             vcruntime${MSVC_VER}_1.dll
             vcruntime${MSVC_VER}_threads.dll
@@ -187,15 +191,13 @@ elseif(LINUX)
     set(release_files
        )
 
-    if( USE_AUTOBUILD_3P )
-        list( APPEND release_files
-                 libuuid.so.16
-                 libuuid.so.16.0.22
-                 libfontconfig.so.1.11.0
-                 libfontconfig.so.1
-                 )
-
-    endif()
+     if( USE_AUTOBUILD_3P )
+         list( APPEND release_files
+                libSDL3.so
+                libSDL3.so.0
+                libSDL3.so.0.2.24
+                )
+     endif()
     if (TARGET ll::fmodstudio)
       # set(debug_files ${debug_files} "libfmodL.so")
       set(release_files ${release_files} "libfmod.so")

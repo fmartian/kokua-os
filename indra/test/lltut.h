@@ -75,17 +75,12 @@ namespace tut
 // overloads declared above.
 
 // turn off warnings about unused functions from clang for tut package
-// turn off warnings about unused functions from gcc for tut package
-#if LL_WINDOWS
-#include <tut/tut.hpp>
-#endif
-
-#if LL_DARWIN && __clang__
+#if LL_CLANG
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-function"
-#include <tut/tut.hpp>
 #endif
-#if LL_DARWIN && __clang__
+#include <tut/tut.hpp>
+#if LL_CLANG
 #pragma clang diagnostic pop
 #endif
 

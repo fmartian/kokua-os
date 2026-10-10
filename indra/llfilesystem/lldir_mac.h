@@ -46,7 +46,6 @@ public:
 
     virtual std::string getCurPath();
     virtual bool getNextFileInDir(const std::string &dirname, const std::string &mask, std::string &fname);
-    virtual bool fileExists(const std::string &filename) const;
 
     /*virtual*/ std::string getLLPluginLauncher();
     /*virtual*/ std::string getLLPluginFilename(std::string base_name);

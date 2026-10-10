@@ -71,6 +71,16 @@ class ViewerManifest(LLManifest):
         with self.prefix(src=pkgdir, dst="skins/default/html/common/equirectangular"):
             self.path("js")
 
+        # ... and the lsl/lua script definition files (needed at build time and packaging)
+        pkgdir = os.path.join(self.args['build'], os.pardir, 'packages')
+        with self.prefix(src=os.path.join(pkgdir, 'lsl_definitions'), dst="app_settings/syntax_default"):
+            self.path("*.txt")
+            self.path("*.yaml")
+            self.path("*.xml")
+            self.path("*.json")
+            self.path("*.luau")
+            self.path("*.yml")
+
         if self.is_packaging_viewer():
             with self.prefix(src_dst="app_settings"):
                 self.exclude("logcontrol.xml")
@@ -99,7 +109,7 @@ class ViewerManifest(LLManifest):
                 with self.prefix(src=pkgdir):
                     self.path("dictionaries")
 
-                # include the extracted packages information (see BuildPackagesInfo.cmake)
+                # include the extracted packages information
                 self.path(src=os.path.join(self.args['build'],"packages-info.txt"), dst="packages-info.txt")
                 # CHOP-955: If we have "sourceid" or "viewer_channel" in the
                 # build process environment, generate it into
@@ -1579,36 +1589,33 @@ class LinuxManifest(ViewerManifest):
         super(LinuxManifest, self).construct()
 
         pkgdir = os.path.join(self.args['build'], os.pardir, 'packages')
+        if "package_dir" in self.args:
+            pkgdir = self.args['package_dir']
+
         relpkgdir = os.path.join(pkgdir, "lib", "release")
         debpkgdir = os.path.join(pkgdir, "lib", "debug")
 
         self.path("licenses-linux.txt","licenses.txt")
-        with self.prefix("linux_tools", dst=""):
-            self.path("client-readme.txt","README-linux.txt")
-            self.path("client-readme-voice.txt","README-linux-voice.txt")
-            self.path("client-readme-joystick.txt","README-linux-joystick.txt")
-            self.path("client-readme-streamingmedia.txt","README-linux-streamingmedia.txt")
-            self.path("client-readme-install-setup.txt","README-linux-install-setup.txt")
-            self.path("handle_secondlifeprotocol.sh", "etc/handle_secondlifeprotocol.sh")
-            self.path("register_secondlifeprotocol.sh", "etc/register_secondlifeprotocol.sh")
-            self.path("register_hopprotocol.sh", "etc/register_hopprotocol.sh")
-            self.path("refresh_desktop_app_entry.sh", "etc/refresh_desktop_app_entry.sh")
-            self.path("launch_url.sh","etc/launch_url.sh")
-            self.path("wrapper.sh","kokua")
-            with self.prefix(src="", dst="etc"):
+        with self.prefix("linux_tools"):
+            self.path("wrapper.sh","secondlife")
+            with self.prefix(dst="etc"):
                 self.path("handle_secondlifeprotocol.sh")
                 self.path("register_secondlifeprotocol.sh")
                 self.path("refresh_desktop_app_entry.sh")
-                self.path("launch_url.sh")
             self.path("install.sh")
 
-        with self.prefix(src="", dst="bin"):
+        with self.prefix(dst="bin"):
             self.path("kokua-bin","do-not-directly-run-kokua-bin")
             self.path2basename("../llplugin/slplugin", "SLPlugin")
+            #this copies over the python wrapper script, associated utilities and required libraries, see SL-321, SL-322 and SL-323
+            #with self.prefix(src="../viewer_components/manager", dst=""):
+            #    self.path("*.py")
 
         # recurses, packaged again
         self.path("res-sdl")
 
+        # We  copy ll_icon.BMP in CMakeLists.txt to newview/res-sdl and this will let the above self.path step take  care of copying
+        # the correct branded icon
         # Get the icons based on the channel type
         icon_path = self.icon_path()
         print("DEBUG: icon_path '%s'" % icon_path)
@@ -1620,125 +1627,68 @@ class LinuxManifest(ViewerManifest):
         with self.prefix(src=os.path.join(self.args['build'], os.pardir, "llwebrtc" ), dst="lib"):
             self.path("libllwebrtc.so")
 
+        with self.prefix(src=os.path.join(self.args['build'], os.pardir, "llwebrtc" ), dst="lib"):
+            self.path("libllwebrtc.so")
+
         # plugins
-        with self.prefix(src=os.path.join(self.args['build'], os.pardir, 'media_plugins'), dst="bin/llplugin"):
-            self.path2basename("cef", "libmedia_plugin_cef.so")
-            self.path2basename("libvlc", "libmedia_plugin_libvlc.so")
+        with self.prefix(dst="bin/llplugin"):
+            with self.prefix(src=os.path.join(self.args['build'], os.pardir, 'media_plugins')):
+                with self.prefix(src='cef'):
+                    self.path("libmedia_plugin_cef.so")
 
-        # CEF runtime files - not debug (release, relwithdebinfo etc.)
+                # Media plugins - LibVLC
+                with self.prefix(src='libvlc'):
+                    self.path("libmedia_plugin_libvlc.so")
 
-        config = 'debug' if self.args['configuration'].lower() == 'debug' else 'release'
+                # GStreamer 1.0 Media Plugin
+                with self.prefix(src='gstreamer10'):
+                    self.path("libmedia_plugin_gstreamer10.so")
 
-        with self.prefix(src=os.path.join(pkgdir, 'lib', config), dst="lib"):
+                # Media plugins - Example (useful for debugging - not shipped with release viewer)
+                if self.channel_type() != 'release':
+                    with self.prefix(src='example'):
+                        self.path("libmedia_plugin_example.so")
+
+
+        with self.prefix(src=os.path.join(pkgdir, 'lib', 'release'), dst="lib"):
             self.path( "libcef.so" )
-            self.path( "libEGL.so" )
-            self.path( "libGLESv2.so" )
-#            self.path( "libminigbm.so" )
-            self.path( "libvk_swiftshader.so" )
+            self.path( "libEGL*" )
+            self.path( "libvulkan*" )
+            self.path( "libvk_swiftshader*" )
+            self.path( "libGLESv2*" )
 
-#        with self.prefix(src=os.path.join(pkgdir, 'lib', config, 'swiftshader'), dst=os.path.join("bin", "swiftshader") ):
-#            self.path( "*.so" )
-#        with self.prefix(src=os.path.join(pkgdir, 'lib', config, 'swiftshader'), dst=os.path.join("lib", "swiftshader") ):
-#            self.path( "*.so" )
-
-        with self.prefix(src=os.path.join(pkgdir, 'bin', config), dst="bin"):
+        with self.prefix(src=os.path.join(pkgdir, 'bin', 'release'), dst="bin"):
             self.path( "chrome-sandbox" )
             self.path( "dullahan_host" )
-            self.path( "snapshot_blob.bin" )
-            self.path( "v8_context_snapshot.bin" )
-        with self.prefix(src=os.path.join(pkgdir, 'bin', config), dst="lib"):
-            self.path( "snapshot_blob.bin" )
-            self.path( "v8_context_snapshot.bin" )
 
-        # CEF files common to all configurations
-        with self.prefix(src=os.path.join(pkgdir, 'resources'), dst="bin"):
-            self.path( "chrome_100_percent.pak" )
-            self.path( "chrome_200_percent.pak" )
-            self.path( "resources.pak" )
-            self.path( "icudtl.dat" )
+        with self.prefix(src=os.path.join(pkgdir, 'lib', 'release'), dst="bin"):
+            self.path( "v8_context_snapshot.bin" )
+            self.path( "vk_swiftshader_icd.json")
+
+        with self.prefix(src=os.path.join(pkgdir, 'lib', 'release'), dst="lib"):
+            self.path( "v8_context_snapshot.bin" )
+            self.path( "vk_swiftshader_icd.json")
+
         with self.prefix(src=os.path.join(pkgdir, 'resources'), dst="lib"):
             self.path( "chrome_100_percent.pak" )
             self.path( "chrome_200_percent.pak" )
             self.path( "resources.pak" )
             self.path( "icudtl.dat" )
 
-        with self.prefix(src=os.path.join(pkgdir, 'resources', 'locales'), dst=os.path.join('bin', 'locales')):
-            self.path("am.pak")
-            self.path("ar.pak")
-            self.path("bg.pak")
-            self.path("bn.pak")
-            self.path("ca.pak")
-            self.path("cs.pak")
-            self.path("da.pak")
-            self.path("de.pak")
-            self.path("el.pak")
-            self.path("en-GB.pak")
-            self.path("en-US.pak")
-            self.path("es-419.pak")
-            self.path("es.pak")
-            self.path("et.pak")
-            self.path("fa.pak")
-            self.path("fi.pak")
-            self.path("fil.pak")
-            self.path("fr.pak")
-            self.path("gu.pak")
-            self.path("he.pak")
-            self.path("hi.pak")
-            self.path("hr.pak")
-            self.path("hu.pak")
-            self.path("id.pak")
-            self.path("it.pak")
-            self.path("ja.pak")
-            self.path("kn.pak")
-            self.path("ko.pak")
-            self.path("lt.pak")
-            self.path("lv.pak")
-            self.path("ml.pak")
-            self.path("mr.pak")
-            self.path("ms.pak")
-            self.path("nb.pak")
-            self.path("nl.pak")
-            self.path("pl.pak")
-            self.path("pt-BR.pak")
-            self.path("pt-PT.pak")
-            self.path("ro.pak")
-            self.path("ru.pak")
-            self.path("sk.pak")
-            self.path("sl.pak")
-            self.path("sr.pak")
-            self.path("sv.pak")
-            self.path("sw.pak")
-            self.path("ta.pak")
-            self.path("te.pak")
-            self.path("th.pak")
-            self.path("tr.pak")
-            self.path("uk.pak")
-            self.path("vi.pak")
-            self.path("zh-CN.pak")
-            self.path("zh-TW.pak")
-
-        with self.prefix(src=os.path.join(pkgdir, 'lib', 'vlc', 'plugins'), dst="bin/llplugin/vlc/plugins"):
-            self.path( "plugins.dat" )
-            self.path( "*/*.so" )
-
-        with self.prefix(src=os.path.join(pkgdir, 'lib' ), dst="lib"):
-            self.path( "libvlc*.so*" )
-
-        # llcommon
-        #if not self.path("../llcommon/libllcommon.so", "lib/libllcommon.so"):
-            #print("Skipping llcommon.so (assuming llcommon was linked statically)")
+        with self.prefix(src=os.path.join(pkgdir, 'resources', 'locales'), dst=os.path.join('lib', 'locales')):
+            self.path("*.pak")
 
         self.path("featuretable_linux.txt")
         self.path("cube.dae")
 
-        with self.prefix(src=pkgdir,dst="bin"):
-            self.path("ca-bundle.crt")
-
-        with self.prefix(src=pkgdir,dst="app_settings"):
+        with self.prefix(src=pkgdir, dst="bin"):
             self.path("ca-bundle.crt")
 
     def package_finish(self):
         installer_name = self.installer_base_name()
+
+        # When running as a GitHub Action job, RUNNER_TEMP is defined as the tmp dir
+        RUNNER_TEMP = os.getenv('RUNNER_TEMP')
 
         self.strip_binaries()
 
@@ -1754,8 +1704,18 @@ class LinuxManifest(ViewerManifest):
         # temporarily move directory tree so that it has the right
         # name in the tarfile
         realname = self.get_dst_prefix()
-        tempname = self.build_path_of(installer_name)
-        self.run_command(["mv", realname, tempname])
+        versionedName = self.build_path_of(installer_name)
+
+        tarName = versionedName + ".tar.xz"
+
+        # If using a github runner we divert packaging a little. Considering this wil be a VM/docker image
+        # we can just pack the final installer into RUNNER_TEMP and not into the usual stop we'd pick when
+        # not building a GHA release
+        if RUNNER_TEMP:
+            tarName = os.path.join(RUNNER_TEMP, self.package_file)
+
+        self.run_command(["mv", realname, versionedName])
+
         try:
             # only create tarball if it's a release build.
             if self.args['buildtype'].lower() == 'release':
@@ -1763,23 +1723,30 @@ class LinuxManifest(ViewerManifest):
                 # security etc.
                 self.run_command(['tar', '-C', self.get_build_prefix(),
                                   '--numeric-owner', '-cJf',
-                                 tempname + '.tar.xz', installer_name])
+                                 tarName, installer_name])
+                self.set_github_output_path('viewer_app', tarName)
             else:
                 print("Skipping %s.tar.xz for non-Release build (%s)" % \
                       (installer_name, self.args['buildtype']))
         finally:
-            self.run_command(["mv", tempname, realname])
+            self.run_command(["mv", versionedName, realname])
 
     def strip_binaries(self):
         if self.args['buildtype'].lower() == 'release' and self.is_packaging_viewer():
-            print("* Going strip-crazy on the packaged binaries, since this is a RELEASE build")
+            print("* Going strip-crazy on the packaged binaries, since this is a Release build")
             # makes some small assumptions about our packaged dir structure
             self.run_command(
                 ["find"] +
-                [os.path.join(self.get_dst_prefix(), dir) for dir in ('bin', 'lib' )] +
-                ['-type', 'f', '!', '-name', '*.py', '!', '-name', 'natives_blob.bin', '!', '-name', 'snapshot_blob.bin', '!', '-name', 'v8_context_snapshot.bin', '!', '-name', 'SLVersionChecker', '!', '-name', '*.crt','!', '-name', '*.log', '!', '-path', '*win32*',
-                 '!', '-name', 'update_install', '!', '-name', '*.pak', '!', '-name', '*.dat',  '-exec', 'strip', '-S', '{}', ';'])
-
+                [os.path.join(self.get_dst_prefix(), dir) for dir in ('bin', 'lib')] +
+                ['-type', 'f', '!', '-name', '*.py',
+                 '!', '-name', '*.pak',
+                 '!', '-name', '*.bin',
+                 '!', '-name', '*.dat',
+                 '!', '-name', '*.crt',
+                 '!', '-name', '*.dll',
+                 '!', '-name', '*.lib',
+                 '!', '-name', '*.json',
+                 '!', '-name', 'update_install', '-exec', 'strip', '-S', '{}', ';'])
 
 class Linux_x86_64_Manifest(LinuxManifest):
     address_size = 64
@@ -1788,16 +1755,20 @@ class Linux_x86_64_Manifest(LinuxManifest):
         super(Linux_x86_64_Manifest, self).construct()
 
         pkgdir = os.path.join(self.args['build'], os.pardir, 'packages')
+        if "package_dir" in self.args:
+            pkgdir = self.args['package_dir']
+
         relpkgdir = os.path.join(pkgdir, "lib", "release")
-        debpkgdir = os.path.join(pkgdir, "lib", "debug")
+        #debpkgdir = os.path.join(pkgdir, "lib", "debug")
 
-       # support file for valgrind debug tool
-        self.path("secondlife-i686.supp")
+        with self.prefix(src=relpkgdir, dst="lib"):
+            self.path("libSDL*.so.*")
 
-        # Arch does not package libpng12 a dependency of Kokua's gtk+ libraries
-        #if self.prefix("/lib/x86_64-linux-gnu", dst="lib"):
-        #    self.path("libpng12.so.0*")
-        #    self.end_prefix("lib")
+            self.path("libalut.so*")
+            self.path("libopenal.so*")
+
+            if self.args['discord'] == 'ON':
+                self.path("libdiscord_partner_sdk.so*")
 
         with self.prefix(src=relpkgdir, dst="lib"):
             if self.args['fmodstudio'] == 'ON':
@@ -1816,42 +1787,7 @@ class Linux_x86_64_Manifest(LinuxManifest):
                       self.path("libfmod.so")
                       self.path("libfmod.so*")
 
-            self.path("libapr-1.so*")
-            self.path("libaprutil-1.so*")
-            #self.path("libdb*.so")
-            self.path("libSDL-1.2.so.*")
-            self.path("libuuid.so")
-            self.path("libuuid.so.16")
-            self.path("libuuid.so.16.0.22")
-            #self.path("libGLOD.so")
-            #self.path("libjemalloc.so*")
-
-            #cef plugin
-# already pulled this in earlier
-#            self.path( "libcef.so" )
-
-            if self.args['buildtype'].lower() == 'debug':
-             if self.prefix("../packages/lib/debug", dst="lib"):
-              self.path("libapr-1.so*")
-              self.path("libaprutil-1.so*")
-              self.path("libboost_context-mt-d.so.*")
-              self.path("libboost_program_options-mt-d.so.*")
-              self.path("libboost_regex-mt-d.so.*")
-              self.path("libboost_thread-mt-d.so.*")
-              self.path("libboost_filesystem-mt-d.so.*")
-              self.path("libboost_signals-mt-d.so.*")
-              self.path("libboost_system-mt-d.so.*")
-              self.path("libboost_wave-mt-d.so.*")
-              self.path("libboost_coroutine-mt-d.so.*")
-              self.path("libexpat.so.1")
-              self.path("libz.so.1.2.5")
-              self.path("libz.so.1")
-              self.path("libz.so")
-              self.path("libcollada14dom-d.so*")
-              self.path("libGLOD.so")
-              self.end_prefix("lib")
-
-
+        self.strip_binaries()
 ################################################################
 
 def symlinkf(src, dst):

@@ -117,7 +117,8 @@ protected:
     bool onExternalChange(const std::string& filename);
     bool loadNotecardText(const std::string& filename);
     bool writeToFile(const std::string& filename);
-    std::string getTmpFileName();
+    std::string getCleanNameForTmpFile() const;
+    std::string getTmpFileName(const std::string& note_name) const;
 
 protected:
     LLViewerTextEditor* mEditor = nullptr;
@@ -126,6 +127,8 @@ protected:
     LLButton* mEditBtn = nullptr;
     LLButton* mDeleteBtn = nullptr;
     LLUICtrl* mLockBtn = nullptr;
+
+    std::string mNoteName;
 
     LLUUID mAssetID;
 

@@ -35,7 +35,6 @@
 #endif
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
 
-#include "fix_macros.h"
 #include "dae.h"
 //#include "dom.h"
 #include "dom/domAsset.h"

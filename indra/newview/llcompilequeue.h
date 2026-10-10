@@ -55,7 +55,7 @@ public:
 
     /*virtual*/ bool postBuild();
 
-    void setMono(bool mono) { mMono = mono; }
+    void setCompileTarget(std::string target) { mCompileTarget = target; }
     void setFull(bool full) { mFull = full; }
     bool getFull() { return mFull; }
     void setDeleteOnly(bool delete_only) { mDeleteOnly = delete_only; }
@@ -107,8 +107,8 @@ protected:
 
 protected:
     // UI
-    LLScrollListCtrl* mMessages;
-    LLButton* mCloseBtn;
+    LLScrollListCtrl* mMessages { nullptr };
+    LLButton* mCloseBtn { nullptr };
 
     // Object Queue
     struct ObjectData
@@ -120,10 +120,10 @@ protected:
 
     object_data_list_t mObjectList;
     LLUUID mCurrentObjectID;
-    bool mDone;
+    bool mDone { false };
 
     std::string mStartString;
-    bool mMono;
+    std::string mCompileTarget { "lsl2" };
     bool mFull;
   bool mAwaitingMessage;
   bool mIsMono;
@@ -136,7 +136,6 @@ protected:
 
     typedef std::function<bool(const LLPointer<LLViewerObject> &, LLInventoryObject*, LLEventPump &)>   fnQueueAction_t;
     static void objectScriptProcessingQueueCoro(std::string action, LLHandle<LLFloaterScriptQueue> hfloater, object_data_list_t objectList, fnQueueAction_t func);
-
 };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

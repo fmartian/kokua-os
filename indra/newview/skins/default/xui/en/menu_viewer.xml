@@ -4,7 +4,6 @@ bg_visible="false"
 follows="left|top|right"
 name="Dummy Menu">
 </menu_bar>
-
 <!--
 ############################################################################
 #
@@ -23,11 +22,11 @@ name="Dummy Menu">
 #
 ############################################################################
 ### 
-###<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-###<menu_bar
-### bg_visible="false"
-### follows="left|top|right"
-### name="Main Menu">
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<menu_bar
+ bg_visible="false"
+ follows="left|top|right"
+ name="Main Menu">
 ###    <menu
 ###     create_jump_keys="true"
 ###     label="Me"
@@ -67,6 +66,13 @@ name="Dummy Menu">
 ###       shortcut="control|L">
 ###        <menu_item_call.on_click
 ###         function="Tools.Link"/>
+###      </menu_item_call>
+###      <menu_item_call
+###       label="Visited places..."
+###       name="Visited Places"
+###       shortcut="control|shift|L">
+###        <menu_item_call.on_click
+###         function="Tools.Unlink"/>
 ###      </menu_item_call>
 ###      <menu_item_call
 ###       label="Picks..."
@@ -464,7 +470,7 @@ name="Dummy Menu">
 ###        </menu_item_call>       
 ###        <menu_item_call
 ###         label="Stop animations"
-###         name="Stop Animating My Avatar">
+###         name="Stop Animating My Avatar"
 ###         allow_key_repeat="true"
 ###         shortcut="alt|shift|A">
 ###          <menu_item_call.on_click
@@ -488,24 +494,6 @@ name="Dummy Menu">
 ###           function="World.CheckAlwaysRun" />
 ###          <menu_item_check.on_click
 ###           function="World.AlwaysRun" />
-###        </menu_item_check>
-###        <menu_item_check
-###          label="Hear Media and Sound from Avatar"
-###          name="Hear Media and Sound from Avatar">
-###          <menu_item_check.on_check
-###           control="MediaSoundsEarLocation" />
-###          <menu_item_check.on_click
-###           function="Agent.ToggleHearMediaSoundFromAvatar" />
-###        </menu_item_check>
-###        <menu_item_check
-###          label="Hear Voice from Avatar"
-###          name="Hear Voice from Avatar">
-###          <menu_item_check.on_check
-###           control="VoiceEarLocation" />
-###          <menu_item_check.on_click
-###           function="Agent.ToggleHearVoiceFromAvatar" />
-###          <menu_item_call.on_enable
-###           control="EnableVoiceChat" />
 ###        </menu_item_check>
 ###      <menu_item_separator/>
 ###      <menu_item_check
@@ -547,7 +535,7 @@ name="Dummy Menu">
 ###     name="Help with avatars">
 ###        <menu_item_call.on_click
 ###            function="Advanced.ShowURL"
-###            parameter="https://community.secondlife.com/search/?type=cms_records3&amp;tags=avatar&amp;nodes=30&amp;search_and_or=or"/>
+###            parameter="https://community.secondlife.com/knowledgebase/english/controlling-your-avatars-appearance-r216/"/>
 ###      </menu_item_call>
 ###    </menu>
 ###    <menu
@@ -601,61 +589,6 @@ name="Dummy Menu">
 ###            <menu_item_check.on_click
 ###             function="Floater.Toggle"
 ###             parameter="conversation" />
-###        </menu_item_check>
-###        <menu_item_separator/>
-###        <menu
-###         label="Voice morphing"
-###         name="VoiceMorphing"
-###         visibility_control="VoiceMorphingEnabled">
-###            <menu_item_check
-###             label="No voice morphing"
-###             name="NoVoiceMorphing">
-###                <menu_item_check.on_check
-###                 function="Communicate.VoiceMorphing.NoVoiceMorphing.Check" />
-###                <menu_item_check.on_click
-###                 function="Communicate.VoiceMorphing.NoVoiceMorphing.Click" />
-###            </menu_item_check>
-###            <menu_item_separator/>
-###            <menu_item_check
-###             label="Preview..."
-###             name="Preview">
-###                <menu_item_check.on_check
-###                 function="Floater.Visible"
-###                 parameter="voice_effect" />
-###                <menu_item_check.on_click
-###                 function="Floater.Toggle"
-###                 parameter="voice_effect" />
-###            </menu_item_check>
-###            <menu_item_call
-###             label="Subscribe..."
-###             name="Subscribe">
-###                <menu_item_call.on_click
-###                 function="Communicate.VoiceMorphing.Subscribe" />
-###            </menu_item_call>
-###            <menu_item_call
-###             label="Premium perk..."
-###             name="PremiumPerk">
-###                <menu_item_call.on_click
-###                 function="Communicate.VoiceMorphing.PremiumPerk" />
-###            </menu_item_call>
-###        </menu>
-###        <menu_item_check
-###          label="Hear Media and Sound from Avatar"
-###          name="Hear Media and Sound from Avatar">
-###            <menu_item_check.on_check
-###             control="MediaSoundsEarLocation" />
-###            <menu_item_check.on_click
-###             function="Agent.ToggleHearMediaSoundFromAvatar" />
-###        </menu_item_check>
-###        <menu_item_check
-###          label="Hear Voice from Avatar"
-###          name="Hear Voice from Avatar">
-###            <menu_item_check.on_check
-###             control="VoiceEarLocation" />
-###            <menu_item_check.on_click
-###             function="Agent.ToggleHearVoiceFromAvatar" />
-###            <menu_item_call.on_enable
-###             control="EnableVoiceChat" />
 ###        </menu_item_check>
 ###        <menu_item_separator/>
 ###        <menu_item_check
@@ -818,8 +751,9 @@ name="Dummy Menu">
 ###            <menu_item_call.on_click
 ###             function="Floater.Show"
 ###             parameter="snapshot" />
-###        </menu_item_call>        
-###	<menu_item_call
+###        </menu_item_call>
+###        
+###<menu_item_call
 ###         label="360 snapshot"
 ###         name="Capture 360">
 ###            <menu_item_call.on_click
@@ -1006,7 +940,7 @@ name="Dummy Menu">
 ###           parameter="performance" />
 ###        </menu_item_check>
 ###        <menu_item_separator/>
-###    --><!--    <menu_item_check
+###    <!--    <menu_item_check
 ###         label="Show Navigation Bar"
 ###         name="ShowNavbarNavigationPanel">
 ###           <menu_item_check.on_click
@@ -1026,7 +960,7 @@ name="Dummy Menu">
 ###             function="CheckControl"
 ###             parameter="ShowNavbarFavoritesPanel" />
 ###        </menu_item_check>
-###        <menu_item_separator/>--><!--
+###        <menu_item_separator/>-->
 ###
 ###        <menu
 ###         create_jump_keys="true"
@@ -1044,20 +978,20 @@ name="Dummy Menu">
 ###                 function="World.EnableEnvSettings" 
 ###                 parameter="sunrise" />
 ###            </menu_item_check>
-###            <menu_item_check
-###             label="Midday"
-###             name="Noon"
-###             shortcut="control|shift|Y">
-###                <menu_item_check.on_click
-###                 function="World.EnvSettings"
-###                 parameter="noon" />
-###                <menu_item_check.on_check
-###                 function="World.EnableEnvSettings" 
-###                 parameter="noon" />
-###            </menu_item_check>
-###            <menu_item_check
+###          <menu_item_check
+###           label="Midday"
+###           name="Noon"
+###           shortcut="control|shift|Y">
+###            <menu_item_check.on_click
+###             function="World.EnvSettings"
+###             parameter="noon" />
+###            <menu_item_check.on_check
+###             function="World.EnableEnvSettings"
+###             parameter="noon" />
+###          </menu_item_check>
+###          <menu_item_check
 ###             label="Midday (Legacy)"
-###             name="legacy noon">
+###             name="legacy noon"
 ###             shortcut="control|shift|T">
 ###            <menu_item_check.on_click
 ###             function="World.EnvSettings"
@@ -1090,7 +1024,7 @@ name="Dummy Menu">
 ###            </menu_item_check>
 ###            <menu_item_check
 ###             label="Use Shared Environment"
-###             name="Use Shared Environment">
+###             name="Use Shared Environment"
 ###             shortcut="control|shift|X">
 ###                <menu_item_check.on_click
 ###                 function="World.EnvSettings"
@@ -1100,6 +1034,17 @@ name="Dummy Menu">
 ###                 parameter="region" />
 ###            </menu_item_check>
 ###        <menu_item_separator/>
+###           <menu_item_check
+###             label="Switch to Shared after teleport"
+###             name="Switch to Shared after teleport">
+###                <menu_item_check.on_click
+###                 function="ToggleControl"
+###                 parameter="SwitchToSharedEnvAfterTeleport" />
+###                <menu_item_check.on_check
+###                 function="CheckControl"
+###                 parameter="SwitchToSharedEnvAfterTeleport" />
+###            </menu_item_check>
+###            <menu_item_separator/>
 ###	     	<menu_item_call
 ###	     	 label="My Environments..."
 ###	     	 name="my_environs">
@@ -1127,8 +1072,16 @@ name="Dummy Menu">
 ###	     	 	 	parameter="pause_clouds" />
 ###	     	 	</menu_item_check>
 ###	     	</menu>
-###	     	
-###--><!--   
+###        <menu_item_check
+###          label="Mute/unmute sound"
+###          name="toggle_sound"
+###          shortcut="control|alt|shift|M">
+###          <menu_item_check.on_click
+###           function="World.ToggleMasterAudio"/>
+###          <menu_item_check.on_check
+###           function="World.IsMasterAudioMuted"/>
+###        </menu_item_check>
+###<!--   
 ###	    <menu
 ###	     create_jump_keys="true"
 ###	     label="Environment Editor"
@@ -1197,6 +1150,7 @@ name="Dummy Menu">
 ###</menu_item_call>
 ###</menu>
 ###</menu>
+###-->    
 ###    
 ###    </menu>
 ###    <menu
@@ -1462,6 +1416,24 @@ name="Dummy Menu">
 ###               function="EditableSelected" />
 ###          </menu_item_call>
 ###          <menu_item_call
+###             label="Recompile Scripts (Lua)"
+###             name="Lua">
+###            <menu_item_call.on_click
+###               function="Tools.SelectedScriptAction"
+###               parameter="compile lua" />
+###            <menu_item_call.on_enable
+###               function="EditableSelectedLua" />
+###          </menu_item_call>
+###          <menu_item_call
+###             label="Recompile Scripts (LSL on Luau)"
+###             name="LSL on Luau">
+###            <menu_item_call.on_click
+###               function="Tools.SelectedScriptAction"
+###               parameter="compile lsl-luau" />
+###            <menu_item_call.on_enable
+###               function="EditableSelectedLua" />
+###          </menu_item_call>
+###          <menu_item_call
 ###             label="Reset Scripts"
 ###             name="Reset Scripts">
 ###            <menu_item_call.on_click
@@ -1480,14 +1452,25 @@ name="Dummy Menu">
 ###               function="EditableSelected" />
 ###          </menu_item_call>
 ###          <menu_item_call
-###             label="Set Scripts to Not Running"
-###             name="Set Scripts to Not Running">
+###              label="Set Scripts to Not Running"
+###              name="Set Scripts to Not Running">
 ###            <menu_item_call.on_click
-###               function="Tools.SelectedScriptAction"
-###               parameter="stop" />
+###                function="Tools.SelectedScriptAction"
+###                parameter="stop" />
 ###            <menu_item_call.on_enable
-###               function="EditableSelected" />
+###                function="EditableSelected" />
 ###          </menu_item_call>
+###          <menu_item_separator/>
+###          <menu_item_check
+###              label="Script Editor Server"
+###              name="Script Editor Server">
+###            <menu_item_check.on_check
+###                function="Tools.CheckScriptEditorServer" />
+###            <menu_item_check.on_click
+###                function="Tools.ToggleScriptEditorServer" />
+###            <menu_item_check.on_enable
+###                function="Tools.EnableScriptEditorServer" />
+###          </menu_item_check>
 ###        </menu>
 ###
 ###      <menu
@@ -1571,7 +1554,7 @@ name="Dummy Menu">
 ###                     function="Tools.SelectOnlyMovableObjects"
 ###                     parameter="movable" />
 ###                </menu_item_check>
-###                <menu_item_check
+###            <menu_item_check
 ###                 label="Select Invisible Objects"
 ###                 name="Select Invisible Objects">
 ###                    <menu_item_check.on_check
@@ -1678,6 +1661,64 @@ name="Dummy Menu">
 ###             parameter="RenderDisablePostProcessing" />
 ###          </menu_item_check>
 ###          
+###
+###          <menu
+###           create_jump_keys="true"
+###           label="Selection level of detail"
+###           name="Selection level of detail"
+###           tear_off="true">
+###
+###              <menu_item_check
+###                label="Default"
+###                name="Default lod setting">
+###                  <menu_item_check.on_check
+###                   function="Tools.ToolsCheckSelectionLODMode"
+###                   parameter="default" />
+###                  <menu_item_check.on_click
+###                   function="Tools.SelectionLODMode"
+###                   parameter="default" />
+###              </menu_item_check>
+###              <menu_item_check
+###                label="High"
+###                name="High lod setting">
+###                  <menu_item_check.on_check
+###                   function="Tools.ToolsCheckSelectionLODMode"
+###                   parameter="high" />
+###                  <menu_item_check.on_click
+###                   function="Tools.SelectionLODMode"
+###                   parameter="high" />
+###              </menu_item_check>
+###              <menu_item_check
+###                label="Medium"
+###                name="Medium lod setting">
+###                  <menu_item_check.on_check
+###                   function="Tools.ToolsCheckSelectionLODMode"
+###                   parameter="medium" />
+###                  <menu_item_check.on_click
+###                   function="Tools.SelectionLODMode"
+###                   parameter="medium" />
+###              </menu_item_check>
+###              <menu_item_check
+###                label="Low"
+###                name="Low lod setting">
+###                  <menu_item_check.on_check
+###                   function="Tools.ToolsCheckSelectionLODMode"
+###                   parameter="low" />
+###                  <menu_item_check.on_click
+###                   function="Tools.SelectionLODMode"
+###                   parameter="low" />
+###              </menu_item_check>
+###              <menu_item_check
+###                label="Lowest"
+###                name="Lowest lod setting">
+###                  <menu_item_check.on_check
+###                   function="Tools.ToolsCheckSelectionLODMode"
+###                   parameter="lowest" />
+###                  <menu_item_check.on_click
+###                   function="Tools.SelectionLODMode"
+###                   parameter="lowest" />
+###              </menu_item_check>
+###          </menu>
 ###        <menu_item_separator/>
 ###
 ###                <menu_item_check
@@ -1736,7 +1777,7 @@ name="Dummy Menu">
 ###         name="Upload"
 ###         tear_off="true">
 ###            <menu_item_call
-###             label="Image (L$[COST])..."
+###             label="Image..."
 ###             layout="topleft"
 ###             name="Upload Image"
 ###             shortcut="control|U">
@@ -1788,7 +1829,7 @@ name="Dummy Menu">
 ###            <menu_item_call.on_visible
 ###            function="File.VisibleUploadModel"/>
 ###            </menu_item_call>
-###	   <menu_item_call
+###          <menu_item_call
 ###           label="Material..."
 ###           layout="topleft"
 ###           name="Upload Material">
@@ -1811,7 +1852,7 @@ name="Dummy Menu">
 ###            </menu_item_call>
 ###        </menu>
 ###
-###        <menu_item_separator/>
+###      <menu_item_separator/>
 ###        <menu_item_call
 ###         enabled="false"
 ###         label="Undo"
@@ -1842,22 +1883,13 @@ name="Dummy Menu">
 ###     label="Help"
 ###     name="Help"
 ###     tear_off="true">
-###        <menu_item_call
-###         label="Guidebook"
-###         name="How To"
-###         shortcut="F1">
-###            <menu_item_call.on_click
-###             function="Help.ToggleHowTo"
-###             parameter="" />
-###        </menu_item_call>
-###--><!---        <menu_item_call
+###<!--        <menu_item_call
 ###         label="Tutorial"
 ###         name="Tutorial">
 ###            <menu_item_call.on_click
 ###             function="Floater.Show"
 ###             parameter="hud" />
-###        </menu_item_call>->
-###		<menu_item_separator/>
+###        </menu_item_call>-->
 ###        <menu_item_call
 ###             label="Knowledge Base"
 ###             name="Knowledge Base">
@@ -2080,16 +2112,6 @@ name="Dummy Menu">
 ###                 parameter="HideSelectedObjects" />
 ###            </menu_item_check>
 ###            <menu_item_check
-###             label="Highlight Transparent"
-###             name="Highlight Transparent"
-###             shortcut="control|alt|T"
-###             use_mac_ctrl="true">
-###                <menu_item_check.on_check
-###                 function="View.CheckHighlightTransparent" />
-###                <menu_item_check.on_click
-###                 function="View.HighlightTransparent" />
-###            </menu_item_check>
-###            <menu_item_check
 ###             label="Show Mouselook Crosshairs"
 ###             name="ShowCrosshairs">
 ###                <menu_item_check.on_check
@@ -2099,7 +2121,7 @@ name="Dummy Menu">
 ###                 function="ToggleControl"
 ###                 parameter="ShowCrosshairs" />
 ###            </menu_item_check>
-###  --><!-- <menu
+###  <!-- <menu
 ###         create_jump_keys="true"
 ###         label="Hover Tips"
 ###         name="Hover Tips"
@@ -2138,7 +2160,7 @@ name="Dummy Menu">
 ###                <menu_item_check.on_enable
 ###                 function="View.CheckShowHoverTips" />
 ###            </menu_item_check>
-###        </menu>->
+###        </menu>-->
 ###
 ###        </menu>
 ###
@@ -2158,7 +2180,7 @@ name="Dummy Menu">
 ###                 function="Advanced.ToggleRenderType"
 ###                 parameter="simple" />
 ###            </menu_item_check>
-###            <menu_item_check
+###          <menu_item_check
 ###             label="Materials"
 ###             name="Rendering Type Materials">
 ###            <menu_item_check.on_check
@@ -2283,17 +2305,6 @@ name="Dummy Menu">
 ###                <menu_item_check.on_click
 ###                 function="Advanced.ToggleRenderType"
 ###                 parameter="water" />
-###            </menu_item_check>
-###            <menu_item_check
-###             label="Ground"
-###             name="Rendering Type Ground"
-###             shortcut="control|alt|shift|8">
-###                <menu_item_check.on_check
-###                 function="Advanced.CheckRenderType"
-###                 parameter="ground" />
-###                <menu_item_check.on_click
-###                 function="Advanced.ToggleRenderType"
-###                 parameter="ground" />
 ###            </menu_item_check>
 ###            <menu_item_check
 ###             label="Volume"
@@ -2571,30 +2582,7 @@ name="Dummy Menu">
 ###                 function="View.EnableLastChatter" />
 ###            </menu_item_call>
 ###
-###            <menu_item_separator/>
-
-###            <menu_item_call
-###             label="Zoom In"
-###             name="Zoom In"
-###             shortcut="control|0">
-###                <menu_item_call.on_click
-###                 function="View.ZoomIn" />
-###            </menu_item_call>
-###            <menu_item_call
-###             label="Zoom Default"
-###             name="Zoom Default"
-###             shortcut="control|9">
-###                <menu_item_call.on_click
-###                 function="View.ZoomDefault" />
-###            </menu_item_call>
-###            <menu_item_call
-###             label="Zoom Out"
-###             name="Zoom Out"
-###             shortcut="control|8">
-###                <menu_item_call.on_click
-###                 function="View.ZoomOut" />
-###            </menu_item_call>
-###        </menu> --><!--Shortcuts--><!--
+###        </menu> <!--Shortcuts-->
 ###
 ###        <menu_item_separator/>
 ###
@@ -2685,18 +2673,6 @@ name="Dummy Menu">
 ###                 parameter="fast timers" />
 ###            </menu_item_check>
 ###            <menu_item_check
-###             label="Memory"
-###             name="Memory"
-###             shortcut="control|shift|0"
-###             use_mac_ctrl="true">
-###                <menu_item_check.on_check
-###                 function="Advanced.CheckConsole"
-###                 parameter="memory view" />
-###                <menu_item_check.on_click
-###                 function="Advanced.ToggleConsole"
-###                 parameter="memory view" />
-###            </menu_item_check>
-###            <menu_item_check
 ###               label="Scene Statistics"
 ###               name="Scene Statistics">
 ###              <menu_item_check.on_check
@@ -2716,20 +2692,6 @@ name="Dummy Menu">
 ###               function="Advanced.ToggleConsole"
 ###               parameter="scene monitor" />
 ###            </menu_item_check>
-###            <menu_item_call
-###              enabled="false"
-###              visible="false"
-###              label="Texture Fetch Debug Console"
-###              name="Texture Fetch Debug Console">
-###              <menu_item_call.on_click
-###                function="Floater.Show"
-###                parameter="tex_fetch_debugger" />
-###              <on_enable
-###                function="Develop.SetTexFetchDebugger" />
-###              <on_visible
-###                function="Develop.SetTexFetchDebugger" />
-###            </menu_item_call>
-###          
 ###            <menu_item_separator/>
 ###
 ###            <menu_item_call
@@ -2961,7 +2923,7 @@ name="Dummy Menu">
 ###                 function="Advanced.ForceErrorOSException" />
 ###                <menu_item_call.on_visible
 ###                 function="Advanced.EnableErrorOSException" />
-###            </menu_item_call>            
+###            </menu_item_call>
 ###            <menu_item_call
 ###             label="Force a Crash in a Coroutine"
 ###             name="Force a Crash in a Coroutine">
@@ -2981,8 +2943,8 @@ name="Dummy Menu">
 ###                 function="Advanced.ForceErrorWorkQueueCrash" />
 ###            </menu_item_call>
 ###            <menu_item_call
-###             label="Force a Crash in a Thread"
-###             name="Force a Crash in a Thread">
+###             label="Force an LLError Crash in a Thread"
+###             name="Force an LLError Crash in a Thread">
 ###                <menu_item_call.on_click
 ###                 function="Advanced.ForceErrorThreadCrash" />
 ###            </menu_item_call>
@@ -3006,7 +2968,7 @@ name="Dummy Menu">
 ###                parameter="mem_leaking" />
 ###               </menu_item_call>
 ###        </menu>
-###        <menu
+###      <menu
 ###         create_jump_keys="true"
 ###         label="GLTF"
 ###         name="GLTF"
@@ -3014,8 +2976,8 @@ name="Dummy Menu">
 ###        <menu_item_call
 ###         label="Open..."
 ###         name="Open...">
-###            --><!--<menu_item_call.on_enable
-###             function="EnableGLTF"/>--><!--
+###            <!--<menu_item_call.on_enable
+###             function="EnableGLTF"/>-->
 ###          <menu_item_call.on_click
 ###           function="Advanced.ClickGLTFOpen" />
 ###        </menu_item_call>
@@ -3045,6 +3007,40 @@ name="Dummy Menu">
 ###        </menu_item_call>
 ###      </menu>
 ###      <menu
+###         create_jump_keys="true"
+###         label="Video"
+###         name="Video"
+###         tear_off="true">
+###        <menu_item_call
+###         label="1080x1920"
+###         name="1080x1920">
+###          <menu_item_call.on_click
+###           function="Advanced.ClickResizeWindow"
+###            parameter="1080x1920"/>
+###        </menu_item_call>
+###        <menu_item_call
+###         label="1920x1080"
+###         name="1920x1080">
+###          <menu_item_call.on_click
+###           function="Advanced.ClickResizeWindow"
+###            parameter="1920x1080"/>
+###        </menu_item_call>
+###        <menu_item_call
+###         label="1280x720"
+###         name="1280x720">
+###          <menu_item_call.on_click
+###           function="Advanced.ClickResizeWindow"
+###            parameter="1280x720"/>
+###          </menu_item_call>
+###        <menu_item_call
+###          label="720x1280"
+###         name="720x1280">
+###          <menu_item_call.on_click
+###           function="Advanced.ClickResizeWindow"
+###            parameter="720x1280"/>
+###          </menu_item_call>
+###      </menu>
+###        <menu
 ###         create_jump_keys="true"
 ###         label="Render Tests"
 ###         name="Render Tests"
@@ -3078,15 +3074,6 @@ name="Dummy Menu">
 ###                 function="Advanced.TogglePeriodicSlowFrame"
 ###                 parameter="points" />
 ###            </menu_item_check>
-###            <menu_item_check
-###             label="Frame Test"
-###             name="Frame Test">
-###                <menu_item_check.on_check
-###                 function="Advanced.CheckFrameTest"
-###                 parameter="Frame Test" />
-###                <menu_item_check.on_click
-###                 function="Advanced.ToggleFrameTest" />
-###            </menu_item_check>
 ###          <menu_item_call
 ###             label="Frame Profile"
 ###             name="Frame Profile">
@@ -3104,12 +3091,6 @@ name="Dummy Menu">
 ###           name="HDRI Preview">
 ###            <menu_item_call.on_click
 ###             function="Advanced.ClickHDRIPreview" />
-###          </menu_item_call>
-###          <menu_item_call
-###           label="GLTF Scene Preview"
-###           name="GLTF Scene Preview">
-###            <menu_item_call.on_click
-###             function="Advanced.ClickGLTFScenePreview" />
 ###          </menu_item_call>
 ###        </menu>
 ###      <menu
@@ -3278,24 +3259,24 @@ name="Dummy Menu">
 ###           parameter="lights" />
 ###        </menu_item_check>
 ###        <menu_item_check
-###         label="Build Queue"
-###         name="Build Queue">
+###         label="Reflection Probes"
+###         name="Reflection Probes">
 ###          <menu_item_check.on_check
 ###           function="Advanced.CheckInfoDisplay"
-###           parameter="build queue" />
+###           parameter="reflection probes" />
 ###          <menu_item_check.on_click
 ###           function="Advanced.ToggleInfoDisplay"
-###           parameter="build queue" />
+###           parameter="reflection probes" />
 ###        </menu_item_check>
 ###        <menu_item_check
-###         label="Lights"
-###         name="Lights">
+###         label="Probe Updates"
+###         name="Probe Updates">
 ###          <menu_item_check.on_check
 ###           function="Advanced.CheckInfoDisplay"
-###           parameter="lights" />
+###           parameter="probe updates" />
 ###          <menu_item_check.on_click
 ###           function="Advanced.ToggleInfoDisplay"
-###           parameter="lights" />
+###           parameter="probe updates" />
 ###        </menu_item_check>
 ###        <menu_item_check
 ###         label="Particles"
@@ -3462,23 +3443,9 @@ name="Dummy Menu">
 ###                <menu_item_check.on_click
 ###                 function="ToggleControl"
 ###                 parameter="UseOcclusion" />
-###                <menu_item_check.on_enable
-###                 function="Advanced.EnableObjectObjectOcclusion" />
 ###            </menu_item_check>
 ###          <menu_item_separator />
 ###
-###          <menu_item_check
-###                       label="Advanced Lighting Model"
-###                       name="Advanced Lighting Model">
-###            <menu_item_check.on_check
-###             function="CheckControl"
-###             parameter="RenderDeferred" />
-###            <menu_item_check.on_click
-###             function="ToggleControl"
-###             parameter="RenderDeferred" />
-###            <menu_item_check.on_enable
-###                 function="Advanced.EnableRenderDeferred" />
-###          </menu_item_check>
 ###          <menu_item_check
 ###                       label="   Shadows from Sun/Moon/Projectors"
 ###                       name="Shadows from Sun/Moon/Projectors">
@@ -3506,14 +3473,14 @@ name="Dummy Menu">
 ###          <menu_item_separator />
 ###
 ###          <menu_item_check
-###             label="Debug GL"
+###             label="Start Debug GL on next run"
 ###             name="Debug GL">
 ###                <menu_item_check.on_check
 ###                 function="CheckControl"
-###                 parameter="RenderDebugGL" />
+###                 parameter="RenderDebugGLSession" />
 ###                <menu_item_check.on_click
 ###                 function="ToggleControl"
-###                 parameter="RenderDebugGL" />
+###                 parameter="RenderDebugGLSession" />
 ###            </menu_item_check>
 ###            <menu_item_check
 ###             label="Debug Pipeline"
@@ -3566,36 +3533,6 @@ name="Dummy Menu">
 ###                 parameter="TextureDisable" />
 ###            </menu_item_check>
 ###            <menu_item_check
-###              label="Disable Ambient"
-###             name="Disable Ambient">
-###            <menu_item_check.on_check
-###             function="CheckControl"
-###             parameter="AmbientDisable" />
-###            <menu_item_check.on_click
-###             function="ToggleShaderControl"
-###             parameter="AmbientDisable" />
-###          </menu_item_check>
-###          <menu_item_check
-###             label="Disable Sunlight"
-###             name="Disable Sunlight">
-###            <menu_item_check.on_check
-###             function="CheckControl"
-###             parameter="SunlightDisable" />
-###            <menu_item_check.on_click
-###             function="ToggleShaderControl"
-###             parameter="SunlightDisable" />
-###          </menu_item_check>
-###          <menu_item_check
-###             label="Disable Local Lights"
-###             name="Disable Local Lights">
-###            <menu_item_check.on_check
-###             function="CheckControl"
-###             parameter="LocalLightDisable" />
-###            <menu_item_check.on_click
-###             function="ToggleShaderControl"
-###             parameter="LocalLightDisable" />
-###          </menu_item_check>
-###            <menu_item_check
 ###              label="Full Res Textures"
 ###             name="Rull Res Textures">
 ###                <menu_item_check.on_check
@@ -3645,17 +3582,27 @@ name="Dummy Menu">
 ###                 function="ToggleControl"
 ###                 parameter="CollectFontVertexBuffers" />
 ###            </menu_item_check>
-###          <menu_item_separator />
 ###            <menu_item_check
-###             label="Hover Glow Objects"
-###             name="Hover Glow Objects">
+###             label="Collect UI Image Vertex Buffers"
+###             name="Collect UI Image Vertex Buffers">
 ###                <menu_item_check.on_check
 ###                 function="CheckControl"
-###                 parameter="RenderHoverGlowEnable" />
+###                 parameter="CollectUIImageVertexBuffers" />
 ###                <menu_item_check.on_click
 ###                 function="ToggleControl"
-###                 parameter="RenderHoverGlowEnable" />
+###                 parameter="CollectUIImageVertexBuffers" />
 ###            </menu_item_check>
+###          <menu_item_separator />
+###          <menu_item_check
+###             label="Enable Shader Cache"
+###             name="Enable Shader Cache">
+###            <menu_item_check.on_check
+###             function="CheckControl"
+###             parameter="RenderShaderCacheEnabled" />
+###            <menu_item_check.on_click
+###             function="ToggleShaderControl"
+###             parameter="RenderShaderCacheEnabled" />
+###          </menu_item_check>
 ###          <menu_item_call
 ###            enabled="true"
 ###            label="Clear Shader Cache"
@@ -3664,7 +3611,6 @@ name="Dummy Menu">
 ###             function="Advanced.ClearShaderCache" />
 ###          </menu_item_call>
 ###          <menu_item_separator />
-###          
 ###          <menu_item_call
 ###            enabled="true"
 ###            label="Clear Cache Immediately"
@@ -3884,7 +3830,7 @@ name="Dummy Menu">
 ###                 function="Advanced.ResetInterestLists" />
 ###			</menu_item_call>
 ###		</menu>
-###        --><!-- terrain --><!--
+###        <!-- terrain -->
 ###        <menu
 ###         create_jump_keys="true"
 ###         label="Terrain"
@@ -3908,7 +3854,6 @@ name="Dummy Menu">
 ###              <menu_item_call.on_click
 ###               function="Advanced.TerrainCreateLocalPaintMap" />
 ###            </menu_item_call>
-###
 ###            <menu_item_call
 ###              enabled="true"
 ###              label="Delete Local Paintmap"
@@ -3930,7 +3875,7 @@ name="Dummy Menu">
 ###             function="Advanced.WebContentTest"
 ###             parameter="http://duckduckgo.com"/>
 ###          </menu_item_call>
-###          <menu_item_call
+###            <menu_item_call
 ###             label="Inventory Thumbnails Helper"
 ###             name="Inventory Thumbnails Helper"
 ###				shortcut="control|alt|shift|X">
@@ -3956,7 +3901,6 @@ name="Dummy Menu">
 ###           name="Dump Font Textures">
 ###            <menu_item_call.on_click
 ###             function="Develop.Fonts.DumpTextures" />
-###             parameter="https://cryptic-ridge-1632.herokuapp.com/"/>
 ###          </menu_item_call>
 ###          <menu_item_call
 ###             label="Dump SelectMgr"
@@ -4402,7 +4346,7 @@ name="Dummy Menu">
 ###                 function="Advanced.ToggleInfoDisplay"
 ###                 parameter="impostors" />
 ###            </menu_item_check>
-###            --><!-- Appears not to exist anymore
+###            <!-- Appears not to exist anymore
 ###            <menu_item_check
 ###             label="Debug Rotation"
 ###             name="Debug Rotation">
@@ -4412,7 +4356,7 @@ name="Dummy Menu">
 ###                <menu_item_check.on_click
 ###                 function="ToggleControl"
 ###                 parameter="DebugAvatarRotation" />
-###            </menu_item_check> ->
+###            </menu_item_check> -->
 ###            <menu_item_call
 ###             label="Dump Attachments"
 ###             name="Dump Attachments">
@@ -4443,7 +4387,6 @@ name="Dummy Menu">
 ###            <menu_item_call.on_click
 ###             function="Advanced.CompressImage" />
 ###        </menu_item_call>
-###
 ###      <menu_item_call
 ###       label="Compress File Test"
 ###       name="Compress File Test">
@@ -4884,7 +4827,7 @@ name="Dummy Menu">
 ###                    <menu_item_call.on_click
 ###                     function="PromptShowURL"
 ###                     name="PublicIssueTracker_url"
-###                     parameter="WebLaunchPublicIssue,http://jira.secondlife.com" />
+###                     parameter="WebLaunchPublicIssue,https://feedback.secondlife.com/" />
 ###                </menu_item_call>
 ###                <menu_item_call
 ###                 label="Public Issue Tracker Help"
@@ -4925,5 +4868,5 @@ name="Dummy Menu">
 ###        </menu>
 ###    </menu>
 ###</menu_bar>
-###
+######
 -->

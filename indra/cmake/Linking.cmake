@@ -79,6 +79,7 @@ else()
   find_library(COREGRAPHICS_LIBRARY CoreGraphics)
   find_library(AUDIOTOOLBOX_LIBRARY AudioToolbox)
   find_library(AVFOUNDATION_LIBRARY AVfoundation) # for microphone permission request
+  find_library(UNIFORMTYPEIDENTIFIERS_LIBRARY UniformTypeIdentifiers)
 
   target_link_libraries( ll::oslibraries INTERFACE
           ${COCOA_LIBRARY}
@@ -90,6 +91,7 @@ else()
           ${AUDIOTOOLBOX_LIBRARY}
           ${COREGRAPHICS_LIBRARY}
           ${AVFOUNDATION_LIBRARY}
+          ${UNIFORMTYPEIDENTIFIERS_LIBRARY}
           )
 endif()
 
