@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<floater
+ legacy_header_height="18"
+ can_resize="false"
+ height="232"
+ layout="topleft"
+ name="wind"
+ save_rect="true"
+ title="WIND"
+ width="170">
+    <floater.string
+     name="speed">
+        [MS] m/s  ([KNOTS] kn)
+    </floater.string>
+    <floater.string
+     name="direction_from">
+        From [DEGREES]° ([POINT])
+    </floater.string>
+    <floater.string
+     name="calm">
+        Calm
+    </floater.string>
+    <floater.string
+     name="no_wind_data">
+        No wind data
+    </floater.string>
+    <!-- Sixteen compass points, clockwise from north -->
+    <floater.string
+     name="compass_points">
+        N,NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW
+    </floater.string>
+    <!-- Sits in the title bar next to the minimize button, placed from code -->
+    <button
+     control_name="KokuaWindPinned"
+     follows="right|top"
+     height="16"
+     image_selected="Icon_Pin_On"
+     image_unselected="Icon_Pin_Off"
+     is_toggle="true"
+     label=""
+     layout="topleft"
+     left="100"
+     name="pin_btn"
+     tab_stop="false"
+     tool_tip="Keep this window in front of the other windows"
+     top="0"
+     width="16" />
+    <text
+     follows="left|top"
+     halign="center"
+     height="14"
+     layout="topleft"
+     left="5"
+     name="north_label"
+     top="22"
+     width="160">
+        N
+    </text>
+    <view
+     follows="left|top"
+     height="120"
+     layout="topleft"
+     left="25"
+     top="36"
+     mouse_opaque="false"
+     name="arrow_area"
+     width="120" />
+    <text
+     follows="left|top"
+     halign="center"
+     height="16"
+     layout="topleft"
+     left="5"
+     name="speed_text"
+     top_pad="6"
+     width="160" />
+    <text
+     follows="left|top"
+     halign="center"
+     height="16"
+     layout="topleft"
+     left="5"
+     name="direction_text"
+     top_pad="2"
+     width="160" />
+    <check_box
+     control_name="KokuaWindShowApparent"
+     follows="left|top"
+     height="16"
+     label="Apparent wind"
+     layout="topleft"
+     left="10"
+     name="apparent_check"
+     tool_tip="Show the wind as felt while moving: the wind minus your own velocity"
+     top_pad="6"
+     width="150" />
+</floater>
