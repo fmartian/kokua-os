@@ -354,6 +354,11 @@ are allowed.
 	<!-- Indicates that an avatar name or other similar datum is being retrieved. General usage. -->
 	<string name="RetrievingData">Retrieving...</string>
 
+	<!-- ALT-SHIFT click on the world -->
+	<string name="CameraFocusCoordinates">Camera focus: [SLURL] ([DISTANCE] m away)</string>
+	<string name="CameraFocusLabelPosition">[X], [Y], [Z]</string>
+	<string name="CameraFocusLabelDistance">[DISTANCE] m</string>
+
 	<string name="ReleaseNotes">Release Notes</string>
 	<!-- Always mark translate="false" for strings that are nothing but URLs, as they don't need translation. -->
 	<string name="RELEASE_NOTES_BASE_URL" translate="false">http://kokuaviewer.org.uk/releasenotes/Kokua:Release_Notes/</string>

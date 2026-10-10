@@ -87,6 +87,7 @@ LLHUDText::LLHUDText(const U8 type) :
     mFadeDistance = 8.f;
     mFadeRange = 4.f;
     mZCompare = true;
+    mIgnoreDepth = false;
     mOffscreen = false;
     mRadius = 0.1f;
     LLPointer<LLHUDText> ptr(this);
@@ -101,7 +102,7 @@ void LLHUDText::render()
 {
     if (!mOnHUDAttachment && sDisplayText)
     {
-        LLGLDepthTest gls_depth(GL_TRUE, GL_FALSE);
+        LLGLDepthTest gls_depth(mIgnoreDepth ? GL_FALSE : GL_TRUE, GL_FALSE);
         //LLGLDisable gls_stencil(GL_STENCIL_TEST);
         renderText();
     }
