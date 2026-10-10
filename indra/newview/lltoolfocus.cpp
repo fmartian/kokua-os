@@ -336,12 +336,24 @@ bool LLToolCamera::handleMouseUp(S32 x, S32 y, MASK mask)
 }
 
 static bool right_hold_mouse_walk = false;//<FS:JL> Mouse movement by Singularity
+// A trackpad can't hold both buttons, so Ctrl walks as well while steering
+static bool ctrl_hold_mouse_walk = false;
 
 bool LLToolCamera::handleHover(S32 x, S32 y, MASK mask)
 {
     static LLCachedControl<F32> camera_mouse_speed_multiplier(gSavedSettings, "CameraMouseSpeedMultiplier", 1.0f);
     //<FS:JL> Mouse movement by Singularity
-    if (right_hold_mouse_walk)
+    static LLCachedControl<bool> mouse_movement(gSavedSettings, "KokuaSingularityMouseMovement");
+    bool ctrl_walk = mMouseSteering && mouse_movement && ((mask & (MASK_CONTROL | MASK_SHIFT)) == MASK_CONTROL);
+    if (ctrl_walk != ctrl_hold_mouse_walk)
+    {
+        ctrl_hold_mouse_walk = ctrl_walk;
+        if (!right_hold_mouse_walk)
+        {
+            agent_push_forward(ctrl_walk ? KEYSTATE_DOWN : KEYSTATE_UP);
+        }
+    }
+    if (right_hold_mouse_walk || ctrl_hold_mouse_walk)
     {
         agent_push_forward(KEYSTATE_LEVEL);
     }
@@ -497,10 +509,11 @@ bool LLToolCamera::handleRightMouseDown(S32 x, S32 y, MASK mask)
 
 bool LLToolCamera::handleRightMouseUp(S32 x, S32 y, MASK mask)
 {
-    if (mMouseSteering || right_hold_mouse_walk)
+    if (mMouseSteering || right_hold_mouse_walk || ctrl_hold_mouse_walk)
     {
         agent_push_forward(KEYSTATE_UP);
         right_hold_mouse_walk = false;
+        ctrl_hold_mouse_walk = false;
         return true;
     }
     else
