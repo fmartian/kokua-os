@@ -316,6 +316,8 @@
                 function="Object.ReportAbuse" />
             <pie_slice.on_enable
                 function="Object.EnableReportAbuse" />
+            <pie_slice.on_visible
+                function="Object.EnableReportAbuse" />
         </pie_slice>
         <pie_menu
             name="ExportMenu"

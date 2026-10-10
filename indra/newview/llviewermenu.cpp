@@ -3425,6 +3425,15 @@ class LLObjectEnableReportAbuse : public view_listener_t
     bool handleEvent(const LLSD& userdata)
     {
         bool new_value = LLSelectMgr::getInstance()->getSelection()->getObjectCount() != 0;
+        if (new_value)
+        {
+            // There's nothing to report about your own objects. Group owned ones may be someone else's.
+            LLViewerObject* objectp = LLSelectMgr::getInstance()->getSelection()->getPrimaryObject();
+            if (objectp && objectp->permYouOwner() && !objectp->permGroupOwner())
+            {
+                new_value = false;
+            }
+        }
         return new_value;
     }
 };
