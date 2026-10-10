@@ -279,7 +279,9 @@ void PieMenu::draw()
     LLColor4 selectedColor = LLUIColorTable::instance().getColor("PieMenuSelectedColor");
     LLColor4 textColor = LLUIColorTable::instance().getColor("PieMenuTextColor");
     LLColor4 bgColor = LLUIColorTable::instance().getColor("PieMenuBgColor");
-    LLColor4 borderColor = bgColor % 0.3f;
+    // even background up to the rim, like Imprudence, so the labels in the outer half
+    // keep their contrast. "Override pie colors" with PieMenuFade can still fade it.
+    LLColor4 borderColor = bgColor;
 
     // if the user wants their own colors, apply them here
     static LLCachedControl<bool> sOverridePieColors(gSavedSettings, "OverridePieColors", false);
