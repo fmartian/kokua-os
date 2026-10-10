@@ -796,6 +796,7 @@ set(viewer_SOURCE_FILES
 	NACLfloaterexploresounds.cpp
 	  kokuachatbar.cpp
 	  kokuafloaterbulkrename.cpp
+	  kokuafontpreview.cpp
 	  kokuafloaterstreaminfo.cpp
     )
 
@@ -1515,6 +1516,7 @@ set(viewer_HEADER_FILES
 	NACLfloaterexploresounds.h
 	  kokuachatbar.h
 	  kokuafloaterbulkrename.h
+	  kokuafontpreview.h
 	  kokuafloaterstreaminfo.h
     )
     
