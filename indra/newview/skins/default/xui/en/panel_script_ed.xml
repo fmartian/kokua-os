@@ -262,9 +262,9 @@
     label_selected="Save"
     layout="topleft"
     top_pad="-23"
-     right="487"
+     right="490"
     name="Save_btn"
-    width="81" />
+    width="61" />
   <button
     enabled="false"
     follows="right|bottom"
@@ -272,17 +272,17 @@
     label="Edit..."
     layout="topleft"
     top_pad="-23"
-     right="400"
+     right="424"
     name="Edit_btn"
-    width="81" />
+    width="61" />
   <combo_box
     name="compile_target"
     follows="right|bottom"
     height="23"
     layout="topleft"
     top_pad="-23"
-     right="300"
-    width="140">
+     right="358"
+    width="220">
     <combo_box.item
       label="LSL on Mono (recommended)"
       name="compile_target_mono"
