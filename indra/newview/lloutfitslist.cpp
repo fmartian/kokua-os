@@ -568,6 +568,9 @@ void LLOutfitsList::revealTab(LLOutfitAccordionCtrlTab* tab)
     LLRect screen_rect;
     tab->localRectToScreen(hint_rect, &screen_rect);
     static_cast<LLView*>(mAccordion)->notifyParent(LLSD().with("scrollToShowRect", screen_rect.getValue()));
+
+    // That only moves the scrollbar, the tabs follow it when they are arranged
+    mAccordion->arrange();
 }
 
 void LLOutfitsList::onChangeOutfitSelection(LLWearableItemsList* list, const LLUUID& category_id)
