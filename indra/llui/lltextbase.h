@@ -354,7 +354,8 @@ public:
                                 bg_highlighted_color,
 // [/SL:KB]
                                 text_selected_color,
-                                bg_selected_color;
+                                bg_selected_color,
+                                link_color;
 
         Optional<bool>          bg_visible,
                                 border_visible,
@@ -810,6 +811,8 @@ protected:
     bool                        mAlwaysShowIcons;
 
     bool                        mSkipLinkUnderline;
+    bool                        mHasLinkColor;
+    LLUIColor                   mLinkColor;
 
     // support widgets
     LLHandle<LLContextMenu>     mPopupMenuHandle;

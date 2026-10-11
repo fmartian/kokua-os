@@ -1,10 +1,10 @@
 /**
- * @file llfloateraddpaymentmethod.h
- * @brief LLFloaterAddPaymentMethod class definition
+ * @file llfloatermaturitydialog.h
+ * @brief LLFloaterMaturityDialog class definition
  *
- * $LicenseInfo:firstyear=2020&license=viewerlgpl$
+ * $LicenseInfo:firstyear=2026&license=viewerlgpl$
  * Second Life Viewer Source Code
- * Copyright (C) 2020, Linden Research, Inc.
+ * Copyright (C) 2026, Linden Research, Inc.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,29 +24,24 @@
  * $/LicenseInfo$
  */
 
-#ifndef LL_FLOATER_ADDPAYMENTMETHOD_H
-#define LL_FLOATER_ADDPAYMENTMETHOD_H
+#pragma once
 
-#include "llfloater.h"
+#include "llmodaldialog.h"
 
-class LLFloaterAddPaymentMethod:
-    public LLFloater
+class LLFloaterMaturityDialog : public LLModalDialog
 {
     friend class LLFloaterReg;
 public:
     bool postBuild() override;
     void onOpen(const LLSD& key) override;
+    void draw() override;
 
 private:
-    LLFloaterAddPaymentMethod(const LLSD& key);
+    LLFloaterMaturityDialog(const LLSD& key);
+    ~LLFloaterMaturityDialog() = default;
 
-    void centerOnScreen();
+    void onContinue();
+    void onCancel();
 
-    void onCloseBtn();
-    void onContinueBtn();
-
-    /*virtual*/ ~LLFloaterAddPaymentMethod();
-
+    U8 mRegionAccess = SIM_ACCESS_ADULT;
 };
-
-#endif

@@ -10,6 +10,9 @@ include(Linking)
 include(Boost)
 include(bugsplat)
 include(BuildPackagesInfo)
+# Luau isn't an autobuild package, so stage its license separately.
+file(MAKE_DIRECTORY "${AUTOBUILD_INSTALL_DIR}/LICENSES")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/luau.txt" "${AUTOBUILD_INSTALL_DIR}/LICENSES/luau.txt" COPYONLY)
 include(BuildVersion)
 include(CMakeCopyIfDifferent)
 include(CubemapToEquirectangularJS)
@@ -216,7 +219,6 @@ set(viewer_SOURCE_FILES
 	llfloateradvancedbuildoptions.cpp
     llfloateravatarwelcomepack.cpp
     llfloaterbvhpreview.cpp
-    llfloateraddpaymentmethod.cpp
     llfloaterauction.cpp
     llfloaterautoreplacesettings.cpp
     llfloateravatarpicker.cpp
@@ -288,6 +290,7 @@ set(viewer_SOURCE_FILES
     llfloaterloadprefpreset.cpp
     llfloatermarketplacelistings.cpp
     llfloatermap.cpp
+    llfloatermaturitydialog.cpp
     llfloatermediasettings.cpp
     llfloatermemleak.cpp
     llfloatermodelpreview.cpp
@@ -941,7 +944,6 @@ set(viewer_HEADER_FILES
 	llfloateradvancedbuildoptions.h
     llfloateravatarwelcomepack.h
     llfloaterbvhpreview.h
-    llfloateraddpaymentmethod.h
     llfloaterauction.h
     llfloaterautoreplacesettings.h
     llfloateravatarpicker.h
@@ -1017,6 +1019,7 @@ set(viewer_HEADER_FILES
     llfloatermap.h
     llfloatermarketplace.h
     llfloatermarketplacelistings.h
+    llfloatermaturitydialog.h
     llfloatermediasettings.h
     llfloatermemleak.h
     llfloatermodelpreview.h

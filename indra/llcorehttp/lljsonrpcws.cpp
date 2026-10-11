@@ -31,9 +31,8 @@
 #include "llsdjson.h"
 #include "lldate.h"
 #include "llcoros.h"
-#include "llmainthreadtask.h"
-#include "lleventtimer.h"
 #include "lltimer.h"
+#include "workqueue.h"
 
 #include <boost/json.hpp>
 
@@ -44,27 +43,10 @@
 void LLJSONRPCConnection::onOpen()
 {
     LL_INFOS("JSONRPC") << "JSON-RPC connection opened" << LL_ENDL;
-
-    // Start the recurring timeout sweep timer on the main thread. The timer
-    // is canceled in onClose() before the connection can be destroyed, so
-    // capturing `this` is safe. Keep a weak_ptr so we can safely test
-    // whether the timer instance still exists at cancellation time.
-    LLEventTimer* timer = LLEventTimer::run_every(TIMEOUT_SWEEP_INTERVAL,
-        [this]() { sweepTimeouts(); });
-    mTimeoutTimer = timer->getWeak();
 }
 
 void LLJSONRPCConnection::onClose()
 {
-    // Cancel the sweep timer if it is still alive. LLEventTimer's instance
-    // tracker keeps a shared_ptr with a no-op deleter, so raw `delete` is
-    // the documented cancellation idiom (see lleventtimer.h).
-    if (auto timer = mTimeoutTimer.lock())
-    {
-        delete timer.get();
-    }
-    mTimeoutTimer.reset();
-
     // Move the pending-request map out under the lock so we can invoke the
     // callbacks without holding it (callbacks may themselves call into this
     // connection).
@@ -132,7 +114,7 @@ void LLJSONRPCConnection::onMessage(const std::string& message)
     catch (const std::exception& e)
     {
         LL_WARNS("JSONRPC") << "Exception processing JSON-RPC message: " << e.what() << LL_ENDL;
-        sendError(LLSD(), InternalError(e.what()));
+        sendError(LLSD(), InternalError());
     }
 }
 
@@ -181,6 +163,18 @@ void LLJSONRPCConnection::processRequest(const LLSD& request)
     LL_DEBUGS("JSONRPC") << "Processing " << (is_notification ? "notification" : "request")
                          << " for method: " << method << LL_ENDL;
 
+    // Nothing for a peer that has not proven itself, and nothing said of
+    // which methods there are.
+    if (!mAuthenticated)
+    {
+        LL_DEBUGS("JSONRPC") << "Refused " << method << " from a peer not authenticated" << LL_ENDL;
+        if (!is_notification)
+        {
+            sendError(id, UnauthorizedError());
+        }
+        return;
+    }
+
     // Resolve the handler under the mutex, then invoke it unlocked.
     MethodHandler handler;
     bool          is_async = false;
@@ -207,18 +201,19 @@ void LLJSONRPCConnection::processRequest(const LLSD& request)
         // Async handler — launched as a coroutine, response sent by the lambda.
         if (is_notification)
         {
-            LL_WARNS("JSONRPC") << "Async method " << method
-                                << " called as notification; ignoring" << LL_ENDL;
-            return;
+            LL_WARNS("JSONRPC") << "Method " << method
+                                << " called as notification; rejecting request" << LL_ENDL;
+            throw InvalidRequest("Method " + method + " cannot be called as a notification");
         }
         ptr_t conn = std::static_pointer_cast<LLJSONRPCConnection>(getSelfPtr());
         if (!conn)
         {
-            LL_WARNS("JSONRPC") << "Connection expired before async method " << method
-                                << " could be launched" << LL_ENDL;
-            return;
+            LL_WARNS("JSONRPC") << "Connection expired before method " << method
+                                << " could be launched; failing request" << LL_ENDL;
+            throw InternalError("Connection expired before method " + method
+                                + " could be launched");
         }
-        LLMainThreadTask::dispatch(
+        bool posted = LL::WorkQueue::postToMainLoop(
             [handler, method, id, params, conn]()
             {
                 LLCoros::instance().launch(
@@ -254,7 +249,9 @@ void LLJSONRPCConnection::processRequest(const LLSD& request)
                         {
                             if (conn->isConnected())
                             {
-                                conn->sendError(id, InternalError(e.what()));
+                                LL_WARNS("JSONRPC") << "Exception in async method " << method
+                                                    << ": " << e.what() << LL_ENDL;
+                                conn->sendError(id, InternalError());
                             }
                             else
                             {
@@ -264,6 +261,11 @@ void LLJSONRPCConnection::processRequest(const LLSD& request)
                         }
                     });
             });
+        if (!posted)
+        {
+            LL_WARNS("JSONRPC") << "Main loop unavailable; failing async method " << method << LL_ENDL;
+            throw InternalError("Viewer is shutting down; cannot service " + method);
+        }
         return;
     }
 
@@ -301,7 +303,9 @@ void LLJSONRPCConnection::processRequest(const LLSD& request)
     {
         if (!is_notification)
         {
-            sendError(id, InternalError(e.what()));
+            LL_WARNS("JSONRPC") << "Exception in handler for " << method
+                               << ": " << e.what() << LL_ENDL;
+            sendError(id, InternalError());
         }
         else
         {
@@ -445,8 +449,7 @@ void LLJSONRPCConnection::sweepTimeouts()
 
     for (auto& [id, callback] : expired)
     {
-        LL_WARNS("JSONRPC") << "Request " << id << " timed out after "
-                            << REQUEST_TIMEOUT_SECONDS << " seconds" << LL_ENDL;
+        LL_WARNS("JSONRPC") << "Request " << id << " timed out" << LL_ENDL;
         if (callback)
         {
             LLSD error;
@@ -515,6 +518,24 @@ void LLJSONRPCConnection::unregisterMethod(const std::string& method)
     LL_DEBUGS("JSONRPC") << "Unregistered method: " << method << LL_ENDL;
 }
 
+std::set<std::string> LLJSONRPCConnection::getMethods() const
+{
+    LLMutexLock lock(&mMutex);
+    std::set<std::string> methods;
+
+    for (const auto& [method, handler] : mMethodHandlers)
+    {
+        methods.insert(method);
+    }
+
+    for (const auto& [method, handler] : mAsyncMethodHandlers)
+    {
+        methods.insert(method);
+    }
+
+    return methods;
+}
+
 LLSD LLJSONRPCConnection::makeEnvelope(const LLSD& id,
                                        const std::string& method,
                                        const LLSD& params,
@@ -547,7 +568,7 @@ LLSD LLJSONRPCConnection::makeEnvelope(const LLSD& id,
     return env;
 }
 
-LLSD LLJSONRPCConnection::call(const std::string& method, const LLSD& params, ResponseCallback callback)
+LLSD LLJSONRPCConnection::call(const std::string& method, const LLSD& params, ResponseCallback callback, F64 timeout)
 {
     LL_PROFILE_ZONE_SCOPED_CATEGORY_WEBSOCKET;
     LLSD id = generateId();
@@ -560,7 +581,7 @@ LLSD LLJSONRPCConnection::call(const std::string& method, const LLSD& params, Re
     {
         LLMutexLock lock(&mMutex);
         mPendingRequests[id_str] = std::move(callback);
-        mPendingDeadlines.push({ LLTimer::getTotalSeconds() + REQUEST_TIMEOUT_SECONDS, id_str });
+        mPendingDeadlines.push({ LLTimer::getTotalSeconds() + timeout, id_str });
     }
 
     // Send the request
@@ -669,23 +690,11 @@ LLJSONRPCServer::LLJSONRPCServer(const std::string& name, U16 port, bool local_o
                         << " on port " << port << LL_ENDL;
 
     // Register standard JSON-RPC methods
-    registerGlobalMethod("system.listMethods", [this](const std::string& method, const LLSD& id, const LLSD& params) -> LLSD {
-        LL_DEBUGS("JSONRPC") << "System method " << method << " called" << LL_ENDL;
-        return getMethodList();
-    });
-
     registerGlobalMethod("system.getStats", [this](const std::string& method, const LLSD& id, const LLSD& params) -> LLSD {
         LL_DEBUGS("JSONRPC") << "System method " << method << " called" << LL_ENDL;
         return getServerStats();
     });
 
-    registerGlobalMethod("system.ping", [](const std::string& method, const LLSD& id, const LLSD& params) -> LLSD {
-        LL_DEBUGS("JSONRPC") << "System method " << method << " called" << LL_ENDL;
-        LLSD result;
-        result["pong"] = LLDate::now().asString();
-        result["params"] = params;
-        return result;
-    });
 }
 
 LLWebsocketMgr::WSConnection::ptr_t LLJSONRPCServer::connectionFactory(LLWebsocketMgr::WSServer::ptr_t server,
@@ -708,6 +717,25 @@ void LLJSONRPCServer::onConnectionClosed(const LLWebsocketMgr::WSConnection::ptr
                         << getConnectionCount() << LL_ENDL;
 }
 
+bool LLJSONRPCServer::update()
+{
+    // Main thread, once per frame; throttled to TIMEOUT_SWEEP_INTERVAL.
+    if (mSweepTimer.getElapsedTimeF32() < LLJSONRPCConnection::TIMEOUT_SWEEP_INTERVAL)
+    {
+        return true;
+    }
+    mSweepTimer.reset();
+
+    for (const auto& conn : getConnections())
+    {
+        if (auto rpc = std::dynamic_pointer_cast<LLJSONRPCConnection>(conn))
+        {
+            rpc->sweepTimeouts();
+        }
+    }
+    return true;
+}
+
 void LLJSONRPCServer::setupConnectionMethods(LLJSONRPCConnection::ptr_t connection)
 {
     LLMutexLock lock(&mGlobalMethodsMutex);
@@ -718,21 +746,80 @@ void LLJSONRPCServer::setupConnectionMethods(LLJSONRPCConnection::ptr_t connecti
         connection->registerMethod(method, handler);
     }
 
-    // Register session.ping handler for connection health monitoring
-    connection->registerMethod("session.ping",
-        [](const std::string&, const LLSD&, const LLSD& params) -> LLSD
+    std::weak_ptr<LLJSONRPCConnection> weak_connection = connection;
+    connection->registerMethod(
+        "system.listMethods",
+        [weak_connection](
+            const std::string&,
+            const LLSD&,
+            const LLSD&) -> LLSD
         {
-            LLSD result;
-            // Echo back the original timestamp
-            if (params.has("timestamp"))
+            LLSD methods(LLSD::emptyArray());
+            auto connection = weak_connection.lock();
+            if (!connection)
             {
-                result["timestamp"] = params["timestamp"];
+                return methods;
             }
-            // Add server's current time in milliseconds
-            result["server_time"] = static_cast<LLSD::Integer>(
-                LLDate::now().secondsSinceEpoch() * 1000.0);
-            return result;
+
+            for (const std::string& method : connection->getMethods())
+            {
+                methods.append(method);
+            }
+
+            return methods;
         });
+
+    connection->registerMethod(
+        "system.ping",
+        [this, weak_connection](
+            const std::string& method,
+            const LLSD& id,
+            const LLSD& params) -> LLSD
+        {
+            LL_DEBUGS("JSONRPC") << "System method " << method
+                                 << " called" << LL_ENDL;
+            return handlePing(weak_connection.lock(), params);
+        });
+
+    connection->registerMethod(
+        "system.getVersion",
+        [this, weak_connection](
+            const std::string& method,
+            const LLSD& id,
+            const LLSD& params) -> LLSD
+        {
+            LL_DEBUGS("JSONRPC") << "System method " << method
+                                 << " called" << LL_ENDL;
+            return handleGetVersion(weak_connection.lock(), params);
+        });
+
+    connection->registerMethod(
+        "system.status",
+        [this, weak_connection](
+            const std::string& method,
+            const LLSD& id,
+            const LLSD& params) -> LLSD
+        {
+            LL_DEBUGS("JSONRPC") << "System method " << method
+                                 << " called" << LL_ENDL;
+            return handleStatus(weak_connection.lock(), params);
+        });
+}
+
+LLSD LLJSONRPCServer::handlePing(
+    const LLJSONRPCConnection::ptr_t& connection,
+    const LLSD& params) const
+{
+    return LLSD("pong");
+}
+
+LLSD LLJSONRPCServer::handleStatus(
+    const LLJSONRPCConnection::ptr_t& connection,
+    const LLSD& params) const
+{
+    LLSD result;
+    result["status"] = "OK";
+    return result;
 }
 
 void LLJSONRPCServer::registerGlobalMethod(const std::string& method, MethodHandler handler)
