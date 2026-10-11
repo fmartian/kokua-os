@@ -4301,14 +4301,14 @@ S32 copy_prefs_file(const std::string& from, const std::string& to)
 {
     LL_WARNS() << "copying " << from << " to " << to << LL_ENDL;
     S32 rv = 0;
-    LLFILE* in = LLFile::fopen(from, "rb"); /*Flawfinder: ignore*/
+    LLFILE* in = LLFile::fopen(from, LLFILE_MODE("rb")); /*Flawfinder: ignore*/
     if(!in)
     {
         LL_WARNS() << "couldn't open source file " << from << " - copy aborted." << LL_ENDL;
         return -1;
     }
 
-    LLFILE* out = LLFile::fopen(to, "wb");  /*Flawfinder: ignore*/
+    LLFILE* out = LLFile::fopen(to, LLFILE_MODE("wb"));  /*Flawfinder: ignore*/
     if(!out)
     {
         fclose(in);

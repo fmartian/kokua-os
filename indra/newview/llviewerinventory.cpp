@@ -943,7 +943,7 @@ void LLViewerInventoryCategory::buildDisplayName() const
         is_accessories = (parent_folder_id == gInventory.getLibraryRootFolderID());
     }
 
-    if (is_accessories || LLFolderType::lookupIsProtectedType(preferred_type))
+    if (is_accessories || LLFolderType::lookupIsProtectedType(preferred_type, LLUUID::null))
     {
         // All predefined folders have translations in strings.xml.
         LLTrans::findString(mDisplayName, std::string("InvFolder ") + getName(), LLSD());

@@ -35,7 +35,6 @@
 // This brings in the version information instead of the cmake mechanism
 // which rebuilds the whole of newbuild for each hg commit
 #include "kokuabuildversion.h"
-#include "llversioninfovars.h"
 
 #if ! defined(LL_VIEWER_CHANNEL)       \
  || ! defined(LL_VIEWER_VERSION_MAJOR) \

@@ -11293,9 +11293,6 @@ void initialize_menus()
     view_listener_t::addMenu(new LLToolsCheckSelectionLODMode(), "Tools.ToolsCheckSelectionLODMode");
     // Commands menu
     view_listener_t::addMenu(new LLToolsEnableCommandlineChat(), "Commands.EnableCommandlineChat");
-    // Help menu
-    // most items use the ShowFloater method
-    view_listener_t::addMenu(new LLToggleHowTo(), "Help.ToggleHowTo");
 
     view_listener_t::addMenu(new LLToolsCheckScriptEditorServer(), "Tools.CheckScriptEditorServer");
     view_listener_t::addMenu(new LLToolsEnableScriptEditorServer(), "Tools.EnableScriptEditorServer");
