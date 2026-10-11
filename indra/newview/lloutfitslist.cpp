@@ -714,6 +714,14 @@ void LLOutfitsList::applyFilterToTab(
         // and it has no matched items
         tab->setVisible(list->hasMatchedItems());
 
+        // An outfit found by what it holds is opened, or the match that brought it up
+        // wouldn't be seen. The state it had is restored when the search is cleared.
+        if (list->hasMatchedItems() && !tab->getDisplayChildren())
+        {
+            tab->setDisplayChildren(true);
+            list->notify(LLSD().with("rearrange", true));
+        }
+
         // Remove title highlighting because it might
         // have been previously highlighted by less restrictive filter
         tab->setTitle(tab->getTitle());
