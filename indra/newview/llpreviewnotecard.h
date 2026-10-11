@@ -120,6 +120,17 @@ protected:
     std::string getCleanNameForTmpFile() const;
     std::string getTmpFileName(const std::string& note_name) const;
 
+    // Load from file / Save to file, as in the script editor
+    bool canLoadFromFile() const;
+    bool canSaveToFile() const;
+    void onLoadFromFile();
+    void onSaveToFile();
+    void pickFileToLoad();
+    void pickFileToSave();
+    static bool handleFileConfirmDialog(LLHandle<LLPreviewNotecard> handle, const LLSD& notification, const LLSD& response, bool load);
+    static void loadFromPickedFile(LLHandle<LLPreviewNotecard> handle, const std::vector<std::string>& filenames);
+    static void saveToPickedFile(LLHandle<LLPreviewNotecard> handle, const std::vector<std::string>& filenames);
+
 protected:
     LLViewerTextEditor* mEditor = nullptr;
     LLLineEditor* mDescEditor = nullptr;
