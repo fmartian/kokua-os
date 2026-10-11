@@ -1303,7 +1303,8 @@ bool LLNotifications::uniqueFilter(LLNotificationPtr pNotif)
     }
 
     // checks against existing unique notifications
-    for (LLNotificationMap::iterator existing_it = mUniqueNotifications.find(pNotif->getName());
+    // lower_bound() and not find(), which on a multimap may return any of the entries with that name
+    for (LLNotificationMap::iterator existing_it = mUniqueNotifications.lower_bound(pNotif->getName());
         existing_it != mUniqueNotifications.end();
         ++existing_it)
     {
@@ -1365,7 +1366,8 @@ bool LLNotifications::failedUniquenessTest(const LLSD& payload)
         // Update the existing unique notification with the data from this particular instance...
         // This guarantees that duplicate notifications will be collapsed to the one
         // most recently triggered
-        for (LLNotificationMap::iterator existing_it = mUniqueNotifications.find(pNotif->getName());
+        // lower_bound() and not find(), which on a multimap may return any of the entries with that name
+        for (LLNotificationMap::iterator existing_it = mUniqueNotifications.lower_bound(pNotif->getName());
             existing_it != mUniqueNotifications.end();
             ++existing_it)
         {
@@ -1385,7 +1387,8 @@ bool LLNotifications::failedUniquenessTest(const LLSD& payload)
         // Add to the existing unique notification with the data from this particular instance...
         // This guarantees that duplicate notifications will be collapsed to the one
         // most recently triggered
-        for (LLNotificationMap::iterator existing_it = mUniqueNotifications.find(pNotif->getName());
+        // lower_bound() and not find(), which on a multimap may return any of the entries with that name
+        for (LLNotificationMap::iterator existing_it = mUniqueNotifications.lower_bound(pNotif->getName());
             existing_it != mUniqueNotifications.end();
             ++existing_it)
         {

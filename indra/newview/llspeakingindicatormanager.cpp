@@ -165,9 +165,10 @@ void SpeakingIndicatorManager::registerSpeakingIndicator(const LLUUID& speaker_i
 void SpeakingIndicatorManager::unregisterSpeakingIndicator(const LLUUID& speaker_id, const LLSpeakingIndicator* const speaking_indicator)
 {
     LL_DEBUGS("SpeakingIndicator") << "Unregistering indicator: " << speaker_id << "|"<< speaking_indicator << LL_ENDL;
-    speaking_indicators_mmap_t::iterator it;
-    it = mSpeakingIndicators.find(speaker_id);
-    for (;it != mSpeakingIndicators.end(); ++it)
+    // Not find(): on a multimap it may return any of the entries with that id, and scanning
+    // on from one in the middle misses the indicator, which is then left behind dangling
+    std::pair<speaking_indicators_mmap_t::iterator, speaking_indicators_mmap_t::iterator> range = mSpeakingIndicators.equal_range(speaker_id);
+    for (speaking_indicators_mmap_t::iterator it = range.first; it != range.second; ++it)
     {
         if (it->second == speaking_indicator)
         {
