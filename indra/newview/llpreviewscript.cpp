@@ -88,6 +88,8 @@
 //kokua
 #include "llcompilequeue.h"
 const std::string HELP_LSL_PORTAL_TOPIC = "LSL_Portal";
+const std::string HELP_LUA_PORTAL_URL = "https://wiki.secondlife.com/wiki/Lua_Alpha";
+const std::string HELP_LUA_LIBRARY_URL = "https://luau.org/library";
 
 const std::string DEFAULT_SCRIPT_NAME = "New Script"; // *TODO:Translate?
 const std::string DEFAULT_SCRIPT_DESC = "(No Description)"; // *TODO:Translate?
@@ -95,6 +97,36 @@ const std::string DEFAULT_SCRIPT_DESC = "(No Description)"; // *TODO:Translate?
 // Description and header information
 const S32 MAX_HISTORY_COUNT = 10;
 const F32 LIVE_HELP_REFRESH_TIME = 1.f;
+
+static bool is_luau_library_symbol(const std::string& symbol)
+{
+    return symbol.rfind("bit32.", 0) == 0
+        || symbol.rfind("buffer.", 0) == 0
+        || symbol.rfind("coroutine.", 0) == 0
+        || symbol.rfind("debug.", 0) == 0
+        || symbol.rfind("math.", 0) == 0
+        || symbol.rfind("os.", 0) == 0
+        || symbol.rfind("string.", 0) == 0
+        || symbol.rfind("table.", 0) == 0
+        || symbol.rfind("utf8.", 0) == 0;
+}
+
+static std::string build_script_help_url(bool luau_language, const std::string& help_string)
+{
+    if (!luau_language || help_string.rfind("ll.", 0) == 0)
+    {
+        LLUIString url_string = gSavedSettings.getString("LSLHelpURL");
+        std::string page = help_string;
+        if (luau_language)
+        {
+            page.erase(2, 1); // Lua's ll.GetOwner maps to LSL's llGetOwner.
+        }
+        url_string.setArg("[LSL_STRING]", page.empty() ? HELP_LSL_PORTAL_TOPIC : page);
+        return url_string.getString();
+    }
+
+    return is_luau_library_symbol(help_string) ? HELP_LUA_LIBRARY_URL : HELP_LUA_PORTAL_URL;
+}
 
 static bool have_script_upload_cap(LLUUID& object_id)
 {
@@ -433,13 +465,18 @@ LLScriptEdCore::~LLScriptEdCore()
     deleteBridges();
 
     // If the search window is up for this editor, close it.
-//  LLFloaterScriptSearch* script_search = LLFloaterScriptSearch::getInstance();
-//  if (script_search && script_search->getEditorCore() == this)
-//  {
-//      script_search->closeFloater();
-//      delete script_search;
-//  }
-
+//    LLFloaterScriptSearch* script_search = LLFloaterScriptSearch::getInstance();
+//    if (script_search && script_search->getEditorCore() == this)
+//    {
+//        script_search->closeFloater();
+//        // closeFloater can delete instance since it's not reusable nor single instance
+//        // so make sure instance is still there before deleting
+//        script_search = LLFloaterScriptSearch::getInstance();
+//        if (script_search)
+//        {
+//            delete script_search;
+//        }
+//    }
 
     if (mSyntaxIDConnection.connected())
     {
@@ -873,13 +910,9 @@ void LLScriptEdCore::setHelpPage(const std::string& help_string)
     LLComboBox* history_combo = help_floater->getChild<LLComboBox>("history_combo");
     if (!history_combo) return;
 
-    LLUIString url_string = gSavedSettings.getString("LSLHelpURL");
-
-    url_string.setArg("[LSL_STRING]", help_string.empty() ? HELP_LSL_PORTAL_TOPIC : help_string);
-
     addHelpItemToHistory(help_string);
 
-    web_browser->navigateTo(url_string);
+    web_browser->navigateTo(build_script_help_url(mEditor->getIsLuauLanguage(), help_string));
 
 }
 
@@ -1014,6 +1047,10 @@ void LLScriptEdCore::onBtnDynamicHelp()
         mLiveHelpHistorySize = 0;
     }
 
+    const bool luau_language = mEditor->getIsLuauLanguage();
+    live_help_floater->setTitle(luau_language ? "LUA REFERENCE" : "LSL REFERENCE");
+    live_help_floater->setHelpTopic(luau_language ? "Lua_Alpha" : "lsl_reference");
+
     bool visible = true;
     bool take_focus = true;
     live_help_floater->setVisible(visible);
@@ -1087,9 +1124,7 @@ void LLScriptEdCore::onHelpComboCommit(LLUICtrl* ctrl, void* userdata)
         corep->addHelpItemToHistory(help_string);
 
         LLMediaCtrl* web_browser = live_help_floater->getChild<LLMediaCtrl>("lsl_guide_html");
-        LLUIString url_string = gSavedSettings.getString("LSLHelpURL");
-        url_string.setArg("[LSL_STRING]", help_string);
-        web_browser->navigateTo(url_string);
+        web_browser->navigateTo(build_script_help_url(corep->mEditor->getIsLuauLanguage(), help_string));
     }
 }
 
@@ -1417,7 +1452,21 @@ LLUUID LLScriptEdCore::getAssociatedExperience()const
     return mAssociatedExperience;
 }
 
-void LLLiveLSLEditor::setExperienceIds( const LLSD& experience_ids )
+//void LLScriptEdCore::onChangeFontSize(const LLSD &userdata)
+//{
+//    const std::string font_name = userdata.asString();
+//    gSavedSettings.setString("LSLFontSizeName", font_name);
+//}
+//
+//bool LLScriptEdCore::isFontSizeChecked(const LLSD &userdata)
+//{
+//    const std::string current_size_name = LLScriptEditor::getScriptFontSize();
+//    const std::string size_name = userdata.asString();
+//
+//    return (size_name == current_size_name);
+//}
+
+    void LLLiveLSLEditor::setExperienceIds( const LLSD& experience_ids )
 {
     mExperienceIds=experience_ids;
     updateExperiencePanel();
@@ -1980,29 +2029,6 @@ void LLPreviewLSL::finishedLSLUpload(LLUUID itemId, LLSD response)
     }
 }
 
-// <FS:ND> Asset uploader that can be used for LSL and Mono
-class FSScriptAssetUpload: public LLScriptAssetUpload
-{
-    bool m_bMono;
-public:
-    FSScriptAssetUpload( LLUUID itemId, std::string buffer, invnUploadFinish_f finish, bool a_bMono )
-    : LLScriptAssetUpload( itemId, buffer, finish, nullptr )
-    {
-        m_bMono = a_bMono;
-    }
-
-    virtual LLSD generatePostBody()
-    {
-        LLSD body = LLScriptAssetUpload::generatePostBody();
-        if( m_bMono )
-            body["target"] = "mono";
-        else
-            body["target"] = "lsl2";
-        return body;
-    }
-};
-// </FS:ND>
-
 bool LLPreviewLSL::failedLSLUpload(LLUUID itemId, LLUUID taskId, LLSD response, std::string reason)
 {
     LLSD floater_key;
@@ -2040,7 +2066,6 @@ bool LLPreviewLSL::failedLSLUpload(LLUUID itemId, LLUUID taskId, LLSD response, 
 // fails, go ahead and save the text anyway.
 void LLPreviewLSL::saveIfNeeded(bool sync /*= true*/)
 {
-    // LL_INFOS() << "LLPreviewLSL::saveIfNeeded()" << LL_ENDL;
     if (!mScriptEd->hasChanged())
     {
         return;
@@ -2048,16 +2073,8 @@ void LLPreviewLSL::saveIfNeeded(bool sync /*= true*/)
 
     mPendingUploads = 0;
     mScriptEd->mErrorList->deleteAllItems();
+    mScriptEd->enableSave(false);
     mScriptEd->mEditor->makePristine();
-
-    // save off asset into file
-    LLTransactionID tid;
-    tid.generate();
-    LLAssetID asset_id = tid.makeAssetID(gAgent.getSecureSessionID());
-    std::string filepath = gDirUtilp->getExpandedFilename(LL_PATH_CACHE,asset_id.asString());
-    std::string filename = filepath + ".lsl";
-
-    mScriptEd->writeToFile(filename);
 
     if (sync)
     {
@@ -2074,118 +2091,26 @@ void LLPreviewLSL::saveIfNeeded(bool sync /*= true*/)
         mPendingUploads++;
         if (!url.empty())
         {
-            uploadAssetViaCaps(url, filename, mItemUUID);
+            std::string compile_target(mScriptEd->mCompileTarget->getValue());
+            std::string buffer(mScriptEd->mEditor->getText());
+
+            LLUUID old_asset_id = inv_item->getAssetUUID().isNull() ? mScriptEd->getAssetID() : inv_item->getAssetUUID();
+
+            LLResourceUploadInfo::ptr_t uploadInfo(std::make_shared<LLScriptAssetUpload>(mItemUUID, compile_target, buffer,
+                [old_asset_id](LLUUID itemId, LLUUID, LLUUID, LLSD response) {
+                    LLFileSystem::removeFile(old_asset_id, LLAssetType::AT_LSL_TEXT);
+                    LLPreviewLSL::finishedLSLUpload(itemId, response);
+                },
+                LLPreviewLSL::failedLSLUpload));
+
+            LLViewerAssetUpload::EnqueueInventoryUpload(url, uploadInfo);
         }
     }
-}
-
-void LLPreviewLSL::uploadAssetViaCaps(const std::string& url,
-                                      const std::string& filename,
-                                      const LLUUID& item_id)
-{
-    LL_INFOS() << "Update Agent Inventory via capability" << LL_ENDL;
-    LLSD body;
-    body["item_id"] = item_id;
-    body["target"] = gSavedSettings.getBOOL("SaveInventoryScriptsAsMono") ? "mono" : "lsl2";
-    std::string buffer(mScriptEd->mEditor->getText());
-    LLBufferedAssetUploadInfo::invnUploadFinish_f proc = boost::bind(&LLPreviewLSL::finishedLSLUpload, _1, _4);
-
-    // LLResourceUploadInfo::ptr_t uploadInfo(new LLScriptAssetUpload(mItemUUID, buffer, proc));
-    LLResourceUploadInfo::ptr_t uploadInfo(new FSScriptAssetUpload(mItemUUID, buffer, proc, gSavedSettings.getBOOL("SaveInventoryScriptsAsMono")));
-
-    LLViewerAssetUpload::EnqueueInventoryUpload(url, uploadInfo); // <FS:ND> DoMono needs to be passed/set here.
-    //  LLHTTPClient::post(url, body, new LLUpdateAgentInventoryResponder(body, filename, LLAssetType::AT_LSL_TEXT));
-}
-
-// static
-void LLPreviewLSL::onSaveComplete(const LLUUID& asset_uuid, void* user_data, S32 status, LLExtStat ext_status) // StoreAssetData callback (fixed)
-{
-    LLScriptSaveInfo* info = reinterpret_cast<LLScriptSaveInfo*>(user_data);
-    if(0 == status)
-    {
-        if (info)
-        {
-            const LLViewerInventoryItem* item;
-            item = (const LLViewerInventoryItem*)gInventory.getItem(info->mItemUUID);
-            if(item)
-            {
-                LLPointer<LLViewerInventoryItem> new_item = new LLViewerInventoryItem(item);
-                new_item->setAssetUUID(asset_uuid);
-                new_item->setTransactionID(info->mTransactionID);
-                new_item->updateServer(FALSE);
-                gInventory.updateItem(new_item);
-                gInventory.notifyObservers();
-            }
-            else
-            {
-                LL_WARNS() << "Inventory item for script " << info->mItemUUID
-                    << " is no longer in agent inventory." << LL_ENDL;
-            }
-
-            // Find our window and close it if requested.
-            LLPreviewLSL* self = LLFloaterReg::findTypedInstance<LLPreviewLSL>("preview_script", info->mItemUUID);
-            if (self)
-            {
-                getWindow()->decBusyCount();
-                self->mPendingUploads--;
-                if (self->mPendingUploads <= 0
-                    && self->mCloseAfterSave)
-                {
-                    self->closeFloater();
-                }
-            }
-        }
-    }
-    else
-    {
-        LL_WARNS() << "Problem saving script: " << status << LL_ENDL;
-        LLSD args;
-        args["REASON"] = std::string(LLAssetStorage::getErrorString(status));
-        LLNotificationsUtil::add("SaveScriptFailReason", args);
-    }
-    delete info;
-}
-
-// static
-void LLPreviewLSL::onSaveBytecodeComplete(const LLUUID& asset_uuid, void* user_data, S32 status, LLExtStat ext_status) // StoreAssetData callback (fixed)
-{
-    LLUUID* instance_uuid = (LLUUID*)user_data;
-    LLPreviewLSL* self = NULL;
-    if(instance_uuid)
-    {
-        self = LLFloaterReg::findTypedInstance<LLPreviewLSL>("preview_script", *instance_uuid);
-    }
-    if (0 == status)
-    {
-        if (self)
-        {
-            LLSD row;
-            row["columns"][0]["value"] = "Compile successful!";
-            row["columns"][0]["font"] = "SANSSERIF_SMALL";
-            self->mScriptEd->mErrorList->addElement(row);
-
-            // Find our window and close it if requested.
-            self->getWindow()->decBusyCount();
-            self->mPendingUploads--;
-            if (self->mPendingUploads <= 0
-                && self->mCloseAfterSave)
-            {
-                self->closeFloater();
-            }
-        }
-    }
-    else
-    {
-        LL_WARNS() << "Problem saving LSL Bytecode (Preview)" << LL_ENDL;
-        LLSD args;
-        args["REASON"] = std::string(LLAssetStorage::getErrorString(status));
-        LLNotificationsUtil::add("SaveBytecodeFailReason", args);
-    }
-    delete instance_uuid;
 }
 
 void LLPreviewLSL::onCompileTargetChanged()
 {
+    mScriptEd->enableSave(true);
     bool is_lua = (mScriptEd->mCompileTarget->getValue().asString() == "luau");
     mScriptEd->mEditor->setLuauLanguage(is_lua);
     mScriptEd->processKeywords(is_lua);
@@ -2769,144 +2694,36 @@ void LLLiveLSLEditor::saveIfNeeded(bool sync /*= true*/)
     mScriptEd->enableSave(false);
     mScriptEd->mEditor->makePristine();
     mScriptEd->mErrorList->deleteAllItems();
-
-    // set up the save on the local machine.
     mScriptEd->mEditor->makePristine();
-    LLTransactionID tid;
-    tid.generate();
-    LLAssetID asset_id = tid.makeAssetID(gAgent.getSecureSessionID());
-    std::string filepath = gDirUtilp->getExpandedFilename(LL_PATH_CACHE,asset_id.asString());
-    std::string filename = llformat("%s.lsl", filepath.c_str());
-
-    mItem->setAssetUUID(asset_id);
-    mItem->setTransactionID(tid);
-
-    mScriptEd->writeToFile(filename);
 
     if (sync)
     {
         mScriptEd->sync();
     }
 
-    // save it out to asset server
-    std::string url = object->getRegion()->getCapability("UpdateScriptTask");
+    bool is_running = mRunningCheckbox->get();
     getWindow()->incBusyCount();
     mPendingUploads++;
-    bool is_running = mRunningCheckbox->get();
-    mIsSaving = TRUE;
+
+    std::string url = object->getRegion()->getCapability("UpdateScriptTask");
+
     if (!url.empty())
     {
-        uploadAssetViaCaps(url, filename, mObjectUUID, mItemUUID, is_running, mScriptEd->getAssociatedExperience());
-    }
-}
+        std::string compile_target(mScriptEd->mCompileTarget->getValue());
+        std::string buffer(mScriptEd->mEditor->getText());
+        LLUUID old_asset_id = mScriptEd->getAssetID();
 
-void LLLiveLSLEditor::uploadAssetViaCaps(const std::string& url,
-                                         const std::string& filename,
-                                         const LLUUID& task_id,
-                                         const LLUUID& item_id,
-                                         BOOL is_running,
-                                         const LLUUID& experience_public_id )
-{
-    LL_INFOS() << "Update Task Inventory via capability " << url << LL_ENDL;
-    LLSD body;
-    body["task_id"] = task_id;
-    body["item_id"] = item_id;
-    body["is_script_running"] = is_running;
-    body["target"] = monoChecked() ? "mono" : "lsl2";
-    body["experience"] = experience_public_id;
-    std::string buffer(mScriptEd->mEditor->getText());
-    LLBufferedAssetUploadInfo::taskUploadFinish_f proc = boost::bind(&LLLiveLSLEditor::finishLSLUpload, _1, _2, _3, _4, is_running);
-
-    LLResourceUploadInfo::ptr_t uploadInfo(std::make_shared<LLScriptAssetUpload>(mObjectUUID, mItemUUID,
-        monoChecked() ? LLScriptAssetUpload::MONO : LLScriptAssetUpload::LSL2,
-        is_running, mScriptEd->getAssociatedExperience(), buffer, proc, nullptr));
-
-    LLViewerAssetUpload::EnqueueInventoryUpload(url, uploadInfo);
-//  LLHTTPClient::post(url, body,
-//      new LLUpdateTaskInventoryResponder(body, filename, LLAssetType::AT_LSL_TEXT));
-}
-
-void LLLiveLSLEditor::onSaveTextComplete(const LLUUID& asset_uuid, void* user_data, S32 status, LLExtStat ext_status) // StoreAssetData callback (fixed)
-{
-    LLLiveLSLSaveData* data = (LLLiveLSLSaveData*)user_data;
-
-    if (status)
-    {
-        LL_WARNS() << "Unable to save text for a script." << LL_ENDL;
-        LLSD args;
-        args["REASON"] = std::string(LLAssetStorage::getErrorString(status));
-        LLNotificationsUtil::add("CompileQueueSaveText", args);
-    }
-    else
-    {
-        LLSD floater_key;
-        floater_key["taskid"] = data->mSaveObjectID;
-        floater_key["itemid"] = data->mItem->getUUID();
-        LLLiveLSLEditor* self = LLFloaterReg::findTypedInstance<LLLiveLSLEditor>("preview_scriptedit", floater_key);
-        if (self)
-        {
-            self->getWindow()->decBusyCount();
-            self->mPendingUploads--;
-            if (self->mPendingUploads <= 0
-                && self->mCloseAfterSave)
+        LLResourceUploadInfo::ptr_t uploadInfo(std::make_shared<LLScriptAssetUpload>(mObjectUUID, mItemUUID,
+            compile_target, is_running, mScriptEd->getAssociatedExperience(), buffer,
+            [is_running, old_asset_id](LLUUID item_id, LLUUID task_id, LLUUID new_asset_id, LLSD response)
             {
-                self->closeFloater();
-            }
-        }
+                LLFileSystem::removeFile(old_asset_id, LLAssetType::AT_LSL_TEXT);
+                LLLiveLSLEditor::finishLSLUpload(item_id, task_id, new_asset_id, response, is_running);
+            },
+            nullptr)); // needs failure handling?
+
+        LLViewerAssetUpload::EnqueueInventoryUpload(url, uploadInfo);
     }
-    delete data;
-    data = NULL;
-}
-
-
-void LLLiveLSLEditor::onSaveBytecodeComplete(const LLUUID& asset_uuid, void* user_data, S32 status, LLExtStat ext_status) // StoreAssetData callback (fixed)
-{
-    LLLiveLSLSaveData* data = (LLLiveLSLSaveData*)user_data;
-    if(!data)
-        return;
-    if(0 ==status)
-    {
-        LL_INFOS() << "LSL Bytecode saved" << LL_ENDL;
-        LLSD floater_key;
-        floater_key["taskid"] = data->mSaveObjectID;
-        floater_key["itemid"] = data->mItem->getUUID();
-        LLLiveLSLEditor* self = LLFloaterReg::findTypedInstance<LLLiveLSLEditor>("preview_scriptedit", floater_key);
-        if (self)
-        {
-            // Tell the user that the compile worked.
-            self->mScriptEd->mErrorList->setCommentText(LLTrans::getString("SaveComplete"));
-            // close the window if this completes both uploads
-            self->getWindow()->decBusyCount();
-            self->mPendingUploads--;
-            if (self->mPendingUploads <= 0
-                && self->mCloseAfterSave)
-            {
-                self->closeFloater();
-            }
-        }
-        LLViewerObject* object = gObjectList.findObject(data->mSaveObjectID);
-        if(object)
-        {
-            object->saveScript(data->mItem, data->mActive, false);
-            dialog_refresh_all();
-            //LLToolDragAndDrop::dropScript(object, ids->first,
-            //                        LLAssetType::AT_LSL_TEXT, FALSE);
-        }
-    }
-    else
-    {
-        LL_INFOS() << "Problem saving LSL Bytecode (Live Editor)" << LL_ENDL;
-        LL_WARNS() << "Unable to save a compiled script." << LL_ENDL;
-
-        LLSD args;
-        args["REASON"] = std::string(LLAssetStorage::getErrorString(status));
-        LLNotificationsUtil::add("CompileQueueSaveBytecode", args);
-    }
-
-    std::string filepath = gDirUtilp->getExpandedFilename(LL_PATH_CACHE,asset_uuid.asString());
-    std::string dst_filename = llformat("%s.lso", filepath.c_str());
-    LLFile::remove(dst_filename);
-    delete data;
 }
 
 bool LLLiveLSLEditor::canClose()
@@ -3002,8 +2819,6 @@ void LLLiveLSLEditor::processScriptRunningReply(LLMessageSystem* msg, void**)
 
         instance->mScriptEd->mCompileTarget->setEnabled(instance->getIsModifiable() && have_script_upload_cap(object_id));
     }
-    // send it along to compilequeue which could also have issued GetRunning
-    LLFloaterLocateQueue::processScriptRunningReply(msg);
 }
 
 void LLLiveLSLEditor::onCompileTargetChanged()

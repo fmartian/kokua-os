@@ -283,9 +283,6 @@ protected:
     void loadAsset() override;
     void saveIfNeeded(bool sync = true) override;
     void onCompileTargetChanged();
-    void uploadAssetViaCaps(const std::string& url,
-                            const std::string& filename,
-                            const LLUUID& item_id);
 
     static void onSearchReplace(void* userdata);
     static void onLoad(void* userdata);
@@ -294,8 +291,6 @@ protected:
     static void onLoadComplete(const LLUUID& uuid,
                                LLAssetType::EType type,
                                void* user_data, S32 status, LLExtStat ext_status);
-    static void onSaveComplete(const LLUUID& uuid, void* user_data, S32 status, LLExtStat ext_status);
-    static void onSaveBytecodeComplete(const LLUUID& asset_uuid, void* user_data, S32 status, LLExtStat ext_status);
 
 protected:
     static void* createScriptEdPanel(void* userdata);
@@ -353,12 +348,6 @@ private:
 
     void loadAsset() override;
     void saveIfNeeded(bool sync = true) override;
-    void uploadAssetViaCaps(const std::string& url,
-                            const std::string& filename,
-                            const LLUUID& task_id,
-                            const LLUUID& item_id,
-                            BOOL is_running,
-                            const LLUUID& experience_public_id);
 
     static void onSearchReplace(void* userdata);
     static void onLoad(void* userdata);
@@ -367,8 +356,6 @@ private:
     static void onLoadComplete(const LLUUID& asset_uuid,
                                LLAssetType::EType type,
                                void* user_data, S32 status, LLExtStat ext_status);
-    static void onSaveTextComplete(const LLUUID& asset_uuid, void* user_data, S32 status, LLExtStat ext_status);
-    static void onSaveBytecodeComplete(const LLUUID& asset_uuid, void* user_data, S32 status, LLExtStat ext_status);
     void onRunningCheckboxClicked();
     void onReset();
 
