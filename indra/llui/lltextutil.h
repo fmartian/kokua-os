@@ -52,6 +52,24 @@ namespace LLTextUtil
         const std::string& text,
         const std::string& hl);
 
+    /**
+     * Draw a box behind the part of a text box's text that matches a filter,
+     * the way folder views do, so the match shows whatever the text color is.
+     *
+     * Meant to be called from the draw() of the view that owns the text box,
+     * before the text box itself is drawn.
+     *
+     * @param txtbox        Text box holding the text
+     * @param hl            Upper-cased string that was highlighted
+     * @param h_pad         Pixels the box extends past the match on each side
+     * @param v_pad         Pixels the box extends above and below the line of text
+     */
+    void drawHighlightBox(
+        LLTextBox *txtbox,
+        const std::string& hl,
+        S32 h_pad = 2,
+        S32 v_pad = 1);
+
     void textboxSetGreyedVal(
             LLTextBox *txtbox,
             const LLStyle::Params& normal_style,

@@ -114,6 +114,9 @@ void LLPanelInventoryListItemBase::draw()
         mSelectedImage->draw(local_rect);
     }
 
+    // Under the item name, which is drawn with the other children
+    LLTextUtil::drawHighlightBox(mTitleCtrl, mHighlightedText);
+
     if (mSeparatorVisible && mSeparatorImage)
     {
         // place under bottom of listitem, using image height

@@ -104,6 +104,9 @@ private:
     // style saved when applying it in setTitleFontStyle
     LLStyle::Params mStyleParams;
 
+    // upper-cased part of the title matching a filter, see setTitle
+    std::string mHighlight;
+
     LLUIColor mHeaderBGColor;
 
     bool mNeedsHighlight;
@@ -169,6 +172,7 @@ void LLAccordionCtrlTab::LLAccordionCtrlTabHeader::setTitle(const std::string& t
 {
     if (mHeaderTextbox)
     {
+        mHighlight = hl;
         LLTextUtil::textboxSetHighlightedVal(
             mHeaderTextbox,
             mStyleParams,
@@ -241,6 +245,12 @@ void LLAccordionCtrlTab::LLAccordionCtrlTabHeader::draw()
         }
         overlay_image->draw(HEADER_IMAGE_LEFT_OFFSET, (height - overlay_image->getHeight()) / 2);
     }
+
+    // Under the title, which is drawn with the other children. Its font is larger
+    // than the one of list items, so the box gets more room around the match.
+    const S32 HEADER_HIGHLIGHT_H_PAD = 5;
+    const S32 HEADER_HIGHLIGHT_V_PAD = 4;
+    LLTextUtil::drawHighlightBox(mHeaderTextbox, mHighlight, HEADER_HIGHLIGHT_H_PAD, HEADER_HIGHLIGHT_V_PAD);
 
     LLUICtrl::draw();
 }
