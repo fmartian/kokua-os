@@ -537,6 +537,37 @@ void LLOutfitsList::resetItemSelection(LLWearableItemsList* list, const LLUUID& 
             }
         }
     }
+
+    // An outfit expanded near the bottom would open below the visible part of the list
+    outfits_map_t::iterator found = mOutfitsMap.find(category_id);
+    if (found != mOutfitsMap.end() && found->second && found->second->getDisplayChildren())
+    {
+        // Its items may still be loading, show it again once they are all there
+        mTabToReveal = found->second;
+        revealTab(found->second);
+    }
+    else
+    {
+        mTabToReveal = NULL;
+    }
+}
+
+void LLOutfitsList::revealTab(LLOutfitAccordionCtrlTab* tab)
+{
+    // The tab sizes and positions are only updated when the accordion is drawn
+    mAccordion->arrange();
+
+    // Same as one click on the scrollbar arrow, see VERTICAL_MULTIPLE in llaccordionctrl.cpp
+    const S32 SCROLL_STEP = 16;
+
+    // An outfit expanded at the bottom of the list opens out of view. Scroll one step,
+    // enough to hint at what is under its name, and only when none of that is showing.
+    LLRect hint_rect = tab->getLocalRect();
+    hint_rect.mBottom = hint_rect.mTop - tab->getHeaderHeight() - SCROLL_STEP;
+
+    LLRect screen_rect;
+    tab->localRectToScreen(hint_rect, &screen_rect);
+    static_cast<LLView*>(mAccordion)->notifyParent(LLSD().with("scrollToShowRect", screen_rect.getValue()));
 }
 
 void LLOutfitsList::onChangeOutfitSelection(LLWearableItemsList* list, const LLUUID& category_id)
@@ -586,10 +617,20 @@ void LLOutfitsList::restoreOutfitSelection(LLOutfitAccordionCtrlTab* tab, const 
 
 void LLOutfitsList::onRefreshComplete(LLUICtrl* ctrl, LLOutfitAccordionCtrlTab* tab)
 {
-    if (!ctrl || getFilterSubString().empty())
+    if (!ctrl)
         return;
 
     LLWearableItemsList* list = dynamic_cast<LLWearableItemsList*>(tab->getAccordionView());
+    if (tab == mTabToReveal && list == ctrl && !list->getNeedsRefresh())
+    {
+        // All the items of the outfit that was just expanded are in the list now
+        mTabToReveal = NULL;
+        revealTab(tab);
+    }
+
+    if (getFilterSubString().empty())
+        return;
+
     if (list != ctrl)
     {
         llassert(false);

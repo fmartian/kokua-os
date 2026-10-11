@@ -399,6 +399,11 @@ private:
     void resetItemSelection(LLWearableItemsList* list, const LLUUID& category_id);
 
     /**
+     * Scrolls the list of outfits one step when an expanded outfit opens out of view
+     */
+    void revealTab(LLOutfitAccordionCtrlTab* tab);
+
+    /**
      * Removes the outfit from selection.
      */
     /*virtual*/ void deselectOutfit(const LLUUID& category_id);
@@ -463,6 +468,8 @@ private:
      * True if there is a selection inside currently selected outfit
      */
     bool                            mItemSelected;
+    // Outfit expanded while its items were loading, only compared and never used
+    LLOutfitAccordionCtrlTab*       mTabToReveal = NULL;
 
     boost::signals2::connection                   mSavedSettingInvFavColor;
 };
