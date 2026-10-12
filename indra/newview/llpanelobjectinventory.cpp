@@ -1096,8 +1096,8 @@ public:
     LLUIImagePtr getIcon() const override;
 
     //static bool enableIfCopyable( void* userdata );
-    virtual void performAction(LLInventoryModel* model, std::string action);
-    virtual void buildContextMenu(LLMenuGL& menu, U32 flags);
+    void performAction(LLInventoryModel* model, std::string action) override;
+    void buildContextMenu(LLMenuGL& menu, U32 flags) override;
 };
 
 // virtual
