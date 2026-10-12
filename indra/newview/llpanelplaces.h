@@ -79,6 +79,10 @@ public:
 
     bool tabsCreated() { return mTabsCreated;}
 
+    // Type of the tab currently shown ("open_favorites_tab", "open_landmark_tab" or
+    // "open_visited_tab"), empty when a place profile is shown instead of the tabs
+    std::string getShownTabType();
+
     /*virtual*/ S32 notifyParent(const LLSD& info);
 
     void hideBackBtn();

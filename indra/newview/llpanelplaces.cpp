@@ -1375,6 +1375,25 @@ void LLPanelPlaces::hideBackBtn()
     mPlaceProfile->setBackgroundVisible(false);
 }
 
+std::string LLPanelPlaces::getShownTabType()
+{
+    if (!mTabContainer || !mTabContainer->getVisible())
+        return std::string();
+
+    LLPanel* tab = mTabContainer->getCurrentPanel();
+    if (!tab)
+        return std::string();
+
+    const std::string& name = tab->getName();
+    if (name == "Favorites")
+        return FAVORITES_TAB_INFO_TYPE;
+    if (name == "Landmarks")
+        return LANDMARK_TAB_INFO_TYPE;
+    if (name == "Teleport History")
+        return VISITED_TAB_INFO_TYPE;
+    return std::string();
+}
+
 static bool is_agent_in_selected_parcel(LLParcel* parcel)
 {
     LLViewerParcelMgr* parcel_mgr = LLViewerParcelMgr::getInstance();

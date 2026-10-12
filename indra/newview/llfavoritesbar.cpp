@@ -460,6 +460,9 @@ LLFavoritesBarCtrl::LLFavoritesBarCtrl(const LLFavoritesBarCtrl::Params& p)
     mSubfolderFilterBtn->setVisible(false);
     addChild(mSubfolderFilterBtn);
 
+    mLandmarksSortConnection = gSavedSettings.getControl("LandmarksSortedByDate")->getSignal()->connect(
+        boost::bind(&LLFavoritesBarCtrl::onLandmarksSortOrderChanged, this));
+
     mDropDownItemsCount = 0;
 
 
@@ -468,6 +471,7 @@ LLFavoritesBarCtrl::LLFavoritesBarCtrl(const LLFavoritesBarCtrl::Params& p)
 LLFavoritesBarCtrl::~LLFavoritesBarCtrl()
 {
     gInventory.removeObserver(this);
+    mLandmarksSortConnection.disconnect();
 
     if (mOverflowMenuHandle.get())
         mOverflowMenuHandle.get()->die();
@@ -563,7 +567,12 @@ bool LLFavoritesBarCtrl::handleDragAndDrop(S32 x, S32 y, MASK mask, bool drop,
                 }
             }
 
-            if (existing_item)
+            if (existing_item && mBarMode == BAR_MODE_LANDMARKS)
+            {
+                // Landmarks follow the Landmarks panel sort order, they can't be reordered here
+                break;
+            }
+            else if (existing_item)
             {
                 *accept = ACCEPT_YES_SINGLE;
 
@@ -576,14 +585,17 @@ bool LLFavoritesBarCtrl::handleDragAndDrop(S32 x, S32 y, MASK mask, bool drop,
             }
             else
             {
-                const LLUUID favorites_id = gInventory.findCategoryUUIDForType(LLFolderType::FT_FAVORITE);
-                if (item->getParentUUID() == favorites_id)
+                const LLUUID favorites_id = getDropDestinationFolderID();
+                // Landmarks already shown on the bar are left where they are
+                if (item->getParentUUID() == favorites_id
+                    || gInventory.isObjectDescendentOf(item->getUUID(), favorites_id))
                 {
-                    LL_WARNS("FavoritesBar") << "Attemt to copy a favorite item into the same folder." << LL_ENDL;
+                    LL_DEBUGS("FavoritesBar") << "Landmark is already in the folder shown on the bar." << LL_ENDL;
                     break;
                 }
 
-                *accept = ACCEPT_YES_COPY_MULTI;
+                // Own landmarks are moved like in the inventory, Library ones are copied
+                *accept = isMovableToBar(item) ? ACCEPT_YES_MULTI : ACCEPT_YES_COPY_MULTI;
 
                 showDragMarker(true);
 
@@ -651,46 +663,72 @@ void LLFavoritesBarCtrl::handleNewFavoriteDragAndDrop(LLInventoryItem *item, con
         return;
 
     LLPointer<LLViewerInventoryItem> viewer_item = new LLViewerInventoryItem(item);
-
-    // Insert the dragged item to the right place
-    if (target_id.notNull())
-    {
-        insertItem(mItems, target_id, viewer_item, insert_before);
-    }
-    else
-    {
-        // This can happen when the item list is empty
-        mItems.push_back(viewer_item);
-    }
-
-    int sortField = 0;
     LLPointer<LLItemCopiedCallback> cb;
+    const bool move_item = isMovableToBar(item);
 
-    const F64 CALLBACK_WAIT_TIME = 30.f;
-    sWaitingForCallabck = LLTimer::getTotalSeconds() + CALLBACK_WAIT_TIME;
-
-    // current order is saved by setting incremental values (1, 2, 3, ...) for the sort field
-    for (LLInventoryModel::item_array_t::iterator i = mItems.begin(); i != mItems.end(); ++i)
+    // The custom order is only kept for Favorites. In Landmarks mode the bar shows
+    // every landmark, so renumbering them all would flood the server with updates.
+    if (mBarMode == BAR_MODE_FAVORITES)
     {
-        LLViewerInventoryItem* currItem = *i;
-
-        if (currItem->getUUID() == item->getUUID())
+        // Insert the dragged item to the right place
+        if (target_id.notNull())
         {
-            cb = new LLItemCopiedCallback(++sortField);
+            insertItem(mItems, target_id, viewer_item, insert_before);
         }
         else
         {
-            LLFavoritesOrderStorage::instance().setSortIndex(currItem, ++sortField);
+            // This can happen when the item list is empty
+            mItems.push_back(viewer_item);
+        }
 
-            currItem->setComplete(true);
-            currItem->updateServer(false);
+        int sortField = 0;
 
-            gInventory.updateItem(currItem);
+        if (!move_item)
+        {
+            // A copy gets a new item ID, its sort index is set when the copy arrives
+            const F64 CALLBACK_WAIT_TIME = 30.f;
+            sWaitingForCallabck = LLTimer::getTotalSeconds() + CALLBACK_WAIT_TIME;
+        }
+
+        // current order is saved by setting incremental values (1, 2, 3, ...) for the sort field
+        for (LLInventoryModel::item_array_t::iterator i = mItems.begin(); i != mItems.end(); ++i)
+        {
+            LLViewerInventoryItem* currItem = *i;
+
+            if (currItem->getUUID() == item->getUUID())
+            {
+                if (move_item)
+                {
+                    // A moved item keeps its ID, the server is updated by the move itself
+                    LLFavoritesOrderStorage::instance().setSortIndex(currItem, ++sortField);
+                }
+                else
+                {
+                    cb = new LLItemCopiedCallback(++sortField);
+                }
+            }
+            else
+            {
+                LLFavoritesOrderStorage::instance().setSortIndex(currItem, ++sortField);
+
+                currItem->setComplete(true);
+                currItem->updateServer(false);
+
+                gInventory.updateItem(currItem);
+            }
         }
     }
 
     LLToolDragAndDrop* tool_dad = LLToolDragAndDrop::getInstance();
-    if (tool_dad->getSource() == LLToolDragAndDrop::SOURCE_NOTECARD)
+    if (move_item)
+    {
+        change_item_parent(item->getUUID(), favorites_id);
+        if (mBarMode == BAR_MODE_FAVORITES)
+        {
+            LLFavoritesOrderStorage::instance().saveOrder();
+        }
+    }
+    else if (tool_dad->getSource() == LLToolDragAndDrop::SOURCE_NOTECARD)
     {
         viewer_item->setType(LLAssetType::AT_LANDMARK);
         copy_inventory_from_notecard(favorites_id,
@@ -722,7 +760,16 @@ void LLFavoritesBarCtrl::handleNewFavoriteDragAndDrop(LLInventoryItem *item, con
         positionAndShowOverflowMenu();
     }
 
-    LL_INFOS("FavoritesBar") << "Copied inventory item #" << item->getUUID() << " to favorites." << LL_ENDL;
+    LL_INFOS("FavoritesBar") << (move_item ? "Moved" : "Copied") << " inventory item #" << item->getUUID()
+                             << " to folder #" << favorites_id << LL_ENDL;
+}
+
+bool LLFavoritesBarCtrl::isMovableToBar(const LLInventoryItem* item) const
+{
+    // Only items in the agent's own inventory can be moved, Library items are copied
+    return item
+        && LLToolDragAndDrop::getInstance()->getSource() == LLToolDragAndDrop::SOURCE_AGENT
+        && gInventory.isObjectDescendentOf(item->getUUID(), gInventory.getRootFolderID());
 }
 
 bool LLFavoritesBarCtrl::findDragAndDropTarget(LLUUID& target_id, bool& insert_before, S32 x, S32 y)
@@ -1189,6 +1236,25 @@ LLUUID LLFavoritesBarCtrl::getBarRootFolderID() const
     return mFavoriteFolderId;
 }
 
+LLUUID LLFavoritesBarCtrl::getDropDestinationFolderID() const
+{
+    // Visited mode doesn't show an inventory folder, keep dropping into Favorites
+    if (mBarMode == BAR_MODE_VISITED)
+        return gInventory.findCategoryUUIDForType(LLFolderType::FT_FAVORITE);
+
+    // Drop into the folder currently shown so the new landmark is visible on the bar
+    const LLUUID root_id = getBarRootFolderID();
+    if (root_id.isNull())
+        return gInventory.findCategoryUUIDForType(LLFolderType::FT_FAVORITE);
+    if (mFilterFolderID.notNull()
+        && gInventory.getCategory(mFilterFolderID)
+        && gInventory.isObjectDescendentOf(mFilterFolderID, root_id))
+    {
+        return mFilterFolderID;
+    }
+    return root_id;
+}
+
 void LLFavoritesBarCtrl::getDirectSubfolders(LLInventoryModel::cat_array_t& cats)
 {
     LLInventoryModel::cat_array_t*  direct_cats = nullptr;
@@ -1232,6 +1298,25 @@ void LLFavoritesBarCtrl::updateSubfolderFilter()
 
     LLUUID root_id = getBarRootFolderID();
     if (root_id.isNull()) return;
+
+    // Apply the saved subfolder of this mode once its folder is known
+    if (mPendingFilterFolderID.notNull())
+    {
+        if (gInventory.getCategory(mPendingFilterFolderID))
+        {
+            if (gInventory.isObjectDescendentOf(mPendingFilterFolderID, root_id))
+            {
+                mFilterFolderID = mPendingFilterFolderID;
+            }
+            mPendingFilterFolderID.setNull();
+        }
+        else if (gInventory.isInventoryUsable())
+        {
+            // The folder no longer exists, show the root folder
+            mPendingFilterFolderID.setNull();
+            gSavedPerAccountSettings.setString(getSubfolderSettingName(), std::string());
+        }
+    }
 
     LLInventoryModel::cat_array_t subfolders;
     getDirectSubfolders(subfolders);
@@ -1287,9 +1372,42 @@ void LLFavoritesBarCtrl::onSubfolderFilterClicked()
     }
 }
 
+std::string LLFavoritesBarCtrl::getSubfolderSettingName() const
+{
+    if (mBarMode == BAR_MODE_FAVORITES)
+        return "KokuaFavoritesBarSubfolder";
+    if (mBarMode == BAR_MODE_LANDMARKS)
+        return "KokuaLandmarksBarSubfolder";
+    return std::string();
+}
+
 void LLFavoritesBarCtrl::onSubfolderSelected(const LLUUID& folder_id)
 {
     mFilterFolderID = folder_id;
+    mPendingFilterFolderID.setNull();
+    const std::string setting_name = getSubfolderSettingName();
+    if (!setting_name.empty())
+    {
+        gSavedPerAccountSettings.setString(setting_name,
+            folder_id.notNull() ? folder_id.asString() : std::string());
+    }
+    updateButtons(true);
+}
+
+void LLFavoritesBarCtrl::restoreSavedSubfolder()
+{
+    const std::string setting_name = getSubfolderSettingName();
+    if (setting_name.empty())
+        return;
+
+    LLUUID saved_id;
+    const std::string saved_str = gSavedPerAccountSettings.getString(setting_name);
+    if (LLUUID::validate(saved_str))
+    {
+        saved_id.set(saved_str);
+    }
+    // Applied by updateSubfolderFilter() once the folder is loaded
+    mPendingFilterFolderID = saved_id;
     updateButtons(true);
 }
 
@@ -1369,7 +1487,30 @@ bool LLFavoritesBarCtrl::collectFavoriteItems(LLInventoryModel::item_array_t &it
     LLIsType is_type(LLAssetType::AT_LANDMARK);
     gInventory.collectDescendentsIf(search_root, cats, items, LLInventoryModel::EXCLUDE_TRASH, is_type);
 
-    std::sort(items.begin(), items.end(), LLFavoritesSort());
+    if (mBarMode == BAR_MODE_LANDMARKS)
+    {
+        // Same order as the Landmarks panel: newest first, or by name
+        if (gSavedSettings.getBOOL("LandmarksSortedByDate"))
+        {
+            std::sort(items.begin(), items.end(),
+                [](const LLViewerInventoryItem* a, const LLViewerInventoryItem* b)
+                {
+                    return a->getCreationDate() > b->getCreationDate();
+                });
+        }
+        else
+        {
+            std::sort(items.begin(), items.end(),
+                [](const LLViewerInventoryItem* a, const LLViewerInventoryItem* b)
+                {
+                    return LLStringUtil::compareDict(a->getName(), b->getName()) < 0;
+                });
+        }
+    }
+    else
+    {
+        std::sort(items.begin(), items.end(), LLFavoritesSort());
+    }
 
     if (mBarMode == BAR_MODE_FAVORITES && needToSaveItemsOrder(items))
     {
@@ -1411,12 +1552,31 @@ bool LLFavoritesBarCtrl::collectVisitedItems(LLInventoryModel::item_array_t &ite
     return true;
 }
 
+void LLFavoritesBarCtrl::onLandmarksSortOrderChanged()
+{
+    if (mBarMode == BAR_MODE_LANDMARKS)
+    {
+        updateButtons(true);
+    }
+}
+
 void LLFavoritesBarCtrl::setBarMode(EBarMode mode)
 {
     if (mBarMode != mode)
     {
         mBarMode = mode;
-        updateButtons(true);
+
+        // Favorites and Landmarks go back to the subfolder they were showing
+        mFilterFolderID.setNull();
+        mPendingFilterFolderID.setNull();
+        if (mode == BAR_MODE_VISITED)
+        {
+            updateButtons(true);
+        }
+        else
+        {
+            restoreSavedSubfolder();
+        }
     }
 }
 
@@ -1958,11 +2118,22 @@ void LLFavoritesBarCtrl::pasteFromClipboard() const
         std::vector<LLUUID> objects;
         LLClipboard::instance().pasteFromClipboard(objects);
         auto count = objects.size();
-        LLUUID parent_id(mFavoriteFolderId);
+        LLUUID parent_id(getDropDestinationFolderID());
+        // A cut is pasted by moving the items, like in the inventory
+        const bool cut_mode = LLClipboard::instance().isCutMode();
         for(size_t i = 0; i < count; i++)
         {
             item = model->getItem(objects.at(i));
-            if (item)
+            if (!item)
+            {
+                continue;
+            }
+
+            if (cut_mode && model->isObjectDescendentOf(item->getUUID(), model->getRootFolderID()))
+            {
+                change_item_parent(item->getUUID(), parent_id);
+            }
+            else
             {
                 copy_inventory_item(
                     gAgent.getID(),
@@ -1972,6 +2143,12 @@ void LLFavoritesBarCtrl::pasteFromClipboard() const
                     std::string(),
                     LLPointer<LLInventoryCallback>(NULL));
             }
+        }
+
+        if (cut_mode)
+        {
+            // Change mode to paste for next paste
+            LLClipboard::instance().setCutMode(false);
         }
     }
 }
@@ -2022,9 +2199,16 @@ bool LLFavoritesBarCtrl::handleHover(S32 x, S32 y, MASK mask)
 
         if(LLToolDragAndDrop::getInstance()->isOverThreshold(screenX, screenY))
         {
-            LLToolDragAndDrop::getInstance()->beginDrag(
-                DAD_LANDMARK, mDragItemId,
-                LLToolDragAndDrop::SOURCE_LIBRARY);
+            // Landmarks from the agent's inventory are dragged as such, so dropping them
+            // on a folder moves them like in the inventory. Visited entries are not
+            // inventory items and keep the Library source.
+            LLToolDragAndDrop::ESource source = LLToolDragAndDrop::SOURCE_LIBRARY;
+            if (mBarMode != BAR_MODE_VISITED
+                && gInventory.isObjectDescendentOf(mDragItemId, gInventory.getRootFolderID()))
+            {
+                source = LLToolDragAndDrop::SOURCE_AGENT;
+            }
+            LLToolDragAndDrop::getInstance()->beginDrag(DAD_LANDMARK, mDragItemId, source);
 
             mStartDrag = false;
 

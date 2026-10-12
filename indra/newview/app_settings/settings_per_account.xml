@@ -237,6 +237,28 @@
         <key>Value</key>
             <string>open_favorites_tab</string>
         </map>
+    <key>KokuaFavoritesBarSubfolder</key>
+        <map>
+        <key>Comment</key>
+            <string>UUID of the Favorites subfolder shown on the favorites bar, empty for the Favorites root</string>
+        <key>Persist</key>
+            <integer>1</integer>
+        <key>Type</key>
+            <string>String</string>
+        <key>Value</key>
+            <string />
+        </map>
+    <key>KokuaLandmarksBarSubfolder</key>
+        <map>
+        <key>Comment</key>
+            <string>UUID of the Landmarks subfolder shown on the favorites bar, empty for the Landmarks root</string>
+        <key>Persist</key>
+            <integer>1</integer>
+        <key>Type</key>
+            <string>String</string>
+        <key>Value</key>
+            <string />
+        </map>
          <key>NavigationBarRatio</key>
    	 <map>	
         <key>Comment</key>
