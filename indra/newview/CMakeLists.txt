@@ -797,6 +797,7 @@ set(viewer_SOURCE_FILES
 	  kokuachatbar.cpp
 	  kokuafloateravatarattachments.cpp
 	  kokuafloaterbulkrename.cpp
+	  kokuafontpreview.cpp
 	  kokuafloaterstreaminfo.cpp
 	  kokuafloaterwind.cpp
     )
@@ -1518,6 +1519,7 @@ set(viewer_HEADER_FILES
 	  kokuachatbar.h
 	  kokuafloateravatarattachments.h
 	  kokuafloaterbulkrename.h
+	  kokuafontpreview.h
 	  kokuafloaterstreaminfo.h
 	  kokuafloaterwind.h
     )

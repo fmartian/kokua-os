@@ -365,6 +365,19 @@ are allowed.
 
 	<!-- Indicates something is being loaded. Maybe should be merged with RetrievingData -->
 	<string name="LoadingData">Loading...</string>
+
+	<!-- Font scheme sample in Preferences -->
+	<string name="FontPreviewRegular">Regular</string>
+	<string name="FontPreviewBold">Bold</string>
+	<string name="FontPreviewItalic">Italic</string>
+	<string name="FontPreviewSmall">Small</string>
+	<string name="FontPreviewLarge">Large</string>
+	<string name="FontPreviewMonospace">Monospace</string>
+	<string name="FontPreviewPangram">The quick brown fox jumps over the lazy dog. 0123456789</string>
+	<string name="FontPreviewAccents">El veloz murciélago hindú comía feliz cardillo y kiwi. ñ ü ç ß å ø</string>
+	<string name="FontPreviewShort">Quick brown fox 0123456789 áéíóú ñ</string>
+	<string name="FontPreviewCode">0O 1lI {}[]() &lt;= != -&gt; 0123456789 áéñ</string>
+	<string name="FontPreviewUnavailable">This font scheme could not be read.</string>
         	<!-- Indicates a protected Inventory folder. ## Zi: Animation Overrider -->
         <string name="ProtectedFolder">protected</string>
 

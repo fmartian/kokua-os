@@ -681,6 +681,16 @@
 	         length="1">
 	           (Requires restart)
 	        </text>
+	        <kokua_font_preview
+	         follows="left|top"
+	         height="150"
+	         layout="topleft"
+	         left="20"
+	         mouse_opaque="false"
+	         name="font_preview"
+	         tool_tip="Sample of the selected font scheme and size adjustment. The viewer itself changes after a restart."
+	         top_pad="8"
+	         width="475" />
 
 	        <text
 	         name="tooltip_textbox5"

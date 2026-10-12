@@ -205,6 +205,7 @@
 
 #include "llwindowlistener.h"
 #include "llviewerwindowlistener.h"
+#include "kokuafontpreview.h"
 #include "llstatslistener.h"
 #include "llcleanup.h"
 
@@ -5963,6 +5964,7 @@ void LLViewerWindow::stopGL()
         stop_glerror();
 
         LLFontGL::destroyAllGL();
+        KokuaFontPreview::releaseAll();
         stop_glerror();
 
         LLVOAvatar::destroyGL();
@@ -6057,6 +6059,8 @@ void LLViewerWindow::restoreGL(const std::string& progress_message)
 void LLViewerWindow::initFonts(F32 zoom_factor)
 {
     LLFontGL::destroyAllGL();
+    // The font samples in Preferences were built for the scale that is about to change
+    KokuaFontPreview::releaseAll();
     // Initialize with possibly different zoom factor
 
     LLFontManager::initClass();
