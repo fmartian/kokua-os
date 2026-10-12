@@ -13,6 +13,28 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
+    <key>KokuaWindShowApparent</key>
+    <map>
+      <key>Comment</key>
+      <string>Show the apparent wind (wind minus your own velocity) in the Wind floater</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
+    <key>KokuaWindPinned</key>
+    <map>
+      <key>Comment</key>
+      <string>Keep the Wind floater in front of the other floaters</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
     <key>KokuaFixedHeightDialogs</key>
     <map>
       <key>Comment</key>
