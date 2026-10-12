@@ -681,12 +681,25 @@ void LLOutfitsList::onFilterSubStringChanged(const std::string& new_string, cons
             // Restore tab title when filter is empty
             tab->setTitle(tab->getTitle());
 
+            // Close the outfits the search opened here, without the tab announcing it.
+            // Left to "restore_state" each of them would rearrange the whole accordion,
+            // which with hundreds of outfits blocks the viewer for a long while.
+            if (mOutfitsOpenedBySearch.count(category_id) && tab->getDisplayChildren())
+            {
+                tab->setDisplayChildren(false);
+            }
+
             // Restore accordion state after all those accodrion tab manipulations
             tab->notifyChildren(LLSD().with("action", "restore_state"));
 
             // Try restoring the tab selection.
             restoreOutfitSelection(tab, category_id);
         }
+    }
+
+    if (new_string.empty())
+    {
+        mOutfitsOpenedBySearch.clear();
     }
 
     mAccordion->arrange();
@@ -723,6 +736,7 @@ void LLOutfitsList::applyFilterToTab(
         {
             tab->setDisplayChildren(true);
             list->notify(LLSD().with("rearrange", true));
+            mOutfitsOpenedBySearch.insert(category_id);
         }
 
         // Remove title highlighting because it might

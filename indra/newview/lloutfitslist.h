@@ -470,6 +470,8 @@ private:
     bool                            mItemSelected;
     // Outfit expanded while its items were loading, only compared and never used
     LLOutfitAccordionCtrlTab*       mTabToReveal = NULL;
+    // Outfits that were collapsed and the search opened because of what they hold
+    uuid_set_t                      mOutfitsOpenedBySearch;
 
     boost::signals2::connection                   mSavedSettingInvFavColor;
 };
