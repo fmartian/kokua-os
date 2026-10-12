@@ -21213,7 +21213,7 @@
       <key>Type</key>
       <string>U32</string>
       <key>Value</key>
-      <integer>1023</integer>
+      <integer>2047</integer>
     </map>
     <key>FSStaticEyesUUID</key>
     <map>

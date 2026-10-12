@@ -2734,6 +2734,7 @@ If you continue to receive this message, please contact Second Life support for 
 	<string name="NotRunQueueStart">set not running</string>
 	<string name="LocateQueueTitle">Locate Progress</string>
 	<string name="LocateQueueStart">locate</string>
+	<string name="DetailQueueTitle">Detail Progress</string>
 	<string name="StatusQueueTitle">Status Progress</string>
 	<string name="DeleteQueueTitle">Delete Progress</string>
 	<string name="DeleteQueueStart">delete</string>

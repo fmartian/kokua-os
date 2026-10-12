@@ -19,6 +19,22 @@
     Screen
   </floater.string>
   <floater.string
+   name="copy_key_label">
+    Copy Key
+  </floater.string>
+  <floater.string
+   name="copy_key_tooltip">
+    Copies the selected object's key to the clipboard.
+  </floater.string>
+  <floater.string
+   name="copy_keys_label">
+    Copy Keys
+  </floater.string>
+  <floater.string
+   name="copy_keys_tooltip">
+    Copies the selected objects' keys to the clipboard.
+  </floater.string>
+  <floater.string
    name="grid_local_text">
     Local
   </floater.string>

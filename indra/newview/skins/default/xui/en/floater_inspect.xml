@@ -114,6 +114,10 @@ VRAM: [VRAM_USAGE] KB
          dynamic_width="true"
          sort_column="creation_date_sort"/>
         <scroll_list.columns
+         label="UUID"
+         name="object_uuid"
+         width="250"/>
+        <scroll_list.columns
          label=""
          name="facecount_sort"
          width="-1" />

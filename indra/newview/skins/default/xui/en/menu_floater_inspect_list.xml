@@ -17,7 +17,7 @@
       label="Edit"
       name="Edit...">
     <menu_item_call.on_click
-        function="Object.Edit" />
+        function="Inspect.EditPrim" />
     <menu_item_call.on_enable
         function="EnableEdit"/>
   </menu_item_call> 

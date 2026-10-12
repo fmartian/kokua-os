@@ -490,6 +490,11 @@ void LLFloaterTools::refresh()
     S32 faces_num = 0;
     S32 prim_count = LLSelectMgr::getInstance()->getSelection()->getObjectCount();
 
+    // A single prim has a single key
+    LLButton* copy_keys_btn = getChild<LLButton>("btnCopyKeys");
+    copy_keys_btn->setLabel(getString(prim_count == 1 ? "copy_key_label" : "copy_keys_label"));
+    copy_keys_btn->setToolTip(getString(prim_count == 1 ? "copy_key_tooltip" : "copy_keys_tooltip"));
+
     //KKA-744 Show the linkset number when working with faces too, so we need it either way
     if (prim_count == 1)
     {

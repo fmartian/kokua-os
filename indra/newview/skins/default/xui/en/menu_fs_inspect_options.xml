@@ -91,4 +91,14 @@
 		 function="Inspect.ToggleColumn"
 		 parameter="creation_date"/>
 	</menu_item_check>
+	<menu_item_check
+	 label="UUID"
+	 name="object_uuid">
+		<menu_item_check.on_check
+		 function="Inspect.EnableColumn"
+		 parameter="object_uuid"/>
+		<menu_item_check.on_click
+		 function="Inspect.ToggleColumn"
+		 parameter="object_uuid"/>
+	</menu_item_check>
 </toggleable_menu>
