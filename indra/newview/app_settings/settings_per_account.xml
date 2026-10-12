@@ -35,6 +35,17 @@
         <key>Value</key>
             <integer>0</integer>
         </map>
+    <key>KokuaPieMenuCenterGoesBack</key>
+        <map>
+        <key>Comment</key>
+            <string>Clicking the center of a pie submenu goes back to the previous pie menu instead of closing it.</string>
+        <key>Persist</key>
+            <integer>1</integer>
+        <key>Type</key>
+            <string>Boolean</string>
+        <key>Value</key>
+            <integer>1</integer>
+        </map>
     <key>UseAO</key>
         <map>
         <key>Comment</key>

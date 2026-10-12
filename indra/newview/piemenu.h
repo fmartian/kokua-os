@@ -81,6 +81,8 @@ class PieMenu : public LLMenuGL
         slice_list_t mMySlices;
         // pointer to the currently used list
         slice_list_t* mSlices;
+        // lists of the menus we came from, to go back by clicking the center
+        std::vector<slice_list_t*> mSlicesHistory;
 
         // appends a sub pie menu to the current pie
         bool appendContextSubMenu(PieMenu* menu);

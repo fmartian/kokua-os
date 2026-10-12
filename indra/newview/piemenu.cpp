@@ -203,6 +203,7 @@ void PieMenu::show(S32 x, S32 y, LLView* spawning_view)
 
     // set up the slices pointer to the menu's own slices
     mSlices = &mMySlices;
+    mSlicesHistory.clear();
 
     // reset enable update checks for slices
     for (slice_list_t::iterator it = mSlices->begin(); it != mSlices->end(); ++it)
@@ -238,6 +239,7 @@ void PieMenu::hide()
 
     mCurrentSegment = -1;
     mSlices = &mMySlices;
+    mSlicesHistory.clear();
 #if PIE_POPUP_EFFECT
     // safety in case the timer was still running
     mPopupTimer.stop();
@@ -277,7 +279,9 @@ void PieMenu::draw()
     LLColor4 selectedColor = LLUIColorTable::instance().getColor("PieMenuSelectedColor");
     LLColor4 textColor = LLUIColorTable::instance().getColor("PieMenuTextColor");
     LLColor4 bgColor = LLUIColorTable::instance().getColor("PieMenuBgColor");
-    LLColor4 borderColor = bgColor % 0.3f;
+    // even background up to the rim, like Imprudence, so the labels in the outer half
+    // keep their contrast. "Override pie colors" with PieMenuFade can still fade it.
+    LLColor4 borderColor = bgColor;
 
     // if the user wants their own colors, apply them here
     static LLCachedControl<bool> sOverridePieColors(gSavedSettings, "OverridePieColors", false);
@@ -521,9 +525,34 @@ bool PieMenu::handleMouseButtonUp(S32 x, S32 y, MASK mask)
         // default to invisible
         BOOL visible = FALSE;
 
+        // a click in the center of a submenu goes back to the previous menu
+        static LLCachedControl<bool> center_goes_back(gSavedPerAccountSettings, "KokuaPieMenuCenterGoesBack", true);
+        LLVector2 mouse_vector((F32)(x - PIE_OUTER_SIZE), (F32)(y - PIE_OUTER_SIZE));
+        bool go_back = center_goes_back && !mSlicesHistory.empty() && mouse_vector.length() <= PIE_INNER_SIZE;
+
         // get the current selected slice and check if this is a regular click slice
         PieSlice* currentSlice = dynamic_cast<PieSlice*>(mSlice);
-        if (currentSlice)
+        if (go_back)
+        {
+            mSlices = mSlicesHistory.back();
+            mSlicesHistory.pop_back();
+            // reset enable update checks for slices
+            for (slice_list_t::iterator it = mSlices->begin(); it != mSlices->end(); ++it)
+            {
+                PieSlice* resetSlice = dynamic_cast<PieSlice*>(*it);
+                if (resetSlice)
+                {
+                    resetSlice->resetUpdateEnabledCheck();
+                }
+            }
+            visible = TRUE;
+#if PIE_POPUP_EFFECT
+            mPopupTimer.reset();
+            mPopupTimer.start();
+#endif
+            make_ui_sound("UISndPieMenuAppear");
+        }
+        else if (currentSlice)
         {
             // if so, click it and make a sound
             make_ui_sound("UISndClickRelease");
@@ -537,6 +566,8 @@ bool PieMenu::handleMouseButtonUp(S32 x, S32 y, MASK mask)
             {
                 // if so, remember we clicked the menu already at least once
                 mFirstClick = false;
+                // remember where we came from, to be able to go back
+                mSlicesHistory.push_back(mSlices);
                 // swap out the list of items for the ones in the submenu
                 mSlices = &currentSubmenu->mMySlices;
                 // reset enable update checks for slices
