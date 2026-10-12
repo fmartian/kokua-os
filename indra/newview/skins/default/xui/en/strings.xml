@@ -354,6 +354,13 @@ are allowed.
 	<!-- Indicates that an avatar name or other similar datum is being retrieved. General usage. -->
 	<string name="RetrievingData">Retrieving...</string>
 
+	<string name="ReleaseNotes">Release Notes</string>
+	<!-- Always mark translate="false" for strings that are nothing but URLs, as they don't need translation. -->
+	<string name="RELEASE_NOTES_BASE_URL" translate="false">http://kokuaviewer.org.uk/releasenotes/Kokua:Release_Notes/</string>
+
+	<!-- Indicates something is being loaded. Maybe should be merged with RetrievingData -->
+	<string name="LoadingData">Loading...</string>
+
 	<!-- Font scheme sample in Preferences -->
 	<string name="FontPreviewRegular">Regular</string>
 	<string name="FontPreviewBold">Bold</string>
@@ -366,13 +373,6 @@ are allowed.
 	<string name="FontPreviewShort">Quick brown fox 0123456789 áéíóú ñ</string>
 	<string name="FontPreviewCode">0O 1lI {}[]() &lt;= != -&gt; 0123456789 áéñ</string>
 	<string name="FontPreviewUnavailable">This font scheme could not be read.</string>
-
-	<string name="ReleaseNotes">Release Notes</string>
-	<!-- Always mark translate="false" for strings that are nothing but URLs, as they don't need translation. -->
-	<string name="RELEASE_NOTES_BASE_URL" translate="false">http://kokuaviewer.org.uk/releasenotes/Kokua:Release_Notes/</string>
-
-	<!-- Indicates something is being loaded. Maybe should be merged with RetrievingData -->
-	<string name="LoadingData">Loading...</string>
         	<!-- Indicates a protected Inventory folder. ## Zi: Animation Overrider -->
         <string name="ProtectedFolder">protected</string>
 
