@@ -55,6 +55,13 @@
 #include "llfloaterreg.h"
 #include "llfloatercamera.h"
 #include "llmenugl.h"
+#include "fscommon.h"
+#include "llcallbacklist.h"
+#include "llhudtext.h"
+#include "llslurl.h"
+#include "lltrans.h"
+#include "llviewerregion.h"
+#include "llworld.h"
 
 // Globals
 bool gCameraBtnZoom = true;
@@ -147,6 +154,11 @@ bool LLToolCamera::handleMouseDown(S32 x, S32 y, MASK mask)
     return true;
 }
 
+// The ALT-SHIFT click label stays for this long, fading out at the end
+const F32 CAMERA_FOCUS_LABEL_SECONDS = 3.f;
+const F32 CAMERA_FOCUS_LABEL_FADE_SECONDS = 1.f;
+static LLPointer<LLHUDText> sFocusLabel;
+
 void LLToolCamera::pickCallback(const LLPickInfo& pick_info)
 {
     LLToolCamera* camera = LLToolCamera::getInstance();
@@ -229,6 +241,56 @@ void LLToolCamera::pickCallback(const LLPickInfo& pick_info)
             // Hit the ground
             gAgentCamera.setFocusOnAvatar(false, ANIMATE);
             gAgentCamera.setFocusGlobal(pick_info);
+        }
+
+        // ALT-SHIFT click also reports the point the camera is now looking at
+        if ((pick_info.mKeyMask & (MASK_ALT | MASK_SHIFT | MASK_CONTROL)) == (MASK_ALT | MASK_SHIFT) &&
+            !pick_info.mPosGlobal.isExactlyZero() &&
+            !(hit_obj && hit_obj->isHUDAttachment()))
+        {
+            LLViewerRegion* regionp = LLWorld::getInstance()->getRegionFromPosGlobal(pick_info.mPosGlobal);
+            if (regionp)
+            {
+                LLVector3 pos_region = regionp->getPosRegionFromGlobal(pick_info.mPosGlobal);
+                LLStringUtil::format_map_t args;
+                args["[SLURL]"] = LLSLURL(regionp->getName(), pos_region).getSLURLString();
+                args["[X]"] = llformat("%d", ll_round(pos_region.mV[VX]));
+                args["[Y]"] = llformat("%d", ll_round(pos_region.mV[VY]));
+                args["[Z]"] = llformat("%d", ll_round(pos_region.mV[VZ]));
+                args["[DISTANCE]"] = llformat("%.1f", (F32)(pick_info.mPosGlobal - gAgent.getPositionGlobal()).magVec());
+                report_to_nearby_chat(LLTrans::getString("CameraFocusCoordinates", args));
+
+                // Show the same over the clicked point for a few seconds
+                if (sFocusLabel.notNull())
+                {
+                    sFocusLabel->markDead();
+                }
+                sFocusLabel = (LLHUDText *)LLHUDObject::addHUDObject(LLHUDObject::LL_HUD_TEXT);
+                sFocusLabel->setIgnoreDepth(true);
+                sFocusLabel->setDoFade(false);
+                sFocusLabel->setPositionGlobal(pick_info.mPosGlobal);
+                sFocusLabel->addLine(LLTrans::getString("CameraFocusLabelPosition", args), LLColor4::white);
+                sFocusLabel->addLine(LLTrans::getString("CameraFocusLabelDistance", args), LLColor4::white);
+                LLPointer<LLHUDText> label = sFocusLabel;
+                LLFrameTimer timer;
+                doPeriodically([label, timer]() mutable -> bool
+                {
+                    if (label != sFocusLabel)
+                    {
+                        // Replaced by a newer click
+                        return true;
+                    }
+                    F32 remaining = CAMERA_FOCUS_LABEL_SECONDS - timer.getElapsedTimeF32();
+                    if (remaining <= 0.f)
+                    {
+                        label->markDead();
+                        sFocusLabel = NULL;
+                        return true;
+                    }
+                    label->setAlpha(llmin(1.f, remaining / CAMERA_FOCUS_LABEL_FADE_SECONDS));
+                    return false;
+                }, 0.02f);
+            }
         }
 
         bool zoom_tool = gCameraBtnZoom && (LLToolMgr::getInstance()->getBaseTool() == LLToolCamera::getInstance());

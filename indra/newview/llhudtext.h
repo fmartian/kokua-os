@@ -100,6 +100,8 @@ public:
     void setColor(const LLColor4 &color);
     void setAlpha(F32 alpha);
     void setZCompare(const bool zcompare);
+    // Draw over everything in the world instead of being hidden by what is in front
+    void setIgnoreDepth(bool ignore_depth) { mIgnoreDepth = ignore_depth; }
     void setDoFade(const bool do_fade);
 //  void setVisibleOffScreen(bool visible) { mVisibleOffScreen = visible; }
 
@@ -142,6 +144,7 @@ private:
     F32             mFadeDistance;
     F32             mLastDistance;
     bool            mZCompare;
+    bool            mIgnoreDepth;
 //  bool            mVisibleOffScreen;
     bool            mOffscreen;
     LLColor4        mColor;
