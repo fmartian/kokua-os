@@ -91,9 +91,9 @@ private:
     void onParcelIconClick(EParcelIcon icon);
 
     /**
-     * Handles clicks on the info buttons.
+     * Handles clicks on the parcel info text.
      */
-    void onInfoButtonClicked();
+    void onParcelInfoTextClicked();
 
     /**
      * Called when agent changes the parcel.
@@ -162,7 +162,6 @@ private:
         }
     }
 
-    LLButton*               mInfoBtn;
     LLTextBox*              mParcelInfoText;
     LLTextBox*              mDamageText;
     LLIconCtrl*             mParcelIcon[ICON_COUNT];

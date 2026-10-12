@@ -141,11 +141,9 @@ bool LLPanelTopInfoBar::handleRightMouseDown(S32 x, S32 y, MASK mask)
 
 bool LLPanelTopInfoBar::postBuild()
 {
-    mInfoBtn = getChild<LLButton>("place_info_btn");
-    mInfoBtn->setClickedCallback(boost::bind(&LLPanelTopInfoBar::onInfoButtonClicked, this));
-    mInfoBtn->setToolTip(LLTrans::getString("LocationCtrlInfoBtnTooltip"));
-
     mParcelInfoText = getChild<LLTextBox>("parcel_info_text");
+    mParcelInfoText->setClickedCallback(boost::bind(&LLPanelTopInfoBar::onParcelInfoTextClicked, this));
+    mParcelInfoText->setToolTip(LLTrans::getString("LocationCtrlInfoBtnTooltip"));
     mDamageText = getChild<LLTextBox>("damage_text");
 
     initParcelIcons();
@@ -474,7 +472,7 @@ void LLPanelTopInfoBar::onContextMenuItemClicked(const LLSD::String& item)
     }
 }
 
-void LLPanelTopInfoBar::onInfoButtonClicked()
+void LLPanelTopInfoBar::onParcelInfoTextClicked()
 {
     LLFloaterSidePanelContainer::showPanel("places", LLSD().with("type", "agent"));
 }
