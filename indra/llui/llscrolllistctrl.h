@@ -417,7 +417,7 @@ public:
      */
     void setPageLines(S32 page_lines );
 
-    LLScrollListItem*   hitItem(S32 x,S32 y);
+    LLScrollListItem*   hitItem(S32 x,S32 y, bool include_disabled = false);
     virtual void        scrollToShowSelected();
 
     // LLEditMenuHandler functions
