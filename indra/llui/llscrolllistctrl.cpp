@@ -2234,8 +2234,10 @@ bool LLScrollListCtrl::handleMouseUp(S32 x, S32 y, MASK mask)
         }
     }
 
-    // always commit when mouse operation is completed inside list
-    if (mItemListRect.pointInRect(x,y))
+    // always commit when mouse operation is completed inside list,
+    // unless it ended on a disabled row, which is not a choice
+    LLScrollListItem* hit_item = hitItem(x, y, true);
+    if (mItemListRect.pointInRect(x,y) && (!hit_item || hit_item->getEnabled()))
     {
         mDirty = mDirty || mSelectionChanged;
         mSelectionChanged = false;
@@ -2460,9 +2462,9 @@ bool LLScrollListCtrl::handleClick(S32 x, S32 y, MASK mask)
     }
 }
 
-LLScrollListItem* LLScrollListCtrl::hitItem( S32 x, S32 y )
+LLScrollListItem* LLScrollListCtrl::hitItem( S32 x, S32 y, bool include_disabled )
 {
-    // Excludes disabled items.
+    // Excludes disabled items unless include_disabled is set.
     LLScrollListItem* hit_item = NULL;
 
     updateSort();
@@ -2493,7 +2495,7 @@ LLScrollListItem* LLScrollListCtrl::hitItem( S32 x, S32 y )
 
         if( mScrollLines <= line && line < mScrollLines + num_page_lines )
         {
-            if( item->getEnabled() && item_rect.pointInRect( x, y ) )
+            if( (include_disabled || item->getEnabled()) && item_rect.pointInRect( x, y ) )
             {
                 hit_item = item;
                 break;
