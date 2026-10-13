@@ -99,6 +99,24 @@ void LLTeleportHistory::goToItem(int idx)
     mRequestedItem = idx;
 }
 
+void LLTeleportHistory::updateCurrentItemToAgentPosition()
+{
+    if (!mGotInitialUpdate || !gAgent.getRegion() || !isAgentAvatarValid())
+    {
+        return;
+    }
+    if (mCurrentItem < 0 || mCurrentItem >= (int)mItems.size())
+    {
+        return;
+    }
+
+    LLVector3 pos_local = gAgent.getPositionAgent();
+    mItems[mCurrentItem].mFullTitle = getCurrentLocationTitle(true, pos_local);
+    mItems[mCurrentItem].mTitle = getCurrentLocationTitle(false, pos_local);
+    mItems[mCurrentItem].mGlobalPos = gAgent.getPositionGlobal();
+    mItems[mCurrentItem].mRegionID = gAgent.getRegion()->getRegionID();
+}
+
 void LLTeleportHistory::onTeleportFailed()
 {
     // Are we trying to teleport within the history?

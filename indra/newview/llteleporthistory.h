@@ -104,6 +104,16 @@ public:
      * @return history items.
      */
     const slurl_list_t&     getItems() const { return mItems; }
+
+    /**
+     * Make the current item point at the spot the agent is standing on.
+     *
+     * Called when a teleport starts, so that going back in the history
+     * returns to where we left from rather than to where we first arrived.
+     * Does not invoke the "history changed" callback(s): the persistent
+     * teleport history keeps the arrival points.
+     */
+    void                    updateCurrentItemToAgentPosition();
     void                    purgeItems();
     /**
      * Is the history empty?
