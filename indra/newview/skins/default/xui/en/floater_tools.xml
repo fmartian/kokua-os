@@ -3176,13 +3176,13 @@ even though the user gets a free copy.
          width="295">
             <flyout_button
              follows="left|top"
-             height="23"
              label="New Script"
              layout="topleft"
-             left="7"
-             name="button new script"
+             left="8"
              top="8"
-             width="83">
+             width="98"
+             height="20"
+             name="button new script">
                 <flyout_button.item
                  label="New LSL Script"
                  name="new_lsl_script"
@@ -3194,56 +3194,51 @@ even though the user gets a free copy.
             </flyout_button>
             <button
              follows="left|top"
-             height="23"
              label="New Notecard"
              layout="topleft"
-             left_pad="7"
-             name="button new notecard"
-             width="137" />
+             left="111"
+             top="8"
+             width="87"
+             height="20"
+             name="button new notecard" />
             <button
              follows="left|top"
-             height="20"
              label="Permissions"
              layout="topleft"
-             left="7"
-             top="37"
-             name="button permissions"
-             width="93" />
+             left="8"
+             top="29"
+             width="98"
+             height="20"
+             name="button permissions" />
             <button
              follows="left|top"
-             height="23"
              is_toggle="true"
              label="Explore in IDE"
              label_selected="Stop Exploring"
              layout="topleft"
-             left_pad="7"
-             name="button publish"
-             width="137" />
+             left="203"
+             top="8"
+             width="84"
+             height="20"
+             name="button publish" />
             <button
              follows="left|top"
-             height="20"
              label="Bulk Rename"
              layout="topleft"
-             top_pad="1"
-             name="button bulk_rename"
-             width="90" />
-            <button
-             top="8"
-             follows="left|top"
+             left="111"
+             top="29"
+             width="87"
              height="20"
-             label="Refresh"
-             layout="topleft"
-             left_pad="5"
-             name="button refresh"
-             width="90" />
+             name="button bulk_rename" />
             <button
              follows="left|top"
-             height="20"
              label="Reset Scripts"
              layout="topleft"
-             top_pad="1"
-             name="button reset scripts"
-             width="90">
+             left="203"
+             top="29"
+             width="84"
+             height="20"
+             name="button reset scripts">
                <button.commit_callback
                 function="Tools.SelectedScriptAction"
                 parameter="reset" />
@@ -3252,25 +3247,35 @@ even though the user gets a free copy.
              follows="left|top|right"
              label="Enter filter text"
              layout="topleft"
-             top_pad="35"
              left="10"
+             top="55"
+             width="248"
+             height="23"
              text_pad_left="10"
              max_length_chars="300"
              highlight_text_field="true"
-             name="contents_filter"
+             name="contents_filter" />			 
+            <button
+             follows="left|top"
+             image_overlay="Refresh_Off"
+             layout="topleft"
+             left="262"
+             top="55"
+             width="23"
              height="23"
-             width="275" />			 
+             name="button refresh"
+             tool_tip="Refresh" />
             <panel_inventory_object
              border="true"
              border_visible="true"
              bevel_style="in"
              follows="left|top|right"
-             height="353"
              layout="topleft"
              left="10"
-             name="contents_inventory"
-             top_pad="31"
-             width="275" />
+             top="82"
+             width="275"
+             height="373"
+             name="contents_inventory" />
 		</panel>
         </tab_container>
 	<panel
