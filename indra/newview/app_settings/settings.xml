@@ -13,6 +13,17 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
+    <key>KokuaTeleportHistoryExitPoint</key>
+    <map>
+      <key>Comment</key>
+      <string>Navigation Back and Forward return to the position you left from instead of the point where you arrived</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>1</integer>
+    </map>
     <key>KokuaWindShowApparent</key>
     <map>
       <key>Comment</key>

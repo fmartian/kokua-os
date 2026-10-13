@@ -101,6 +101,11 @@ void LLTeleportHistory::goToItem(int idx)
 
 void LLTeleportHistory::updateCurrentItemToAgentPosition()
 {
+    static LLCachedControl<bool> exit_point(gSavedSettings, "KokuaTeleportHistoryExitPoint", true);
+    if (!exit_point)
+    {
+        return;
+    }
     if (!mGotInitialUpdate || !gAgent.getRegion() || !isAgentAvatarValid())
     {
         return;
