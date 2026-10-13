@@ -3184,11 +3184,11 @@ even though the user gets a free copy.
              height="20"
              name="button new script">
                 <flyout_button.item
-                 label="New LSL Script"
+                 label="LSL (Mono)"
                  name="new_lsl_script"
                  value="lsl" />
                 <flyout_button.item
-                 label="New Lua Script"
+                 label="Lua"
                  name="new_lua_script"
                  value="lua" />
             </flyout_button>

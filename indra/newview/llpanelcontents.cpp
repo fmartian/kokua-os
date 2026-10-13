@@ -123,7 +123,6 @@ void LLPanelContents::getState(LLViewerObject *objectp )
     if( !objectp )
     {
         mSimulatorFeaturesConnection.disconnect();
-        mLastScriptObjectID.setNull();
         getChildView("button new script")->setEnabled(false);
         getChildView("button new notecard")->setEnabled(false);
         mPublishButton->setEnabled(false);
@@ -166,13 +165,19 @@ void LLPanelContents::getState(LLViewerObject *objectp )
     }
     LLComboBox* new_script = getChild<LLComboBox>("button new script");
     new_script->setEnabledByValue("lua", lua_region);
-    if (mLastScriptObjectID != objectp->getID() || mLastLuaRegion != lua_region)
+
+    // The button creates the language last picked from the list. Until one
+    // has been picked it follows the region, Lua where available. Lua picked
+    // in a region without it falls back to LSL.
+    const std::string preferred = gSavedSettings.getString("KokuaNewScriptLanguage");
+    const bool is_lua = lua_region && preferred != "lsl";
+    const std::string value = is_lua ? "lua" : "lsl";
+    if (mNewScriptIsLua != is_lua || new_script->getValue().asString() != value)
     {
-        mNewScriptIsLua = lua_region;
-        new_script->setValue(mNewScriptIsLua ? "lua" : "lsl");
+        mNewScriptIsLua = is_lua;
+        new_script->setValue(value);
+        new_script->setToolTip(new_script->getSimple());
     }
-    mLastScriptObjectID = objectp->getID();
-    mLastLuaRegion = lua_region;
 
     getChildView("button permissions")->setEnabled(!objectp->isPermanentEnforced());
     mPanelInventoryObject->setEnabled(!objectp->isPermanentEnforced());
@@ -297,12 +302,18 @@ void LLPanelContents::onNewScriptFlyoutCommit(LLUICtrl* ctrl)
     if (value == "lsl")
     {
         mNewScriptIsLua = false;
+        gSavedSettings.setString("KokuaNewScriptLanguage", value);
     }
     else if (value == "lua")
     {
         mNewScriptIsLua = true;
+        gSavedSettings.setString("KokuaNewScriptLanguage", value);
     }
     ctrl->setValue(mNewScriptIsLua ? "lua" : "lsl");
+    if (LLComboBox* new_script = dynamic_cast<LLComboBox*>(ctrl))
+    {
+        new_script->setToolTip(new_script->getSimple());
+    }
 
     const U8 script_language = mNewScriptIsLua ? SST_LUA : SST_LSL;
     std::string vm = (script_language == SST_LUA) ? "luau" : "mono";

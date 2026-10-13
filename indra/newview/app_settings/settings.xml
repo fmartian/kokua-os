@@ -35,6 +35,17 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
+    <key>KokuaNewScriptLanguage</key>
+    <map>
+      <key>Comment</key>
+      <string>Language the New Script button in the build floater creates: lsl or lua. Set when a language is picked from the button's list. Empty follows the region (Lua where available)</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>String</string>
+      <key>Value</key>
+      <string></string>
+    </map>
     <key>KokuaFixedHeightDialogs</key>
     <map>
       <key>Comment</key>
