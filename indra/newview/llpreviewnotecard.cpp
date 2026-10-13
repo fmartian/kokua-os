@@ -60,6 +60,8 @@
 #include "lllineeditor.h"
 #include "lluictrlfactory.h"
 #include "llviewerassetupload.h"
+#include "llmenugl.h"
+#include "llviewermenufile.h" // LLFilePickerReplyThread
 
 // [SL:KB] - Patch: UI-FloaterSearchReplace | Checked: 2010-11-05 (Catznip-2.3.0a) | Added: Catznip-2.3.0a
 #include "llfloatersearchreplace.h"
@@ -109,6 +111,15 @@ bool LLPreviewNotecard::postBuild()
 
     mEditBtn = getChild<LLButton>("Edit");
     mEditBtn->setCommitCallback(boost::bind(&LLPreviewNotecard::openInExternalEditor, this));
+
+    // Same File menu entries as the script editor
+    LLMenuItemCallGL* menu_item = getChild<LLMenuItemCallGL>("LoadFromFile");
+    menu_item->setClickCallback(boost::bind(&LLPreviewNotecard::onLoadFromFile, this));
+    menu_item->setEnableCallback(boost::bind(&LLPreviewNotecard::canLoadFromFile, this));
+
+    menu_item = getChild<LLMenuItemCallGL>("SaveToFile");
+    menu_item->setClickCallback(boost::bind(&LLPreviewNotecard::onSaveToFile, this));
+    menu_item->setEnableCallback(boost::bind(&LLPreviewNotecard::canSaveToFile, this));
 
     const LLInventoryItem* item = getItem();
     std::string note_name = mNoteName;
@@ -927,6 +938,160 @@ std::string LLPreviewNotecard::getCleanNameForTmpFile() const
             return forbidden_chars.contains(c);
         }), note_name.end());
     return note_name;
+}
+
+bool LLPreviewNotecard::canLoadFromFile() const
+{
+    // The editor is only enabled for a notecard that can be modified
+    return mEditor && mEditor->getEnabled() && mAssetStatus == PREVIEW_ASSET_LOADED;
+}
+
+bool LLPreviewNotecard::canSaveToFile() const
+{
+    if (!mEditor || mAssetStatus != PREVIEW_ASSET_LOADED)
+    {
+        return false;
+    }
+
+    // What isn't copyable in world shouldn't get copied to disk
+    const LLInventoryItem* item = getItem();
+    return item && (gAgent.allowOperation(PERM_COPY, item->getPermissions(), GP_OBJECT_MANIPULATE) || gAgent.isGodlike());
+}
+
+void LLPreviewNotecard::onLoadFromFile()
+{
+    if (!canLoadFromFile())
+    {
+        return;
+    }
+
+    // A text file has no embedded items, loading one drops the ones in the notecard
+    if (mEditor->hasEmbeddedInventory())
+    {
+        LLNotificationsUtil::add("GenericAlertYesCancel", LLSD().with("MESSAGE", getString("load_file_embedded_items")), LLSD(),
+                                 boost::bind(&LLPreviewNotecard::handleFileConfirmDialog, getDerivedHandle<LLPreviewNotecard>(), _1, _2, true));
+    }
+    else
+    {
+        pickFileToLoad();
+    }
+}
+
+void LLPreviewNotecard::onSaveToFile()
+{
+    if (!canSaveToFile())
+    {
+        return;
+    }
+
+    // Embedded items can't go in a text file, only the text around them is saved
+    if (mEditor->hasEmbeddedInventory())
+    {
+        LLNotificationsUtil::add("GenericAlertYesCancel", LLSD().with("MESSAGE", getString("save_file_embedded_items")), LLSD(),
+                                 boost::bind(&LLPreviewNotecard::handleFileConfirmDialog, getDerivedHandle<LLPreviewNotecard>(), _1, _2, false));
+    }
+    else
+    {
+        pickFileToSave();
+    }
+}
+
+// static
+bool LLPreviewNotecard::handleFileConfirmDialog(LLHandle<LLPreviewNotecard> handle, const LLSD& notification, const LLSD& response, bool load)
+{
+    LLPreviewNotecard* self = handle.get();
+    if (self && LLNotificationsUtil::getSelectedOption(notification, response) == 0)
+    {
+        if (load)
+        {
+            self->pickFileToLoad();
+        }
+        else
+        {
+            self->pickFileToSave();
+        }
+    }
+    return false;
+}
+
+void LLPreviewNotecard::pickFileToLoad()
+{
+    LLFilePickerReplyThread::startPicker(boost::bind(&LLPreviewNotecard::loadFromPickedFile, getDerivedHandle<LLPreviewNotecard>(), _1),
+                                         LLFilePicker::FFLOAD_TEXT, false);
+}
+
+void LLPreviewNotecard::pickFileToSave()
+{
+    const LLInventoryItem* item = getItem();
+    std::string proposed_name = LLDir::getScrubbedFileName(item ? item->getName() : std::string("notecard")) + ".txt";
+    LLFilePickerReplyThread::startPicker(boost::bind(&LLPreviewNotecard::saveToPickedFile, getDerivedHandle<LLPreviewNotecard>(), _1),
+                                         LLFilePicker::FFSAVE_TEXT, proposed_name);
+}
+
+// static
+void LLPreviewNotecard::loadFromPickedFile(LLHandle<LLPreviewNotecard> handle, const std::vector<std::string>& filenames)
+{
+    LLPreviewNotecard* self = handle.get();
+    if (!self || filenames.empty() || !self->canLoadFromFile())
+    {
+        return;
+    }
+
+    llifstream fin(filenames[0].c_str(), std::ios::binary);
+    if (!fin.is_open())
+    {
+        LLNotificationsUtil::add("GenericAlert", LLSD().with("MESSAGE", self->getString("load_file_failed")));
+        return;
+    }
+    std::string text((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
+    fin.close();
+
+    LLStringUtil::replaceTabsWithSpaces(text, LLTextEditor::spacesPerTab());
+    LLStringUtil::removeCRLF(text);
+
+    if ((S32)text.size() > self->mEditor->getMaxTextLength())
+    {
+        // A notecard can't hold it, and cutting it short would lose text without telling
+        LLNotificationsUtil::add("GenericAlert", LLSD().with("MESSAGE", self->getString("load_file_too_large")));
+        return;
+    }
+
+    // Only replace the notecard if there is something to replace it with. The change
+    // can be undone and isn't saved until Save is pressed, as in the script editor.
+    if (!text.empty())
+    {
+        self->mEditor->selectAll();
+        self->mEditor->insertText(text);
+    }
+}
+
+// static
+void LLPreviewNotecard::saveToPickedFile(LLHandle<LLPreviewNotecard> handle, const std::vector<std::string>& filenames)
+{
+    LLPreviewNotecard* self = handle.get();
+    if (!self || filenames.empty() || !self->canSaveToFile())
+    {
+        return;
+    }
+
+    // Embedded items are special characters in the text, leave them out
+    LLWString text;
+    for (llwchar wc : self->mEditor->getWText())
+    {
+        if (wc < LLTextEditor::FIRST_EMBEDDED_CHAR || wc > LLTextEditor::LAST_EMBEDDED_CHAR)
+        {
+            text.push_back(wc);
+        }
+    }
+
+    llofstream fout(filenames[0].c_str(), std::ios::binary);
+    if (!fout.is_open())
+    {
+        LLNotificationsUtil::add("GenericAlert", LLSD().with("MESSAGE", self->getString("save_file_failed")));
+        return;
+    }
+    fout << wstring_to_utf8str(text);
+    fout.close();
 }
 
 std::string LLPreviewNotecard::getTmpFileName(const std::string& note_name) const

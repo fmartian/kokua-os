@@ -5,7 +5,7 @@
  default_tab_group="1"
  height="361"
  layout="topleft"
- min_height="243"
+ min_height="257"
  min_width="330"
  name="preview notecard"
  help_topic="preview_notecard"
@@ -24,6 +24,55 @@
      name="Title">
         Notecard: [NAME]
     </floater.string>
+    <floater.string
+     name="load_file_embedded_items">
+        Loading a file replaces the whole notecard, and the items embedded in it will be removed. Continue?
+    </floater.string>
+    <floater.string
+     name="save_file_embedded_items">
+        The items embedded in this notecard can't be saved to a file. Only the text will be saved. Continue?
+    </floater.string>
+    <floater.string
+     name="load_file_too_large">
+        That file is too large for a notecard, which holds up to 65536 bytes of text.
+    </floater.string>
+    <floater.string
+     name="load_file_failed">
+        The file could not be read.
+    </floater.string>
+    <floater.string
+     name="save_file_failed">
+        The file could not be written.
+    </floater.string>
+    <menu_bar
+     bg_visible="false"
+     follows="left|top"
+     height="18"
+     layout="topleft"
+     left="0"
+     mouse_opaque="false"
+     name="notecard_menu"
+     top="40"
+     width="90">
+        <menu
+         top="0"
+         height="62"
+         label="File"
+         layout="topleft"
+         left="0"
+         mouse_opaque="false"
+         name="File"
+         width="138">
+            <menu_item_call
+             label="Load from file..."
+             layout="topleft"
+             name="LoadFromFile" />
+            <menu_item_call
+             label="Save to file..."
+             layout="topleft"
+             name="SaveToFile" />
+        </menu>
+    </menu_bar>
     <icon
      follows="top|right"
      height="18"
@@ -64,7 +113,7 @@
      embedded_items="true"
      follows="left|top|right|bottom"
      font="SansSerif"
-     height="281"
+     height="267"
      ignore_tab="false"
      layout="topleft"
      left="4"
@@ -73,7 +122,7 @@
      parse_urls="false" 
      spellcheck="true"
      tab_group="1"
-     top="46"
+     top="60"
      use_color="true"
      show_emoji_helper="true"
      width="392"

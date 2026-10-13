@@ -82,7 +82,10 @@ public:
         FFLOAD_HDRI = 17,
 
         // Firestorm additions
-        FFLOAD_IMPORT = 50
+        FFLOAD_IMPORT = 50,
+
+        // Kokua additions
+        FFLOAD_TEXT = 60
     };
 
     enum ESaveFilter
@@ -106,7 +109,10 @@ public:
         // Firestorm additions
         FFSAVE_BEAM = 50,
         FFSAVE_EXPORT = 51,
-        FFSAVE_CSV = 52
+        FFSAVE_CSV = 52,
+
+        // Kokua additions
+        FFSAVE_TEXT = 60
     };
 
     // open the dialog. This is a modal operation

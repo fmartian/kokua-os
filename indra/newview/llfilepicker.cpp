@@ -64,6 +64,7 @@ LLFilePicker LLFilePicker::sInstance;
 #define HDRI_FILTER L"HDRI Files (*.exr)\0*.exr\0"
 #define MATERIAL_TEXTURES_FILTER L"GLTF Import (*.gltf; *.glb; *.tga; *.bmp; *.jpg; *.jpeg; *.png)\0*.gltf;*.glb;*.tga;*.bmp;*.jpg;*.jpeg;*.png\0"
 #define SCRIPT_FILTER L"Script files (*.lsl; *.lua; *.luau)\0*.lsl;*.lua;*.luau\0"
+#define TEXT_FILTER L"Text files (*.txt)\0*.txt\0"
 #define DICTIONARY_FILTER L"Dictionary files (*.dic; *.xcu)\0*.dic;*.xcu\0"
 // <FS:CR> Import filter
 //#define IMPORT_FILTER L"Import (*.oxp; *.hpa)\0*.oxp;*.hpa\0"
@@ -231,6 +232,9 @@ namespace
             break;
         case LLFilePicker::FFLOAD_SCRIPT:
             filter_vec.push_back({ "Script files (*.lsl; *.lua; *.luau)", "lsl;lua;luau" });
+            break;
+        case LLFilePicker::FFLOAD_TEXT:
+            filter_vec.push_back({ "Text files (*.txt)", "txt" });
             break;
         case LLFilePicker::FFLOAD_DICTIONARY:
             filter_vec.push_back({ "Dictionary files (*.dic; *.xcu)", "dic;xcu" });
@@ -549,6 +553,13 @@ bool LLFilePicker::getSaveFileModeless(ESaveFilter filter,
         }
         file_filters.push_back({ "Script files (*.lsl; *.lua; *.luau)", "lsl;lua;luau" });
         break;
+    case FFSAVE_TEXT:
+        if (default_filename.empty())
+        {
+            default_filename = "untitled.txt";
+        }
+        file_filters.push_back({ "Text files (*.txt)", "txt" });
+        break;
     default:
         return false;
     }
@@ -691,6 +702,10 @@ bool LLFilePicker::setupFilter(ELoadFilter filter)
         break;
     case FFLOAD_DICTIONARY:
         mOFN.lpstrFilter = DICTIONARY_FILTER \
+            L"\0";
+        break;
+    case FFLOAD_TEXT:
+        mOFN.lpstrFilter = TEXT_FILTER \
             L"\0";
         break;
 // <FS:CR> Import filter
@@ -1028,6 +1043,14 @@ bool LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename, 
         mOFN.lpstrDefExt = L"txt";
         mOFN.lpstrFilter = L"LSL Files (*.lsl)\0*.lsl\0" L"\0";
         break;
+    case FFSAVE_TEXT:
+        if (filename.empty())
+        {
+            wcsncpy( mFilesW,L"untitled.txt", FILENAME_BUFFER_SIZE);
+        }
+        mOFN.lpstrDefExt = L"txt";
+        mOFN.lpstrFilter = TEXT_FILTER L"\0";
+        break;
 
 // <Firestorm>
     case FFSAVE_BEAM:
@@ -1182,6 +1205,11 @@ std::unique_ptr<std::vector<std::string>> LLFilePicker::navOpenFilterProc(ELoadF
             allowedv->push_back("lua");
             allowedv->push_back("luau");
             break;
+        case FFLOAD_TEXT:
+            allowedv->push_back("txt");
+            allowedv->push_back("text");
+            allowedv->push_back("md");
+            break;
         case FFLOAD_DICTIONARY:
             allowedv->push_back("dic");
             allowedv->push_back("xcu");
@@ -1321,6 +1349,12 @@ void set_nav_save_data(LLFilePicker::ESaveFilter filter, std::string &extension,
             type = "LSL ";
             creator = "\?\?\?\?";
             extension = "lsl;lua;luau";
+            break;
+
+        case LLFilePicker::FFSAVE_TEXT:
+            type = "TEXT";
+            creator = "\?\?\?\?";
+            extension = "txt";
             break;
         // <FS:CR> Export filter
         case LLFilePicker::FFSAVE_EXPORT:
