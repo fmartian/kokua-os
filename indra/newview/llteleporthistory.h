@@ -61,6 +61,11 @@ public:
     std::string mFullTitle; // human-readable location title including coordinates
     LLVector3d  mGlobalPos; // global position
     LLUUID      mRegionID;  // region ID for getting the region info
+
+    // Where we first arrived. mTitle and mGlobalPos may later move to the
+    // spot we left from; the persistent history keeps using these.
+    std::string mArrivalTitle;
+    LLVector3d  mArrivalGlobalPos;
 };
 
 /**

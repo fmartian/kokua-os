@@ -95,7 +95,7 @@ void LLTeleportHistoryStorage::onTeleportHistoryChange()
 
     const LLTeleportHistoryItem &item = th->getItems()[th->getCurrentItemIndex()];
 
-    addItem(item.mTitle, item.mGlobalPos);
+    addItem(item.mArrivalTitle, item.mArrivalGlobalPos);
     save();
 }
 

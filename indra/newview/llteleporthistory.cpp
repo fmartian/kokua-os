@@ -209,6 +209,8 @@ void LLTeleportHistory::updateCurrentLocation(const LLVector3d& new_pos)
         mItems[mCurrentItem].mTitle = getCurrentLocationTitle(false, new_pos_local);
         mItems[mCurrentItem].mGlobalPos = new_pos;
         mItems[mCurrentItem].mRegionID = gAgent.getRegion()->getRegionID();
+        mItems[mCurrentItem].mArrivalTitle = mItems[mCurrentItem].mTitle;
+        mItems[mCurrentItem].mArrivalGlobalPos = new_pos;
     }
 
     dump();
