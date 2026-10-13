@@ -537,6 +537,40 @@ void LLOutfitsList::resetItemSelection(LLWearableItemsList* list, const LLUUID& 
             }
         }
     }
+
+    // An outfit expanded near the bottom would open below the visible part of the list
+    outfits_map_t::iterator found = mOutfitsMap.find(category_id);
+    if (found != mOutfitsMap.end() && found->second && found->second->getDisplayChildren())
+    {
+        // Its items may still be loading, show it again once they are all there
+        mTabToReveal = found->second;
+        revealTab(found->second);
+    }
+    else
+    {
+        mTabToReveal = NULL;
+    }
+}
+
+void LLOutfitsList::revealTab(LLOutfitAccordionCtrlTab* tab)
+{
+    // The tab sizes and positions are only updated when the accordion is drawn
+    mAccordion->arrange();
+
+    // Same as one click on the scrollbar arrow, see VERTICAL_MULTIPLE in llaccordionctrl.cpp
+    const S32 SCROLL_STEP = 16;
+
+    // An outfit expanded at the bottom of the list opens out of view. Scroll one step,
+    // enough to hint at what is under its name, and only when none of that is showing.
+    LLRect hint_rect = tab->getLocalRect();
+    hint_rect.mBottom = hint_rect.mTop - tab->getHeaderHeight() - SCROLL_STEP;
+
+    LLRect screen_rect;
+    tab->localRectToScreen(hint_rect, &screen_rect);
+    static_cast<LLView*>(mAccordion)->notifyParent(LLSD().with("scrollToShowRect", screen_rect.getValue()));
+
+    // That only moves the scrollbar, the tabs follow it when they are arranged
+    mAccordion->arrange();
 }
 
 void LLOutfitsList::onChangeOutfitSelection(LLWearableItemsList* list, const LLUUID& category_id)
@@ -586,10 +620,20 @@ void LLOutfitsList::restoreOutfitSelection(LLOutfitAccordionCtrlTab* tab, const 
 
 void LLOutfitsList::onRefreshComplete(LLUICtrl* ctrl, LLOutfitAccordionCtrlTab* tab)
 {
-    if (!ctrl || getFilterSubString().empty())
+    if (!ctrl)
         return;
 
     LLWearableItemsList* list = dynamic_cast<LLWearableItemsList*>(tab->getAccordionView());
+    if (tab == mTabToReveal && list == ctrl && !list->getNeedsRefresh())
+    {
+        // All the items of the outfit that was just expanded are in the list now
+        mTabToReveal = NULL;
+        revealTab(tab);
+    }
+
+    if (getFilterSubString().empty())
+        return;
+
     if (list != ctrl)
     {
         llassert(false);
@@ -637,12 +681,25 @@ void LLOutfitsList::onFilterSubStringChanged(const std::string& new_string, cons
             // Restore tab title when filter is empty
             tab->setTitle(tab->getTitle());
 
+            // Close the outfits the search opened here, without the tab announcing it.
+            // Left to "restore_state" each of them would rearrange the whole accordion,
+            // which with hundreds of outfits blocks the viewer for a long while.
+            if (mOutfitsOpenedBySearch.count(category_id) && tab->getDisplayChildren())
+            {
+                tab->setDisplayChildren(false);
+            }
+
             // Restore accordion state after all those accodrion tab manipulations
             tab->notifyChildren(LLSD().with("action", "restore_state"));
 
             // Try restoring the tab selection.
             restoreOutfitSelection(tab, category_id);
         }
+    }
+
+    if (new_string.empty())
+    {
+        mOutfitsOpenedBySearch.clear();
     }
 
     mAccordion->arrange();
@@ -672,6 +729,15 @@ void LLOutfitsList::applyFilterToTab(
         // Hide tab if its title doesn't pass filter
         // and it has no matched items
         tab->setVisible(list->hasMatchedItems());
+
+        // An outfit found by what it holds is opened, or the match that brought it up
+        // wouldn't be seen. The state it had is restored when the search is cleared.
+        if (list->hasMatchedItems() && !tab->getDisplayChildren())
+        {
+            tab->setDisplayChildren(true);
+            list->notify(LLSD().with("rearrange", true));
+            mOutfitsOpenedBySearch.insert(category_id);
+        }
 
         // Remove title highlighting because it might
         // have been previously highlighted by less restrictive filter

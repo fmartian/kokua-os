@@ -28,6 +28,8 @@
 
 #include "lluicolor.h"
 #include "lltextbox.h"
+#include "llui.h"
+#include "lluiimage.h"
 #include "llurlmatch.h"
 
 std::function<bool(LLUrlMatch*, LLTextBase*)> LLTextUtil::TextHelpers::iconCallbackCreationFunction = nullptr;
@@ -54,6 +56,51 @@ void LLTextUtil::textboxSetHighlightedVal(LLTextBox *txtbox, const LLStyle::Para
     txtbox->appendText(text.substr(0, hl_begin),        false, normal_style);
     txtbox->appendText(text.substr(hl_begin, hl_len),   false, hl_style);
     txtbox->appendText(text.substr(hl_begin + hl_len),  false, normal_style);
+}
+
+void LLTextUtil::drawHighlightBox(LLTextBox *txtbox, const std::string& hl, S32 h_pad, S32 v_pad)
+{
+    if (!txtbox || hl.empty() || !txtbox->getVisible())
+    {
+        return;
+    }
+
+    static LLUIColor sFilterBGColor = LLUIColorTable::instance().getColor("FilterBackgroundColor", LLColor4::black);
+    static LLPointer<LLUIImage> sBoxImage = LLUI::getUIImage("Rounded_Square");
+    if (sBoxImage.isNull())
+    {
+        return;
+    }
+
+    LLWString text = txtbox->getWText();
+    LLWStringUtil::toUpper(text);
+    const LLWString match = utf8str_to_wstring(hl);
+    size_t begin = text.find(match);
+    if (begin == LLWString::npos)
+    {
+        return;
+    }
+    size_t end = begin + match.size();
+
+    // The bounding rect is where the text is drawn, alignment included. The characters
+    // are placed inside it by how far the text box lays them out from the first one.
+    LLRect text_rect = txtbox->getTextBoundingRect();
+    S32 text_start = txtbox->getDocRectFromDocIndex(0).mLeft;
+    S32 left = text_rect.mLeft + txtbox->getDocRectFromDocIndex((S32)begin).mLeft - text_start;
+    S32 right = (end < text.size()) ? text_rect.mLeft + txtbox->getDocRectFromDocIndex((S32)end).mLeft - text_start
+                                    : text_rect.mRight;
+
+    LLRect box_rect(left - h_pad, text_rect.mTop + v_pad, right + h_pad, text_rect.mBottom - v_pad);
+    // Text that doesn't fit is cut short
+    box_rect.mRight = llmin(box_rect.mRight, txtbox->getLocalRect().mRight);
+    if (box_rect.mLeft >= box_rect.mRight)
+    {
+        return;
+    }
+
+    // To the coordinates of the view doing the drawing
+    box_rect.translate(txtbox->getRect().mLeft, txtbox->getRect().mBottom);
+    sBoxImage->draw(box_rect, sFilterBGColor.get());
 }
 
 void LLTextUtil::textboxSetGreyedVal(LLTextBox *txtbox, const LLStyle::Params& normal_style, const std::string& text, const std::string& greyed)
