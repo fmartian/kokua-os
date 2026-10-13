@@ -222,7 +222,8 @@ public:
     void            setFocusGlobal(const LLPickInfo& pick);
     void            setFocusGlobal(const LLVector3d &focus, const LLUUID &object_id = LLUUID::null);
     void            setFocusOnAvatar(bool focus, bool animate, bool reset_axes = true);
-    void            setCameraPosAndFocusGlobal(const LLVector3d& pos, const LLVector3d& focus, const LLUUID &object_id);
+    // max_anim_seconds caps the camera animation, the zoom to avatars and objects uses a shorter one
+    void            setCameraPosAndFocusGlobal(const LLVector3d& pos, const LLVector3d& focus, const LLUUID &object_id, F64 max_anim_seconds = 10.0);
     void            clearFocusObject();
     void            setFocusObject(LLViewerObject* object);
     void            setAllowChangeToFollow(bool focus)  { mAllowChangeToFollow = focus; }

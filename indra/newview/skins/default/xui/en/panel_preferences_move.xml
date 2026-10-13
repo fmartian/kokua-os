@@ -484,5 +484,238 @@
      parameter="pref_joystick" />
   </button>
     </panel>
+
+				<!--Zoom-->
+        <panel
+            border="true"
+            layout="topleft"
+            follows="all"
+            height="408"
+            label="Zoom"
+            left="1"
+            mouse_opaque="true"
+            name="move_zoom"
+            width="517">
+  <text
+   follows="left|top"
+   type="string"
+   length="1"
+   height="30"
+   layout="topleft"
+   left="30"
+   name="zoom_intro_lbl"
+   top="10"
+   width="460"
+   wrap="true">
+    Fast Zoom looks at avatars from the front of their face and reaches them in 1 second. Standard Zoom is the original zoom.
+  </text>
+  <text
+   follows="left|top"
+   type="string"
+   length="1"
+   height="10"
+   layout="topleft"
+   left="30"
+   name="zoom_people_lbl"
+   width="190"
+   top_pad="14">
+    Radar and People lists:
+  </text>
+  <combo_box
+   control_name="KokuaZoomPeople"
+   follows="left|top"
+   height="23"
+   layout="topleft"
+   left_pad="10"
+   top_delta="-6"
+   name="zoom_people_combo"
+   width="150">
+    <combo_box.item
+     label="Standard Zoom"
+     name="0"
+     value="0"/>
+    <combo_box.item
+     label="Fast Zoom"
+     name="1"
+     value="1"/>
+  </combo_box>
+  <text
+   follows="left|top"
+   type="string"
+   length="1"
+   height="10"
+   layout="topleft"
+   left="30"
+   name="zoom_chat_lbl"
+   width="190"
+   top_pad="12">
+    Chat, IM and object links:
+  </text>
+  <combo_box
+   control_name="KokuaZoomChat"
+   follows="left|top"
+   height="23"
+   layout="topleft"
+   left_pad="10"
+   top_delta="-6"
+   name="zoom_chat_combo"
+   width="150">
+    <combo_box.item
+     label="Standard Zoom"
+     name="0"
+     value="0"/>
+    <combo_box.item
+     label="Fast Zoom"
+     name="1"
+     value="1"/>
+  </combo_box>
+  <text
+   follows="left|top"
+   type="string"
+   length="1"
+   height="10"
+   layout="topleft"
+   left="30"
+   name="zoom_bump_lbl"
+   width="190"
+   top_pad="12">
+    Bumps:
+  </text>
+  <combo_box
+   control_name="KokuaZoomBump"
+   follows="left|top"
+   height="23"
+   layout="topleft"
+   left_pad="10"
+   top_delta="-6"
+   name="zoom_bump_combo"
+   width="150">
+    <combo_box.item
+     label="Standard Zoom"
+     name="0"
+     value="0"/>
+    <combo_box.item
+     label="Fast Zoom"
+     name="1"
+     value="1"/>
+  </combo_box>
+  <text
+   follows="left|top"
+   type="string"
+   length="1"
+   height="10"
+   layout="topleft"
+   left="30"
+   name="zoom_area_search_lbl"
+   width="190"
+   top_pad="12">
+    Area Search:
+  </text>
+  <combo_box
+   control_name="KokuaZoomAreaSearch"
+   follows="left|top"
+   height="23"
+   layout="topleft"
+   left_pad="10"
+   top_delta="-6"
+   name="zoom_area_search_combo"
+   width="150">
+    <combo_box.item
+     label="Standard Zoom"
+     name="0"
+     value="0"/>
+    <combo_box.item
+     label="Fast Zoom"
+     name="1"
+     value="1"/>
+  </combo_box>
+  <text
+   follows="left|top"
+   type="string"
+   length="1"
+   height="10"
+   layout="topleft"
+   left="30"
+   name="zoom_particle_owner_lbl"
+   width="190"
+   top_pad="12">
+    Particles, zoom to owner:
+  </text>
+  <combo_box
+   control_name="KokuaZoomParticleOwner"
+   follows="left|top"
+   height="23"
+   layout="topleft"
+   left_pad="10"
+   top_delta="-6"
+   name="zoom_particle_owner_combo"
+   width="150">
+    <combo_box.item
+     label="Standard Zoom"
+     name="0"
+     value="0"/>
+    <combo_box.item
+     label="Fast Zoom"
+     name="1"
+     value="1"/>
+  </combo_box>
+  <text
+   follows="left|top"
+   type="string"
+   length="1"
+   height="10"
+   layout="topleft"
+   left="30"
+   name="zoom_fast_avatar_lbl"
+   width="400"
+   top_pad="20">
+    Fast Zoom on avatars, from the avatar center:
+  </text>
+  <spinner
+   control_name="CameraZoomDistance"
+   decimal_digits="1"
+   follows="left|top"
+   height="23"
+   increment="0.1"
+   label="Distance to the avatar (m)"
+   label_width="190"
+   layout="topleft"
+   left="38"
+   max_val="10"
+   min_val="0.5"
+   name="zoom_distance_spinner"
+   top_pad="8"
+   width="260" />
+  <spinner
+   control_name="CameraZoomEyeZOffset"
+   decimal_digits="1"
+   follows="left|top"
+   height="23"
+   increment="0.1"
+   label="Camera height (m)"
+   label_width="190"
+   layout="topleft"
+   left="38"
+   max_val="3"
+   min_val="-2"
+   name="zoom_eye_offset_spinner"
+   top_pad="4"
+   width="260" />
+  <spinner
+   control_name="CameraZoomFocusZOffset"
+   decimal_digits="1"
+   follows="left|top"
+   height="23"
+   increment="0.1"
+   label="Looked at height (m)"
+   label_width="190"
+   layout="topleft"
+   left="38"
+   max_val="3"
+   min_val="-2"
+   name="zoom_focus_offset_spinner"
+   top_pad="4"
+   width="260" />
+        </panel>
   </tab_container>
 </panel>

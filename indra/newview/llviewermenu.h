@@ -88,6 +88,20 @@ void handle_take_copy();
 void handle_look_at_selection(const LLSD& param);
 bool handle_zoom_to_object(const LLUUID& object_id);
 bool save_object_back_to_contents(LLViewerObject* object, const LLUUID& source_task_id);
+// Avatars are seen from the front of their face, objects are framed like in Area Search
+bool handle_zoom_to_object_framed(const LLUUID& object_id);
+// Uses Fast Zoom (handle_zoom_to_object_framed) or Standard Zoom (handle_zoom_to_object)
+// depending on the per-account setting of the feature asking for it, e.g. "KokuaZoomPeople"
+// radar_fallback: with Fast Zoom, zoom to the radar position of an avatar that isn't loaded
+bool kokua_zoom_to_object(const LLUUID& object_id, const std::string& mode_setting, bool radar_fallback = false);
+// Whether kokua_zoom_to_object() can do something with these arguments, for menu items
+bool kokua_can_zoom_to_object(const LLUUID& object_id, const std::string& mode_setting, bool radar_fallback = false);
+// Position of an avatar as the radar knows it, exact or coarse
+bool kokua_get_avatar_position(const LLUUID& avatar_id, LLVector3d& pos_global);
+// Fast Zoom on a position, used by the zoom to position chat command
+void kokua_zoom_to_position(const LLVector3d& target_global);
+// Parses "x y [z]" in the current region, reports problems to nearby chat and zooms there
+void kokua_zoom_to_region_coords(const std::string& coords);
 void handle_object_return();
 void handle_object_delete();
 void handle_object_edit();

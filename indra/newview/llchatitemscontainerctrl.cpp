@@ -83,7 +83,7 @@ public:
 
         if (verb == "zoomin")
         {
-            if (!handle_zoom_to_object(object_id) && params.size() > 2)
+            if (!kokua_zoom_to_object(object_id, "KokuaZoomChat") && params.size() > 2)
             {
                 // zoom faled, show location
                 // secondlife:///app/object/object_id/zoomin/{LOCATION}/{COORDS} SLapp

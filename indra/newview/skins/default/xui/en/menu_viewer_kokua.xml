@@ -2273,6 +2273,16 @@
              function="" />
         </menu_item_call>
 		<menu_item_call
+      		   label="Zoom In Sim zoomto x y [z]"
+               name="Zoom In Sim"
+			   enabled="true"
+			   visibility_control="FSCmdLine">
+            <menu_item_call.on_click
+             function="Advanced.CmdLineZoomTo" />
+            <menu_item_call.on_enable
+             function="" />
+        </menu_item_call>
+		<menu_item_call
       		   label="Teleport To Sim mapto name"
                name="Teleport To Sim"
 			   enabled="true"

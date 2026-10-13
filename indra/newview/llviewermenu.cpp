@@ -161,6 +161,7 @@
 #include "llworldmap.h"
 #include "pipeline.h"
 #include "llviewerjoystick.h"
+#include "llviewermediafocus.h"
 #include "llfloatercamera.h"
 #include "lluilistener.h"
 #include "llappearancemgr.h"
@@ -2330,6 +2331,25 @@ class LLAdvancedCmdLineTeleportPos : public view_listener_t
                         gAgent.teleportViaLocation(pos_global);
                     }
                 }
+                return false;
+            });
+        return true;
+    }
+};
+
+//////////////////////////////
+// CMDLINE ZOOM TO POSITION //
+//////////////////////////////
+
+class LLAdvancedCmdLineZoomTo : public view_listener_t
+{
+    bool handleEvent(const LLSD& userdata)
+    {
+        LLNotificationsUtil::add("CmdLineZoomTo", LLSD(), LLSD(),
+            [](const LLSD& notification, const LLSD& response)
+            {
+                if (LLNotificationsUtil::getSelectedOption(notification, response) != 0) return false;
+                kokua_zoom_to_region_coords(response["coords"].asString());
                 return false;
             });
         return true;
@@ -7404,6 +7424,283 @@ bool handle_zoom_to_object(const LLUUID& object_id)
     return false;
 }
 
+// The default camera animation moves at 10 m/s for up to 10 seconds, far too slow
+// for avatars, objects or positions hundreds of meters away
+static const F64 ZOOM_MAX_ANIM_SECONDS = 1.0;
+
+static void disable_flycam_for_zoom()
+{
+    // Disable flycam if active.  Without this, the requested look-at doesn't happen because the flycam code overrides all other camera motion.
+    bool fly_cam_status(LLViewerJoystick::getInstance()->getOverrideCamera());
+    if (fly_cam_status)
+    {
+        LLViewerJoystick::getInstance()->setOverrideCamera(false);
+        LLPanelStandStopFlying::clearStandStopFlyingMode(LLPanelStandStopFlying::SSFM_FLYCAM);
+        // *NOTE: Above may not be the proper way to disable flycam.  What I really want to do is just be able to move the camera and then leave the flycam in the the same state it was in, just moved to the new location. ~Cron
+    }
+
+    LLViewerJoystick::getInstance()->setCameraNeedsUpdate(true); // Fixes an edge case where if the user has JUST disabled flycam themselves, the camera gets stuck waiting for input.
+}
+
+// Zooms the camera on an avatar's face, or so an object fills most of the screen without going
+// inside the near clip. The object framing was moved here from FSAreaSearch to share it.
+bool handle_zoom_to_object_framed(const LLUUID& object_id)
+{
+    LLViewerObject* objectp = gObjectList.findObject(object_id);
+    if (!objectp)
+    {
+        return false;
+    }
+
+    disable_flycam_for_zoom();
+
+    gAgentCamera.setFocusOnAvatar(false, ANIMATE);
+
+    if (objectp->isAvatar())
+    {
+        // Look at the avatar's face from the front, a framing based on the bounding box
+        // ends up outside of buildings. Same approach and settings as Firestorm.
+        LLVector3d object_center_global = objectp->getPositionGlobal();
+
+        F32 eye_distance = gSavedSettings.getF32("CameraZoomDistance");
+        F32 eye_z_offset = gSavedSettings.getF32("CameraZoomEyeZOffset");
+        LLVector3d focus_z_offset(0.0, 0.0, gSavedSettings.getF32("CameraZoomFocusZOffset"));
+
+        LLVector3d eye_offset(eye_distance, 0.0, eye_z_offset);
+        eye_offset = eye_offset * objectp->getRotationRegion();
+
+        gAgentCamera.setCameraPosAndFocusGlobal(object_center_global + eye_offset,
+                                                object_center_global + focus_z_offset,
+                                                object_id, ZOOM_MAX_ANIM_SECONDS);
+        return true;
+    }
+
+    gAgentCamera.setLookAt(LOOKAT_TARGET_SELECT, objectp);
+
+    // Place the camera looking at the object, along the line from the camera to the object,
+    //  and sufficiently far enough away for the object to fill 3/4 of the screen,
+    //  but not so close that the bbox's nearest possible vertex goes inside the near clip.
+    // Logic C&P'd from LLViewerMediaFocus::setCameraZoom() and then edited as needed
+
+    LLBBox bbox = objectp->getBoundingBoxAgent();
+    LLVector3d center(gAgent.getPosGlobalFromAgent(bbox.getCenterAgent()));
+    F32 height;
+    F32 width;
+    F32 depth;
+    F32 angle_of_view;
+    F32 distance;
+
+    LLVector3d target_pos(center);
+    LLVector3d camera_dir(gAgentCamera.getCameraPositionGlobal() - target_pos);
+    camera_dir.normalize();
+
+    // We need the aspect ratio, and the 3 components of the bbox as height, width, and depth.
+    F32 aspect_ratio(LLViewerMediaFocus::getBBoxAspectRatio(bbox, LLVector3(camera_dir), &height, &width, &depth));
+    F32 camera_aspect(LLViewerCamera::getInstance()->getAspect());
+
+    // We will normally use the side of the volume aligned with the short side of the screen (i.e. the height for
+    // a screen in a landscape aspect ratio), however there is an edge case where the aspect ratio of the object is
+    // more extreme than the screen.  In this case we invert the logic, using the longer component of both the object
+    // and the screen.
+    bool invert((camera_aspect > 1.0f && aspect_ratio > camera_aspect) || (camera_aspect < 1.0f && aspect_ratio < camera_aspect));
+
+    // To calculate the optimum viewing distance we will need the angle of the shorter side of the view rectangle.
+    // In portrait mode this is the width, and in landscape it is the height.
+    // We then calculate the distance based on the corresponding side of the object bbox (width for portrait, height for landscape)
+    // We will add half the depth of the bounding box, as the distance projection uses the center point of the bbox.
+    if (camera_aspect < 1.0f || invert)
+    {
+        angle_of_view = llmax(0.1f, LLViewerCamera::getInstance()->getView() * LLViewerCamera::getInstance()->getAspect());
+        distance = (F32)(width * 0.5 * 1.1 / tanf(angle_of_view * 0.5f));
+    }
+    else
+    {
+        angle_of_view = llmax(0.1f, LLViewerCamera::getInstance()->getView());
+        distance = (F32)(height * 0.5 * 1.1 / tanf(angle_of_view * 0.5f));
+    }
+
+    distance += (F32)(depth * 0.5);
+
+
+    // Verify that the bounding box isn't inside the near clip.  Using OBB-plane intersection to check if the
+    // near-clip plane intersects with the bounding box, and if it does, adjust the distance such that the
+    // object doesn't clip.
+    LLVector3d bbox_extents(bbox.getExtentLocal());
+    LLVector3d axis_x = LLVector3d(1, 0, 0) * bbox.getRotation();
+    LLVector3d axis_y = LLVector3d(0, 1, 0) * bbox.getRotation();
+    LLVector3d axis_z = LLVector3d(0, 0, 1) * bbox.getRotation();
+    //Normal of nearclip plane is camera_dir.
+    F32 min_near_clip_dist = (F32)(bbox_extents.mdV[0] * (camera_dir * axis_x) + bbox_extents.mdV[1] * (camera_dir * axis_y) + bbox_extents.mdV[2] * (camera_dir * axis_z)); // http://www.gamasutra.com/view/feature/131790/simple_intersection_tests_for_games.php?page=7
+    F32 camera_to_near_clip_dist(LLViewerCamera::getInstance()->getNear());
+    F32 min_camera_dist(min_near_clip_dist + camera_to_near_clip_dist);
+    if (distance < min_camera_dist)
+    {
+        // Camera is too close to object, some parts MIGHT clip.  Move camera away to the position where clipping barely doesn't happen.
+        distance = min_camera_dist;
+    }
+
+
+    LLVector3d camera_pos(target_pos + camera_dir * distance);
+
+    if (camera_dir == LLVector3d::z_axis || camera_dir == LLVector3d::z_axis_neg)
+    {
+        // If the direction points directly up, the camera will "flip" around.
+        // We try to avoid this by adjusting the target camera position a
+        // smidge towards current camera position
+        // *NOTE: this solution is not perfect.  All it attempts to solve is the
+        // "looking down" problem where the camera flips around when it animates
+        // to that position.  You still are not guaranteed to be looking at the
+        // object in the correct orientation.  What this solution does is it will
+        // put the camera into position keeping as best it can the current
+        // orientation with respect to the direction wanted.  In other words, if
+        // before zoom the object appears "upside down" from the camera, after
+        /// zooming it will still be upside down, but at least it will not flip.
+        LLVector3d cur_camera_pos = LLVector3d(gAgentCamera.getCameraPositionGlobal());
+        LLVector3d delta = (cur_camera_pos - camera_pos);
+        F64 len = delta.length();
+        delta.normalize();
+        // Move 1% of the distance towards original camera location
+        camera_pos += 0.01 * len * delta;
+    }
+
+    gAgentCamera.setCameraPosAndFocusGlobal(camera_pos, target_pos, objectp->getID(), ZOOM_MAX_ANIM_SECONDS);
+
+    // *TODO: Re-enable joystick flycam if we disabled it earlier...  Have to find some form of callback as re-enabling at this point causes the camera motion to not happen. ~Cron
+    //if (fly_cam_status)
+    //{
+    //  LLViewerJoystick::getInstance()->toggleFlycam();
+    //}
+    return true;
+}
+
+void kokua_zoom_to_position(const LLVector3d& target_global)
+{
+    disable_flycam_for_zoom();
+
+    gAgentCamera.setFocusOnAvatar(false, ANIMATE);
+
+    // Look at the position from the side of the current camera, at the same distance and
+    // height as Fast Zoom on avatars, so the camera doesn't end up above the roofs
+    LLVector3d camera_dir(gAgentCamera.getCameraPositionGlobal() - target_global);
+    camera_dir.mdV[VZ] = 0.0;
+    if (camera_dir.magVec() < 0.01)
+    {
+        // The camera is straight above or below the position, look at it from behind the avatar
+        camera_dir = LLVector3d(-gAgent.getAtAxis());
+        camera_dir.mdV[VZ] = 0.0;
+    }
+    camera_dir.normalize();
+
+    F32 eye_distance = gSavedSettings.getF32("CameraZoomDistance");
+    F32 eye_z_offset = gSavedSettings.getF32("CameraZoomEyeZOffset");
+    LLVector3d camera_pos = target_global + camera_dir * eye_distance + LLVector3d(0.0, 0.0, eye_z_offset);
+
+    gAgentCamera.setCameraPosAndFocusGlobal(camera_pos, target_global, LLUUID::null, ZOOM_MAX_ANIM_SECONDS);
+}
+
+// The camera can't go further than the draw distance from the avatar, tell why it stops short
+static void report_if_beyond_draw_distance(const LLVector3d& target_global)
+{
+    static LLCachedControl<bool> sDisableCameraConstraints(gSavedSettings, "DisableCameraConstraints", false);
+    F32 distance = (F32)(target_global - gAgent.getPositionGlobal()).magVec();
+    if (!sDisableCameraConstraints && distance > gAgentCamera.mDrawDistance)
+    {
+        LLStringUtil::format_map_t args;
+        args["DISTANCE"] = llformat("%.0f", distance);
+        args["DRAW_DISTANCE"] = llformat("%.0f", gAgentCamera.mDrawDistance);
+        report_to_nearby_chat(LLTrans::getString("KokuaCmdLineZoomToTooFar", args));
+    }
+}
+
+void kokua_zoom_to_region_coords(const std::string& coords)
+{
+    LLViewerRegion* regionp = gAgent.getRegion();
+    if (!regionp)
+    {
+        return;
+    }
+
+    // Only positions in the current region: other regions may not be loaded at all
+    const F32 width = regionp->getWidth();
+    std::istringstream ss(coords);
+    F32 x, y, z;
+    if (!(ss >> x && ss >> y && x >= 0.f && x <= width && y >= 0.f && y <= width))
+    {
+        LLStringUtil::format_map_t args;
+        args["COMMAND"] = gSavedSettings.getString("KokuaCmdLineZoomTo");
+        args["WIDTH"] = llformat("%.0f", width);
+        report_to_nearby_chat(LLTrans::getString("KokuaCmdLineZoomToUsage", args));
+        return;
+    }
+    if (!(ss >> z))
+    {
+        z = regionp->getLandHeightRegion(LLVector3(x, y, 0.f));
+    }
+    LLVector3d target_global = regionp->getPosGlobalFromRegion(LLVector3(x, y, z));
+
+    report_if_beyond_draw_distance(target_global);
+    kokua_zoom_to_position(target_global);
+}
+
+bool kokua_get_avatar_position(const LLUUID& avatar_id, LLVector3d& pos_global)
+{
+    // Same source as the radar: exact position for loaded avatars, coarse location
+    // (1 m in x and y, 4 m steps in z) for the others
+    uuid_vec_t avatar_ids;
+    std::vector<LLVector3d> positions;
+    LLWorld::getInstance()->getAvatars(&avatar_ids, &positions);
+    for (size_t i = 0; i < avatar_ids.size() && i < positions.size(); ++i)
+    {
+        if (avatar_ids[i] == avatar_id)
+        {
+            pos_global = positions[i];
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool is_fast_zoom(const std::string& mode_setting)
+{
+    const S32 FAST_ZOOM = 1;
+    return gSavedPerAccountSettings.controlExists(mode_setting)
+        && gSavedPerAccountSettings.getS32(mode_setting) == FAST_ZOOM;
+}
+
+bool kokua_can_zoom_to_object(const LLUUID& object_id, const std::string& mode_setting, bool radar_fallback)
+{
+    if (gObjectList.findObject(object_id))
+    {
+        return true;
+    }
+    LLVector3d pos_global;
+    return radar_fallback && is_fast_zoom(mode_setting) && kokua_get_avatar_position(object_id, pos_global);
+}
+
+bool kokua_zoom_to_object(const LLUUID& object_id, const std::string& mode_setting, bool radar_fallback)
+{
+    if (!is_fast_zoom(mode_setting))
+    {
+        return handle_zoom_to_object(object_id);
+    }
+
+    if (handle_zoom_to_object_framed(object_id))
+    {
+        return true;
+    }
+
+    // The avatar isn't loaded, e.g. it is far away: zoom to its position in the radar
+    LLVector3d pos_global;
+    if (radar_fallback && kokua_get_avatar_position(object_id, pos_global))
+    {
+        pos_global.mdV[VZ] += gSavedSettings.getF32("CameraZoomFocusZOffset");
+        report_if_beyond_draw_distance(pos_global);
+        kokua_zoom_to_position(pos_global);
+        return true;
+    }
+    return false;
+}
+
 class LLAvatarInviteToGroup : public view_listener_t
 {
     bool handleEvent(const LLSD& userdata)
@@ -8289,7 +8586,7 @@ class LLZoomOwnerParticle : public view_listener_t
         LLUUID id = LLToolPie::getInstance()->getPick().mParticleOwnerID;
 
         if (id.notNull()) {
-            handle_zoom_to_object(id);
+            kokua_zoom_to_object(id, "KokuaZoomParticleOwner");
         }
         return true;
     }
@@ -11464,6 +11761,7 @@ void initialize_menus()
     view_listener_t::addMenu(new LLAdvancedRebakeTextures(), "Advanced.RebakeTextures");
     view_listener_t::addMenu(new LLAdvancedTPToGround(), "Advanced.TPToGround");
     view_listener_t::addMenu(new LLAdvancedCmdLineTeleportPos(),    "Advanced.CmdLineTeleportPos");
+    view_listener_t::addMenu(new LLAdvancedCmdLineZoomTo(),         "Advanced.CmdLineZoomTo");
     view_listener_t::addMenu(new LLAdvancedCmdLineTeleportHeight(), "Advanced.CmdLineTeleportHeight");
     view_listener_t::addMenu(new LLAdvancedCmdLineDrawDistance(),   "Advanced.CmdLineDrawDistance");
     view_listener_t::addMenu(new LLAdvancedCmdLineMapTo(),         "Advanced.CmdLineMapTo");

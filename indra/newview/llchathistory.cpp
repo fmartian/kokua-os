@@ -245,7 +245,7 @@ public:
             LLMuteList::getInstance()->remove(LLMute(getAvatarId(), mFrom, LLMute::OBJECT));
         }
         else if (level == "zoom" && mZoomIntoID.notNull()) {
-            handle_zoom_to_object(mZoomIntoID);
+            kokua_zoom_to_object(mZoomIntoID, "KokuaZoomChat");
         }
         else if (level == "map")
         {
@@ -266,7 +266,7 @@ public:
             LLUUID obj_id = mObjectData["object_id"];
             if (obj_id.notNull())
             {
-                handle_zoom_to_object(obj_id);
+                kokua_zoom_to_object(obj_id, "KokuaZoomChat");
             }
         }
     }
@@ -491,7 +491,7 @@ public:
         }
         else if (level == "zoom_in")
         {
-            handle_zoom_to_object(getAvatarId());
+            kokua_zoom_to_object(getAvatarId(), "KokuaZoomChat");
         }
         else if (level == "map")
         {

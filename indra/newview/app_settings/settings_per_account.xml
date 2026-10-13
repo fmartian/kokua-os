@@ -868,5 +868,60 @@
         <key>Value</key>
             <integer>0</integer>
         </map>
+     <key>KokuaZoomPeople</key>
+        <map>
+        <key>Comment</key>
+            <string>Zoom In used by the radar and the People lists (0 = Standard Zoom, 1 = Fast Zoom)</string>
+        <key>Persist</key>
+            <integer>1</integer>
+        <key>Type</key>
+            <string>S32</string>
+        <key>Value</key>
+            <integer>1</integer>
+        </map>
+     <key>KokuaZoomChat</key>
+        <map>
+        <key>Comment</key>
+            <string>Zoom In used by local chat, IM and object zoom links (0 = Standard Zoom, 1 = Fast Zoom)</string>
+        <key>Persist</key>
+            <integer>1</integer>
+        <key>Type</key>
+            <string>S32</string>
+        <key>Value</key>
+            <integer>0</integer>
+        </map>
+     <key>KokuaZoomBump</key>
+        <map>
+        <key>Comment</key>
+            <string>Zoom In used by the Bumps floater (0 = Standard Zoom, 1 = Fast Zoom)</string>
+        <key>Persist</key>
+            <integer>1</integer>
+        <key>Type</key>
+            <string>S32</string>
+        <key>Value</key>
+            <integer>1</integer>
+        </map>
+     <key>KokuaZoomAreaSearch</key>
+        <map>
+        <key>Comment</key>
+            <string>Zoom In used by Area Search (0 = Standard Zoom, 1 = Fast Zoom)</string>
+        <key>Persist</key>
+            <integer>1</integer>
+        <key>Type</key>
+            <string>S32</string>
+        <key>Value</key>
+            <integer>1</integer>
+        </map>
+     <key>KokuaZoomParticleOwner</key>
+        <map>
+        <key>Comment</key>
+            <string>Zoom In used by Zoom to Owner on particles (0 = Standard Zoom, 1 = Fast Zoom)</string>
+        <key>Persist</key>
+            <integer>1</integer>
+        <key>Type</key>
+            <string>S32</string>
+        <key>Value</key>
+            <integer>0</integer>
+        </map>
     </map>
 </llsd>

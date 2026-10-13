@@ -17200,6 +17200,39 @@
       <key>Value</key>
       <real>0.40000000596</real>
     </map>
+    <key>CameraZoomDistance</key>
+    <map>
+      <key>Comment</key>
+      <string>Camera distance to the zoomed in avatar</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>F32</string>
+      <key>Value</key>
+      <real>2.5</real>
+    </map>
+    <key>CameraZoomEyeZOffset</key>
+    <map>
+      <key>Comment</key>
+      <string>Camera height offset of the camera itself on the zoomed in avatar from avatar center</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>F32</string>
+      <key>Value</key>
+      <real>1.0</real>
+    </map>
+    <key>CameraZoomFocusZOffset</key>
+    <map>
+      <key>Comment</key>
+      <string>Camera height offset of zoomed point on the zoomed in avatar from avatar center</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>F32</string>
+      <key>Value</key>
+      <real>0.6</real>
+    </map>
 	<key>moapbeacon</key>
 	<map>
 		<key>Comment</key>
@@ -19526,6 +19559,17 @@
 			<string>String</string>
 			<key>Value</key>
 			<string>tp2cam</string>
+		</map>
+		<key>KokuaCmdLineZoomTo</key>
+		<map>
+			<key>Comment</key>
+			<string>Zoom the camera to a position in the current region, followed by x y and an optional z</string>
+			<key>Persist</key>
+			<integer>1</integer>
+			<key>Type</key>
+			<string>String</string>
+			<key>Value</key>
+			<string>zoomto</string>
 		</map>
 		<key>FSCmdLineKeyToName</key>
 		<map>

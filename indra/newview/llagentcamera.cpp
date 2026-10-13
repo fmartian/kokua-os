@@ -2646,7 +2646,7 @@ void LLAgentCamera::setFocusGlobal(const LLVector3d& focus, const LLUUID &object
 //-----------------------------------------------------------------------------
 // setCameraPosAndFocusGlobal()
 //-----------------------------------------------------------------------------
-void LLAgentCamera::setCameraPosAndFocusGlobal(const LLVector3d& camera_pos, const LLVector3d& focus, const LLUUID &object_id)
+void LLAgentCamera::setCameraPosAndFocusGlobal(const LLVector3d& camera_pos, const LLVector3d& focus, const LLUUID &object_id, F64 max_anim_seconds)
 {
     LLVector3d old_focus = mFocusTargetGlobal.isExactlyZero() ? focus : mFocusTargetGlobal;
 
@@ -2683,7 +2683,7 @@ void LLAgentCamera::setCameraPosAndFocusGlobal(const LLVector3d& camera_pos, con
     {
         const F64 ANIM_METERS_PER_SECOND = 10.0;
         const F64 MIN_ANIM_SECONDS = 0.5;
-        const F64 MAX_ANIM_SECONDS = 10.0;
+        const F64 MAX_ANIM_SECONDS = max_anim_seconds;
         F64 anim_duration = llmax( MIN_ANIM_SECONDS, sqrt(focus_delta_squared) / ANIM_METERS_PER_SECOND );
         anim_duration = llmin( anim_duration, MAX_ANIM_SECONDS );
         setAnimationDuration( (F32)anim_duration );
