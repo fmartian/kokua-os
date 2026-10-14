@@ -226,6 +226,7 @@ bool KokuaFloaterAvatarAttachments::canTouchSelected() const
     {
         return false;
     }
+#if 0
 //MK
     // Grey the button out when a restriction would stop the touch anyway
     if (gRRenabled && !gAgent.mRRInterface.canTouch(objectp, objectp->getPositionAgent()))
@@ -233,6 +234,7 @@ bool KokuaFloaterAvatarAttachments::canTouchSelected() const
         return false;
     }
 //mk
+#endif
     return true;
 }
 
@@ -250,12 +252,14 @@ void KokuaFloaterAvatarAttachments::onClickTouch()
     pick.mIntersection = objectp->getPositionAgent();
     pick.mPosGlobal = objectp->getPositionGlobal();
 
+#if 0
 //MK
     if (gRRenabled && !gAgent.mRRInterface.canTouch(objectp, pick.mIntersection))
     {
         return;
     }
 //mk
+#endif
 
     send_ObjectGrab_message(objectp, pick, LLVector3::zero);
     send_ObjectDeGrab_message(objectp, pick);
