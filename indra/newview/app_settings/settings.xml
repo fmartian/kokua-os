@@ -46,6 +46,17 @@
       <key>Value</key>
       <string></string>
     </map>
+    <key>KokuaFontTabularDigits</key>
+    <map>
+      <key>Comment</key>
+      <string>Draw digits at the width of the widest one (tabular numbers) in fonts that have a weight, such as Inter, as LL does since 26.4. Off keeps proportional digits, which the layouts were made for. Takes effect after a restart</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
     <key>KokuaFixedHeightDialogs</key>
     <map>
       <key>Comment</key>

@@ -153,6 +153,10 @@ public:
     F32 getMaxDigitWidth() const { return mMaxDigitWidth; }
     S32 getFontWeight() const { return mWeight; }
 
+    // Draw digits at the width of the widest one (tabular numbers) in fonts
+    // that have a weight. Read when glyphs are loaded.
+    static bool sUseTabularDigits;
+
     LLFontGlyphInfo* getGlyphInfo(llwchar wch, EFontGlyphType glyph_type) const;
 
     void reset(F32 vert_dpi, F32 horz_dpi);
@@ -199,6 +203,7 @@ private:
     EFontHinting mHinting;
     S32 mFontFlags;
     S32 mWeight = -1;
+    bool usesTabularDigits() const { return sUseTabularDigits && mWeight > 0; }
     S32 mFaceIndex = 0; // Face index within the (possibly collection) font file
     F32 mVertDPI = 0.f; // Kept so lazily-discovered fallback faces can be
     F32 mHorzDPI = 0.f; // opened at this font's size (see addGlyph)

@@ -2076,6 +2076,7 @@ LLViewerWindow::LLViewerWindow(const Params& p)
     // Init font system, load default fonts and generate basic glyphs
     // currently it takes aprox. 0.5 sec and we would load these fonts anyway
     // before login screen.
+    LLFontFreetype::sUseTabularDigits = gSavedSettings.getBOOL("KokuaFontTabularDigits");
     LLFontGL::initClass( gSavedSettings.getF32("FontScreenDPI"),
         mDisplayScale.mV[VX],
         mDisplayScale.mV[VY],
@@ -6065,6 +6066,7 @@ void LLViewerWindow::initFonts(F32 zoom_factor)
 
     LLFontManager::initClass();
 
+    LLFontFreetype::sUseTabularDigits = gSavedSettings.getBOOL("KokuaFontTabularDigits");
     LLFontGL::initClass( gSavedSettings.getF32("FontScreenDPI"),
                                 mDisplayScale.mV[VX] * zoom_factor,
                                 mDisplayScale.mV[VY] * zoom_factor,

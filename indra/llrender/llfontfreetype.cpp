@@ -143,6 +143,8 @@ LLFontGlyphInfo::LLFontGlyphInfo(const LLFontGlyphInfo& fgi)
     mBitmapEntry = fgi.mBitmapEntry;
 }
 
+bool LLFontFreetype::sUseTabularDigits = false;
+
 LLFontFreetype::LLFontFreetype()
 :   mFontBitmapCachep(new LLFontBitmapCache),
     mAscender(0.f),
@@ -375,7 +377,7 @@ F32 LLFontFreetype::getXAdvance(const LLFontGlyphInfo* glyph) const
         return 0.0;
 
     // Use max digit width for tabular numbers
-    if (mWeight > 0 && glyph->mChar >= '0' && glyph->mChar <= '9' && mMaxDigitWidth > 0.0f)
+    if (usesTabularDigits() && glyph->mChar >= '0' && glyph->mChar <= '9' && mMaxDigitWidth > 0.0f)
     {
         return mMaxDigitWidth;
     }
@@ -406,7 +408,7 @@ F32 LLFontFreetype::getXKerning(const LLFontGlyphInfo* left_glyph_info, const LL
 
     if (left_glyph_info)
     {
-        if (mWeight > 0 && left_glyph_info->mChar >= '0' && left_glyph_info->mChar <= '9')
+        if (usesTabularDigits() && left_glyph_info->mChar >= '0' && left_glyph_info->mChar <= '9')
         {
             // Disable kerning for digits when using tabular numbers
             return 0.0;
@@ -415,7 +417,7 @@ F32 LLFontFreetype::getXKerning(const LLFontGlyphInfo* left_glyph_info, const LL
     }
     if (right_glyph_info)
     {
-        if (mWeight > 0 && right_glyph_info->mChar >= '0' && right_glyph_info->mChar <= '9')
+        if (usesTabularDigits() && right_glyph_info->mChar >= '0' && right_glyph_info->mChar <= '9')
         {
             // Disable kerning for digits when using tabular numbers
             return 0.0;
@@ -638,7 +640,7 @@ LLFontGlyphInfo* LLFontFreetype::addGlyphFromFont(const LLFontFreetype *fontp, l
     gi->mXAdvanceRaw = fontp->mFTFace->glyph->advance.x / 64.f;
     gi->mYAdvance = fontp->mFTFace->glyph->advance.y / 64.f;
 
-    if (mWeight > 0 && wch >= '0' && wch <= '9')
+    if (usesTabularDigits() && wch >= '0' && wch <= '9')
     {
         // Digits are supposed to be preloaded, and buffers
         // refresh when new chars get added (mGeneration),
