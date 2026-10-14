@@ -222,7 +222,18 @@ static bool handles_touch(LLViewerObject* objectp)
 bool KokuaFloaterAvatarAttachments::canTouchSelected() const
 {
     LLViewerObject* objectp = getSelectedAttachment();
-    return objectp && handles_touch(objectp);
+    if (!objectp || !handles_touch(objectp))
+    {
+        return false;
+    }
+//MK
+    // Grey the button out when a restriction would stop the touch anyway
+    if (gRRenabled && !gAgent.mRRInterface.canTouch(objectp, objectp->getPositionAgent()))
+    {
+        return false;
+    }
+//mk
+    return true;
 }
 
 void KokuaFloaterAvatarAttachments::onClickTouch()
