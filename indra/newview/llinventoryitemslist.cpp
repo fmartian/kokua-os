@@ -293,7 +293,11 @@ void LLInventoryItemsList::refresh()
                 item_pair_t* item_pair = *pair_it;
                 if (item_pair->first->getParent() != NULL)
                 {
-                    new_visible_items |= updateItemVisibility(item_pair->first, action);
+                    // An item that was just added is visible from the start, so
+                    // updateItemVisibility() reports no change for it; look at
+                    // the item itself or the list is not rearranged for it.
+                    updateItemVisibility(item_pair->first, action);
+                    new_visible_items |= item_pair->first->getVisible();
                 }
             }
 
