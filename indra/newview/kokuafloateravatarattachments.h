@@ -26,6 +26,7 @@
 class LLAvatarName;
 class LLMessageSystem;
 class LLScrollListCtrl;
+class LLViewerObject;
 
 class KokuaFloaterAvatarAttachments : public LLFloater
 {
@@ -45,6 +46,9 @@ private:
     void updateButtons();
     void onClickCreatorProfile();
     void onClickObjectProfile();
+    void onClickTouch();
+    LLViewerObject* getSelectedAttachment() const;
+    bool canTouchSelected() const;
     void setCell(const LLUUID& object_id, S32 column, const std::string& value);
 
     static void onAvatarNameCallback(LLHandle<KokuaFloaterAvatarAttachments> handle, const LLAvatarName& av_name);

@@ -27,6 +27,7 @@
 #include "llscrolllistctrl.h"
 #include "llscrolllistitem.h"
 #include "llselectmgr.h"
+#include "lltoolgrab.h"
 #include "lltrans.h"
 #include "llviewerjointattachment.h"
 #include "llviewerobject.h"
@@ -34,6 +35,7 @@
 #include "llviewerregion.h"
 #include "llvoavatar.h"
 #include "message.h"
+#include "RRInterface.h"
 
 // Column order in floater_avatar_attachments.xml
 const S32 COLUMN_NAME = 0;
@@ -54,6 +56,7 @@ bool KokuaFloaterAvatarAttachments::postBuild()
     childSetAction("refresh_btn", boost::bind(&KokuaFloaterAvatarAttachments::refreshList, this));
     childSetAction("creator_profile_btn", boost::bind(&KokuaFloaterAvatarAttachments::onClickCreatorProfile, this));
     childSetAction("object_profile_btn", boost::bind(&KokuaFloaterAvatarAttachments::onClickObjectProfile, this));
+    childSetAction("touch_btn", boost::bind(&KokuaFloaterAvatarAttachments::onClickTouch, this));
 
     return true;
 }
@@ -168,6 +171,8 @@ void KokuaFloaterAvatarAttachments::updateButtons()
     std::map<LLUUID, LLUUID>::iterator found = mCreators.find(object_id);
     getChildView("creator_profile_btn")->setEnabled(found != mCreators.end() && found->second.notNull());
     getChildView("object_profile_btn")->setEnabled(found != mCreators.end());
+
+    getChildView("touch_btn")->setEnabled(canTouchSelected());
 }
 
 void KokuaFloaterAvatarAttachments::onClickCreatorProfile()
@@ -189,6 +194,60 @@ void KokuaFloaterAvatarAttachments::onClickObjectProfile()
         LLSelectMgr::getInstance()->selectObjectAndFamily(objectp, false, true);
         LLFloaterReg::showInstance("task_properties");
     }
+}
+
+LLViewerObject* KokuaFloaterAvatarAttachments::getSelectedAttachment() const
+{
+    LLViewerObject* objectp = gObjectList.findObject(mAttachmentList->getCurrentID());
+    return (objectp && !objectp->isDead()) ? objectp : NULL;
+}
+
+// Same test as the hand cursor in LLToolPie: some prim of the attachment has a touch handler
+static bool handles_touch(LLViewerObject* objectp)
+{
+    if (objectp->flagHandleTouch())
+    {
+        return true;
+    }
+    for (LLViewerObject* child : objectp->getChildren())
+    {
+        if (child && handles_touch(child))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool KokuaFloaterAvatarAttachments::canTouchSelected() const
+{
+    LLViewerObject* objectp = getSelectedAttachment();
+    return objectp && handles_touch(objectp);
+}
+
+void KokuaFloaterAvatarAttachments::onClickTouch()
+{
+    LLViewerObject* objectp = getSelectedAttachment();
+    if (!objectp)
+    {
+        return;
+    }
+
+    // There is no point on the surface to report, the list was clicked rather than the object
+    LLPickInfo pick;
+    pick.mObjectID = objectp->getID();
+    pick.mIntersection = objectp->getPositionAgent();
+    pick.mPosGlobal = objectp->getPositionGlobal();
+
+//MK
+    if (gRRenabled && !gAgent.mRRInterface.canTouch(objectp, pick.mIntersection))
+    {
+        return;
+    }
+//mk
+
+    send_ObjectGrab_message(objectp, pick, LLVector3::zero);
+    send_ObjectDeGrab_message(objectp, pick);
 }
 
 void KokuaFloaterAvatarAttachments::setCell(const LLUUID& object_id, S32 column, const std::string& value)
