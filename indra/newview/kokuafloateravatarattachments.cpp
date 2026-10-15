@@ -35,7 +35,9 @@
 #include "llviewerregion.h"
 #include "llvoavatar.h"
 #include "message.h"
+#if 0
 #include "RRInterface.h"
+#endif
 
 // Column order in floater_avatar_attachments.xml
 const S32 COLUMN_NAME = 0;
