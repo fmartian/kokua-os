@@ -75,6 +75,7 @@
 #include "llstartup.h"
 #include "llstatusbar.h"
 #include "llteleportflags.h"
+#include "llteleporthistory.h"
 #include "lltool.h"
 #include "lltoolbarview.h"
 #include "lltoolpie.h"
@@ -4732,6 +4733,15 @@ void LLAgent::setTeleportState(ETeleportState state)
                 gAgentAvatarp->setIsCrossingRegion(false);
             }
             // </FS:Ansariel>
+            break;
+
+        case TELEPORT_START:
+        case TELEPORT_LOCAL:
+            // Leaving: let the teleport history remember where we stood.
+            if (LLTeleportHistory::instanceExists())
+            {
+                LLTeleportHistory::getInstance()->updateCurrentItemToAgentPosition();
+            }
             break;
 
         case TELEPORT_MOVING:

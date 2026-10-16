@@ -61,6 +61,11 @@ public:
     std::string mFullTitle; // human-readable location title including coordinates
     LLVector3d  mGlobalPos; // global position
     LLUUID      mRegionID;  // region ID for getting the region info
+
+    // Where we first arrived. mTitle and mGlobalPos may later move to the
+    // spot we left from; the persistent history keeps using these.
+    std::string mArrivalTitle;
+    LLVector3d  mArrivalGlobalPos;
 };
 
 /**
@@ -104,6 +109,16 @@ public:
      * @return history items.
      */
     const slurl_list_t&     getItems() const { return mItems; }
+
+    /**
+     * Make the current item point at the spot the agent is standing on.
+     *
+     * Called when a teleport starts, so that going back in the history
+     * returns to where we left from rather than to where we first arrived.
+     * Does not invoke the "history changed" callback(s): the persistent
+     * teleport history keeps the arrival points.
+     */
+    void                    updateCurrentItemToAgentPosition();
     void                    purgeItems();
     /**
      * Is the history empty?
