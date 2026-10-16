@@ -638,7 +638,7 @@ void LLNavigationBar::onTeleportHistoryChanged()
     mBtnForward->setEnabled(cur_item < ((int)h->getItems().size() - 1));
 }
 
-void LLNavigationBar::rebuildTeleportHistoryMenu()
+void LLNavigationBar::rebuildTeleportHistoryMenu(S32 direction)
 {
     // Has the pop-up menu been built?
     if (mTeleportHistoryMenu)
@@ -666,7 +666,21 @@ void LLNavigationBar::rebuildTeleportHistoryMenu()
     int cur_item = hist->getCurrentItemIndex();
 
     // Items will be shown in the reverse order, just like in Firefox.
-    for (int i = (int)hist_items.size()-1; i >= 0; i--)
+    // Split by button, as in Safari, the nearest place comes first.
+    int first = (int)hist_items.size() - 1;
+    int last = 0;
+    int step = -1;
+    if (direction < 0)
+    {
+        first = cur_item - 1;
+    }
+    else if (direction > 0)
+    {
+        first = cur_item + 1;
+        last = (int)hist_items.size() - 1;
+        step = 1;
+    }
+    for (int i = first; step < 0 ? i >= last : i <= last; i += step)
     {
         LLTeleportHistoryMenuItem::EType type;
         if (i < cur_item)
@@ -717,9 +731,15 @@ void    LLNavigationBar::showTeleportHistoryMenu(LLUICtrl* btn_ctrl)
         return;
     }
 
-    rebuildTeleportHistoryMenu();
+    // Optionally each button lists only the places it can go to
+    S32 direction = 0;
+    if (gSavedSettings.getBOOL("KokuaNavBarSplitHistoryMenu"))
+    {
+        direction = (btn_ctrl == mBtnBack) ? -1 : (btn_ctrl == mBtnForward) ? 1 : 0;
+    }
+    rebuildTeleportHistoryMenu(direction);
 
-    if (mTeleportHistoryMenu == NULL)
+    if (mTeleportHistoryMenu == NULL || mTeleportHistoryMenu->getItemCount() == 0)
         return;
 
     mTeleportHistoryMenu->updateParent(LLMenuGL::sMenuContainer);

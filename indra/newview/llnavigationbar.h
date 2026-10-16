@@ -109,7 +109,8 @@ private:
     // the distance between navigation panel and favorites panel in pixels
     const static S32 FAVBAR_TOP_PADDING = 10;
 
-    void rebuildTeleportHistoryMenu();
+    // direction: 0 lists the whole history, -1 only what Back can reach, 1 only what Forward can reach
+    void rebuildTeleportHistoryMenu(S32 direction = 0);
     void showTeleportHistoryMenu(LLUICtrl* btn_ctrl);
     void invokeSearch(std::string search_text);
     void resizeLayoutPanel();
