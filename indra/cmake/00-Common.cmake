@@ -243,6 +243,11 @@ if (LINUX OR DARWIN)
     add_compile_options(-Werror)
   endif ()
 
+  if (DARWIN)
+    # Recent macOS SDKs deprecate APIs the viewer still uses; keep those as warnings, not errors
+    add_compile_options(-Wno-error=deprecated-declarations)
+  endif ()
+
   add_compile_options(-m${ADDRESS_SIZE})
 endif (LINUX OR DARWIN)
 
