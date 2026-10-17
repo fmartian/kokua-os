@@ -167,6 +167,7 @@
        layout="topleft"
        left="0"
        name="inventory filter tabs"
+       open_tabs_on_drag_and_drop="true"
        tab_height="23"
        tab_position="top"
        tab_min_width="100"
