@@ -1068,6 +1068,66 @@ class LLFileCloseAllWindows : public view_listener_t
     }
 };
 
+// Minimizes every visible floater. Used again, restores the floaters it
+// minimized, in the stacking order they had; floaters opened in the meantime
+// stay open in front of them.
+class LLFileMinimizeAllWindows : public view_listener_t
+{
+    bool handleEvent(const LLSD& userdata)
+    {
+        // Floaters minimized by this command, frontmost first.
+        static std::vector<LLHandle<LLFloater> > minimized_floaters;
+
+        // Forget floaters closed or restored by hand since they were minimized.
+        std::vector<LLFloater*> to_restore;
+        for (LLHandle<LLFloater>& handle : minimized_floaters)
+        {
+            LLFloater* floaterp = handle.get();
+            if (floaterp && floaterp->getVisible() && !floaterp->isDead() && floaterp->isMinimized())
+            {
+                to_restore.push_back(floaterp);
+            }
+        }
+        minimized_floaters.clear();
+
+        // Visible floaters that are not minimized, frontmost first.
+        std::vector<LLFloater*> shown;
+        for (LLView* viewp : *gFloaterView->getChildList())
+        {
+            LLFloater* floaterp = dynamic_cast<LLFloater*>(viewp);
+            if (floaterp && floaterp->getVisible() && !floaterp->isDead() && !floaterp->isMinimized()
+                && floaterp->isMinimizeable() && !floaterp->isDocked())
+            {
+                shown.push_back(floaterp);
+            }
+        }
+
+        if (!to_restore.empty())
+        {
+            // Restore back to front, then put the floaters opened meanwhile back on top.
+            for (auto it = to_restore.rbegin(); it != to_restore.rend(); ++it)
+            {
+                (*it)->setMinimized(false);
+                gFloaterView->bringToFront(*it, shown.empty() && *it == to_restore.front());
+            }
+            for (auto it = shown.rbegin(); it != shown.rend(); ++it)
+            {
+                gFloaterView->bringToFront(*it, *it == shown.front());
+            }
+        }
+        else
+        {
+            for (LLFloater* floaterp : shown)
+            {
+                floaterp->setMinimized(true);
+                minimized_floaters.push_back(floaterp->getHandle());
+            }
+        }
+        if (gMenuHolder) gMenuHolder->hideMenus();
+        return true;
+    }
+};
+
 class LLFileTakeSnapshotToDisk : public view_listener_t
 {
     bool handleEvent(const LLSD& userdata)
@@ -1491,6 +1551,7 @@ void init_menu_file()
     view_listener_t::addCommit(new LLFileUploadBulk(), "File.UploadBulk");
     view_listener_t::addCommit(new LLFileCloseWindow(), "File.CloseWindow");
     view_listener_t::addCommit(new LLFileCloseAllWindows(), "File.CloseAllWindows");
+    view_listener_t::addCommit(new LLFileMinimizeAllWindows(), "File.MinimizeAllWindows");
     view_listener_t::addEnable(new LLFileEnableCloseWindow(), "File.EnableCloseWindow");
     view_listener_t::addEnable(new LLFileEnableCloseAllWindows(), "File.EnableCloseAllWindows");
     view_listener_t::addCommit(new LLFileTakeSnapshotToDisk(), "File.TakeSnapshotToDisk");

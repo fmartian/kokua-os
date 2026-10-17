@@ -2417,6 +2417,13 @@
                 <menu_item_call.on_enable
                  function="File.EnableCloseAllWindows" />
             </menu_item_call>
+            <menu_item_call
+             label="Minimize All Windows"
+             name="Minimize All Windows"
+             shortcut="control|alt|W">
+                <menu_item_call.on_click
+                 function="File.MinimizeAllWindows" />
+            </menu_item_call>
 
             <menu_item_separator/>
 
@@ -3437,6 +3444,13 @@
                  function="File.CloseAllWindows" />
                 <menu_item_call.on_enable
                  function="File.EnableCloseAllWindows" />
+            </menu_item_call>
+            <menu_item_call
+             label="Minimize All Windows"
+             name="Minimize All Windows"
+             shortcut="control|alt|W">
+                <menu_item_call.on_click
+                 function="File.MinimizeAllWindows" />
             </menu_item_call>
 
             <menu_item_separator/>
