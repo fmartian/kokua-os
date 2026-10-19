@@ -179,7 +179,7 @@
 						    label="Render &gt;">
                 <pie_slice
                     name="RenderNormally"
-                    label=" Render Normal">
+                    label="Render Normal">
                     <pie_slice.on_click
                         function="Avatar.SetImpostorMode"
                         parameter="0" />>

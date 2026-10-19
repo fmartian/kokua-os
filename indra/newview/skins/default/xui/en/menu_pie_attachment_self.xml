@@ -260,8 +260,6 @@
          <pie_slice.on_enable
             function="Object.EnableExport" />
         </pie_slice>
-        <pie_separator name="inspect_placeholder" />
-        <pie_separator/>
             <pie_slice
                 label="Textures"
                 name="Debug...">

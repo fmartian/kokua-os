@@ -131,6 +131,7 @@
             label="More >">
             <!-- ## Zi: Is this the right thing to use for avatar textures? -->
             <pie_slice
+                label="Textures"
                 name="Debug...">
                 <pie_slice.on_click
                     function="Avatar.Debug" />
@@ -156,41 +157,45 @@
                     function="Tools.LookAtSelection"
                     parameter="zoom" />
             </pie_slice>
-            <pie_slice
-                name="RenderNormally"
-                label=" Render Normal">
-                <pie_slice.on_click
-                  function="Avatar.SetImpostorMode"
-                  parameter="0" />
-            </pie_slice> 
-            <pie_slice
-                name="DoNotRender"
-                label="Do Not Render">
-                <pie_slice.on_click
-                  function="Avatar.SetImpostorMode"
-                  parameter="1" />
-            </pie_slice>
-            <pie_slice
-                name="AlwaysRenderFully"
-                label="Render Fully">
-                <pie_slice.on_click
-                  function="Avatar.SetImpostorMode"
-                  parameter="2" />
-            </pie_slice>
+            <pie_menu
+                name="RenderMenu"
+                label="Render &gt;">
+                <pie_slice
+                    name="RenderNormally"
+                    label="Render Normal">
+                    <pie_slice.on_click
+                      function="Avatar.SetImpostorMode"
+                      parameter="0" />
+                </pie_slice> 
+                <pie_slice
+                    name="DoNotRender"
+                    label="Do Not Render">
+                    <pie_slice.on_click
+                      function="Avatar.SetImpostorMode"
+                      parameter="1" />
+                </pie_slice>
+                <pie_slice
+                    name="AlwaysRenderFully"
+                    label="Render Fully">
+                    <pie_slice.on_click
+                      function="Avatar.SetImpostorMode"
+                      parameter="2" />
+                </pie_slice>
+                <pie_slice
+                    enabled="true"
+                    label="Exceptions..."
+                    name="Exceptions">
+                    <pie_slice.on_click
+                        function="View.Blocked"
+                        parameter="avatar_rendering_tab" />
+                </pie_slice>
+            </pie_menu>
             <pie_slice
                 enabled="true"
                 label="Tex Refresh"
                 name="Texture Refresh">
                 <pie_slice.on_click
                     function="Avatar.TexRefresh" />
-            </pie_slice>
-            <pie_slice
-                enabled="true"
-                label="Exceptions..."
-                name="Exceptions">
-                <pie_slice.on_click
-                    function="View.Blocked"
-                    parameter="avatar_rendering_tab" />
             </pie_slice>
         </pie_menu>
         <pie_slice

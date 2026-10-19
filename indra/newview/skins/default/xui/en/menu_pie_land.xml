@@ -36,7 +36,6 @@
         <pie_slice.on_click
             function="Land.Teleport" />
     </pie_slice>
-    <pie_separator />
     <pie_slice
         enabled="false"
         label="Buy Pass"
