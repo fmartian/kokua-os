@@ -284,6 +284,15 @@
          is_running_parameters="FSRenderFriendsOnly"
          checkbox_control="FSRenderFriendsOnlyPersistsTP"
            />
+  <command name="hud"
+           available_in_toybox="true"
+           icon="Command_HUD_Icon"
+           label_ref="Command_HUD_Label"
+           tooltip_ref="Command_HUD_Tooltip"
+           execute_function="View.ShowHUDAttachments"
+           is_enabled_function="View.EnableHUDAttachments"
+           is_running_function="View.CheckHUDAttachments"
+           />
   <command name="view"
            available_in_toybox="true"
            icon="Command_View_Icon"
