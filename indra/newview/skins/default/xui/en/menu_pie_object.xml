@@ -39,6 +39,8 @@
             function="Object.SitOrStand" />
         <pie_slice.on_enable
             function="Object.EnableSit" />
+        <pie_slice.on_visible
+            function="Object.ShowSit" />
     </pie_slice>
     <pie_slice
         enabled="false"

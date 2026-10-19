@@ -386,9 +386,11 @@ void PieMenu::draw()
                             // ... it's visible and it's enabled, skip the current one.
                             // the first visible and enabled item in autohide chains wins
                             // this is useful for Sit/Stand toggles
+                            // <Kokua> also skip the current one when it is not visible, so that the
+                            // next one shows even if disabled (Stand Up while sitting under RLV @unsit)
                             lookSlice->updateEnabled();
                             lookSlice->updateVisible();
-                            if (lookSlice->getVisible() && lookSlice->getEnabled())
+                            if (lookSlice->getVisible() && (lookSlice->getEnabled() || !slice_visible))
                             {
                                 continue;
                             }

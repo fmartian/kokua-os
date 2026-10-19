@@ -11853,6 +11853,9 @@ void initialize_menus()
     // Self context menu
     view_listener_t::addMenu(new LLSelfToggleSitStand(), "Self.ToggleSitStand");
     enable.add("Self.EnableSitStand", boost::bind(&enable_sit_stand));
+    enable.add("Self.ShowSitDown", boost::bind(&show_sitdown_self));   // <Kokua/> pie: Sit Here only while not sitting
+    enable.add("Self.EnableSitDown", boost::bind(&enable_sitdown_self));   // <Kokua/> pie Sit Here
+    enable.add("Self.EnableStandUp", boost::bind(&enable_standup_self));   // <Kokua/> pie Stand Up
     view_listener_t::addMenu(new LLSelfRemoveAllAttachments(), "Self.RemoveAllAttachments");
 
     view_listener_t::addMenu(new LLSelfEnableRemoveAllAttachments(), "Self.EnableRemoveAllAttachments");
@@ -11949,6 +11952,7 @@ void initialize_menus()
 
     enable.add("Object.EnableStandUp", boost::bind(&enable_object_stand_up));
     enable.add("Object.EnableSit", boost::bind(&enable_object_sit, _1));
+    enable.add("Object.ShowSit", [](LLUICtrl*, const LLSD&) { return !sitting_on_selection(); });   // <Kokua/> pie: Sit Here only while not sitting on it
 
     view_listener_t::addMenu(new LLObjectEnableReturn(), "Object.EnableReturn");
     enable.add("Object.EnableDuplicate", boost::bind(&LLSelectMgr::canDuplicate, LLSelectMgr::getInstance()));

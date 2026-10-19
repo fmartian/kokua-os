@@ -366,7 +366,9 @@
             function="Self.ToggleSitStand"
             parameter="" />
         <pie_slice.on_enable
-            function="Self.EnableSitStand" />
+            function="Self.EnableSitDown" />
+        <pie_slice.on_visible
+            function="Self.ShowSitDown" />
     </pie_slice>
     <pie_slice
         label="Stand Up"
@@ -375,7 +377,7 @@
         <pie_slice.on_click
             function="Self.ToggleSitStand" />
         <pie_slice.on_enable
-            function="Self.EnableSitStand" />
+            function="Self.EnableStandUp" />
     </pie_slice>
     <pie_separator name="script_count_placeholder" />
     <pie_slice
