@@ -33,6 +33,7 @@
 #include "llnotifications.h"
 #include "llnotificationsutil.h"
 #include "llpanel.h"
+#include "llfocusmgr.h"
 #include "lltoolbar.h"
 #include "lltoolbarview.h"
 #include "lltrans.h"
@@ -98,9 +99,85 @@ bool LLFloaterToybox::postBuild()
     return true;
 }
 
+void LLFloaterToybox::onOpen(const LLSD& key)
+{
+    // Keep the keyboard on the floater itself, so typing searches the buttons right away
+    gFocusMgr.setKeyboardFocus(this);
+    setSearchTerm(LLWString());
+}
+
+// Note: flashing only works because floater_toybox.xml enables it for every button here
+// (button_flash_enable). LLToolBar enables it only for commands that allow flashing, and
+// flashing a button without its flash timer crashes in LLButton::draw() (Linden Lab bug,
+// mFlashingTimer is NULL when the glow is drawn).
+void LLFloaterToybox::setSearchTerm(const LLWString& term)
+{
+    mSearchTerm = term;
+    mSearchTimer.reset();
+    mFlashCleared = false;
+
+    // Flash the buttons whose label contains the typed text, like a toolbar button asking for attention
+    // (flash color, count and rate are set on the buttons in floater_toybox.xml)
+    LLWString lower_term = mSearchTerm;
+    LLWStringUtil::toLower(lower_term);
+    for (const LLCommandId& id : mToolBar->getCommandsList())
+    {
+        mToolBar->flashCommand(id, false);
+        LLCommand* command = LLCommandManager::instance().getCommand(id);
+        if (command && !lower_term.empty())
+        {
+            LLWString label = utf8str_to_wstring(LLTrans::getString(command->labelRef()));
+            LLWStringUtil::toLower(label);
+            if (label.find(lower_term) != LLWString::npos)
+            {
+                mToolBar->flashCommand(id, true, true);
+            }
+        }
+    }
+}
+
+bool LLFloaterToybox::handleUnicodeCharHere(llwchar uni_char)
+{
+    if (uni_char < 0x20 || uni_char == 0x7F)
+    {
+        return false;
+    }
+    // After a pause, a new key starts a new search
+    const F32 SEARCH_RESTART_SECONDS = 1.5f;
+    LLWString term = (mSearchTimer.getElapsedTimeF32() > SEARCH_RESTART_SECONDS) ? LLWString() : mSearchTerm;
+    term += uni_char;
+    setSearchTerm(term);
+    return true;
+}
+
+bool LLFloaterToybox::handleKeyHere(KEY key, MASK mask)
+{
+    if (mask == MASK_NONE && !mSearchTerm.empty())
+    {
+        if (key == KEY_BACKSPACE)
+        {
+            setSearchTerm(mSearchTerm.substr(0, mSearchTerm.size() - 1));
+            return true;
+        }
+    }
+    return LLFloater::handleKeyHere(key, mask);
+}
+
 void LLFloaterToybox::draw()
 {
     llassert(gToolBarView != NULL);
+
+    // A button that finished flashing stays lit until told otherwise; clear it once the animation is over
+    // (3 flashes of 2 x 0.15 s, see floater_toybox.xml)
+    const F32 FLASH_SECONDS = 1.0f;
+    if (!mSearchTerm.empty() && mSearchTimer.getElapsedTimeF32() > FLASH_SECONDS && !mFlashCleared)
+    {
+        for (const LLCommandId& id : mToolBar->getCommandsList())
+        {
+            mToolBar->flashCommand(id, false);
+        }
+        mFlashCleared = true;
+    }
 
     const command_id_list_t& command_list = mToolBar->getCommandsList();
 

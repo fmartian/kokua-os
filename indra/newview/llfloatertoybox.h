@@ -28,6 +28,7 @@
 #define LL_LLFLOATERTOYBOX_H
 
 #include "llfloater.h"
+#include "llframetimer.h"
 
 
 class LLButton;
@@ -42,6 +43,7 @@ public:
 
     // virtuals
     bool postBuild() override;
+    void onOpen(const LLSD& key) override;
     void draw() override;
     bool handleDragAndDrop(S32 x, S32 y, MASK mask, bool drop,
         EDragAndDropType cargo_type,
@@ -53,11 +55,18 @@ protected:
     void onBtnClearAll();
     void onBtnRestoreDefaults();
     void onBtnClose();
+    // Typing while the floater has focus flashes the buttons whose label contains the typed text
+    bool handleUnicodeCharHere(llwchar uni_char) override;
+    bool handleKeyHere(KEY key, MASK mask) override;
+    void setSearchTerm(const LLWString& term);
 
     void onToolBarButtonEnter(LLView* button);
 
 public:
     LLToolBar * mToolBar;
+    LLWString   mSearchTerm;
+    LLFrameTimer mSearchTimer;  // restarts the search after a pause in typing
+    bool        mFlashCleared = true;
 };
 
 #endif // LL_LLFLOATERTOYBOX_H
