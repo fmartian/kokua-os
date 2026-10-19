@@ -13,6 +13,17 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
+    <key>KokuaTrackTeleportDestination</key>
+    <map>
+      <key>Comment</key>
+      <string>Teleports to a landmark, an address or a SLURL put the map beacon on the destination, so it stays as a guide when a landing point sends you elsewhere</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>1</integer>
+    </map>
     <key>KokuaTeleportHistoryExitPoint</key>
     <map>
       <key>Comment</key>
