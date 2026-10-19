@@ -169,6 +169,7 @@ with the same filename but different name
   <!-- FS:Beq FIRE-20977 -->
   <texture name="Command_RFO_Icon"        file_name="toolbar_icons/RFO_ON.png"        preload="true" />
   <!-- /RFO Changes -->
+  <texture name="Command_HUD_Icon"          file_name="toolbar_icons/hud.png"          preload="true" />
   <texture name="Command_View_Icon"         file_name="toolbar_icons/view.png"         preload="true" />
   <texture name="Command_Voice_Icon"        file_name="toolbar_icons/nearbyvoice.png"  preload="true" />
   <texture name="Command_Web_Browser_Icon"  file_name="toolbar_icons/web_browser.png"  preload="true" />
