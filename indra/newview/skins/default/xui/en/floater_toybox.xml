@@ -4,7 +4,7 @@
   can_dock="false"
   can_minimize="false"
   can_resize="false"
-  height="530"
+  height="377"
   help_topic="toybox"
   layout="topleft"
   legacy_header_height="18"
@@ -24,7 +24,7 @@
     length="1"
     name="toybox label 1"
     right="-20"
-    top="35"
+    top="28"
     type="string">
       Add or remove buttons by dragging them to or from the toolbars.
   </text>
@@ -38,27 +38,28 @@
     length="1"
     name="toybox label 2"
     right="-20"
-    top="55"
+    top="46"
     type="string">
       Buttons will appear as shown or as icon-only depending on each toolbar's settings.
   </text>
   <toolbar
-    bottom="465"
+    bottom="328"
     button_display_mode="icons_with_text"
     follows="all"
     left="20"
-    button_icon_and_text.button_width.max="172"
-    button_icon_and_text.button_width.min="70"
+    button_icon_and_text.button_width.max="146"
+    button_icon_and_text.button_width.min="146"
+    button_icon_and_text.desired_height="22"
     name="toybox_toolbar"
     pad_left="5"
     pad_right="5"
     pad_top="5"
     pad_bottom="5"
-    pad_between="15"
+    pad_between="3"
     read_only="true"
     right="-20"
     side="top"
-    top="85">
+    top="67">
     <button_panel background_visible="false" />
     <button_icon_and_text image_unselected="PushButton_Off"
                           image_selected="PushButton_Off"
@@ -79,11 +80,11 @@
   <panel
     bevel_style="none"
     border="true"
-    bottom="466"
+    bottom="333"
     follows="left|bottom|right"
     left="20"
     right="-20"
-    top="466" />
+    top="333" />
   <button
     follows="left|bottom|right"
     height="23"
@@ -92,7 +93,7 @@
     layout="topleft"
     left="110"
     name="btn_clear_all"
-    top="485"
+    top="344"
     width="130">
     <button.commit_callback function="Toybox.ClearAll" />
   </button>
@@ -104,7 +105,7 @@
     layout="topleft"
     left="260"
     name="btn_restore_defaults"
-    top="485"
+    top="344"
     width="130">
     <button.commit_callback function="Toybox.RestoreDefaults" />
   </button>
@@ -116,7 +117,7 @@
     layout="topleft"
     left="410"
     name="btn_close"
-    top="485"
+    top="344"
     width="130">
     <button.commit_callback function="Toybox.Close" />
   </button>

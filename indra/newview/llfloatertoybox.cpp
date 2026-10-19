@@ -55,7 +55,7 @@ bool compare_localized_command_labels(LLCommand * cmd1, LLCommand * cmd2)
     std::string lab1 = LLTrans::getString(cmd1->labelRef());
     std::string lab2 = LLTrans::getString(cmd2->labelRef());
 
-    return (lab1 < lab2);
+    return (LLStringUtil::compareDict(lab1, lab2) < 0);
 }
 
 bool LLFloaterToybox::postBuild()
