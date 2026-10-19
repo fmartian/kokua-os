@@ -3388,7 +3388,12 @@ bool get_selection_object_uuids(LLFolderView *root, uuid_vec_t& ids)
 void LLInventoryAction::doToSelected(LLInventoryModel* model, LLFolderView* root, const std::string& action, bool user_confirm)
 {
     std::set<LLFolderViewItem*> selected_items = root->getSelectionList();
+    // <Kokua> In single folder mode, the menu of the empty space acts on the open folder:
+    // let pasting through, it is handled by the root folder at the end of this function
+    const bool paste_into_open_folder = root->isSingleFolderMode() && ("paste" == action || "paste_link" == action);
+    // </Kokua>
     if (selected_items.empty()
+        && !paste_into_open_folder  // <Kokua/>
         && action != "wear"
         && action != "wear_add"
         && !isRemoveAction(action))
