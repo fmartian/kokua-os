@@ -3294,9 +3294,13 @@ void process_agent_movement_complete(LLMessageSystem* msg, void**)
             if (!origin.getRegion().empty())
             {
                 LLVector3 origin_pos = origin.getPosition();
-                std::string link = llformat("secondlife:///app/teleport/%s/%d/%d/%d",
-                                            LLURI::escape(origin.getRegion()).c_str(),
-                                            ll_round(origin_pos.mV[VX]), ll_round(origin_pos.mV[VY]), ll_round(origin_pos.mV[VZ]));
+                // Labeled link, so the chat shows "Region (x, y, z)" instead of "Teleport to Region (x,y,z)"
+                S32 x = ll_round(origin_pos.mV[VX]);
+                S32 y = ll_round(origin_pos.mV[VY]);
+                S32 z = ll_round(origin_pos.mV[VZ]);
+                std::string link = llformat("[secondlife:///app/teleport/%s/%d/%d/%d %s (%d, %d, %d)]",
+                                            LLURI::escape(origin.getRegion()).c_str(), x, y, z,
+                                            origin.getRegion().c_str(), x, y, z);
                 LLStringUtil::format_map_t args;
                 args["[SLURL]"] = link;
                 LLChat chat;
