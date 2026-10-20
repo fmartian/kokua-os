@@ -3276,6 +3276,39 @@ void process_agent_movement_complete(LLMessageSystem* msg, void**)
         LL_INFOS("Teleport") << "Agent movement complete, setting state to TELEPORT_START_ARRIVAL" << LL_ENDL;
         gAgent.setTeleportState( LLAgent::TELEPORT_START_ARRIVAL );
 
+        // <Kokua> As Imprudence did: tell in nearby chat where we teleported from, with a link back
+        static LLCachedControl<bool> chat_origin(gSavedSettings, "KokuaChatTeleportOrigin", true);
+        bool show_origin = chat_origin;
+#if 0
+//MK
+        if (gRRenabled && gAgent.mRRInterface.mContainsShowloc)
+        {
+            show_origin = false;
+        }
+//mk
+#endif
+        if (show_origin)
+        {
+            LLSLURL origin;
+            gAgent.getTeleportSourceSLURL(origin);
+            if (!origin.getRegion().empty())
+            {
+                LLVector3 origin_pos = origin.getPosition();
+                std::string link = llformat("secondlife:///app/teleport/%s/%d/%d/%d",
+                                            LLURI::escape(origin.getRegion()).c_str(),
+                                            ll_round(origin_pos.mV[VX]), ll_round(origin_pos.mV[VY]), ll_round(origin_pos.mV[VZ]));
+                LLStringUtil::format_map_t args;
+                args["[SLURL]"] = link;
+                LLChat chat;
+                chat.mFromID = LLUUID::null;
+                chat.mSourceType = CHAT_SOURCE_SYSTEM;
+                chat.mText = LLTrans::getString("KokuaTeleportedFrom", args);
+                LLSD none;
+                LLNotificationsUI::LLNotificationManager::instance().onChat(chat, none);
+            }
+        }
+        // </Kokua>
+
         if (isAgentAvatarValid())
         {
             // Set the new position

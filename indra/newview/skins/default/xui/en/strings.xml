@@ -4336,6 +4336,7 @@ Try enclosing path to the editor with double quotes.
   <string name="Command_Contact_Sets_Label">Contact sets</string>
   <string name="Command_Wearable_Favorites_Label">Favorite Wearables</string>
   <string name="Command_RFO_Label">Show Friends Only</string>
+  <string name="KokuaTeleportedFrom">Teleported from [SLURL]</string>
   <string name="Command_HUD_Label">HUD attachments</string>
 
   <string name="Command_AboutLand_Tooltip">Information about the land you're visiting</string>

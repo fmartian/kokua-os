@@ -13,6 +13,17 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
+    <key>KokuaChatTeleportOrigin</key>
+    <map>
+      <key>Comment</key>
+      <string>After a teleport, show in nearby chat a link to the place you teleported from (as Imprudence did)</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>1</integer>
+    </map>
     <key>KokuaTeleportHistoryExitPoint</key>
     <map>
       <key>Comment</key>
