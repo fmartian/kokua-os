@@ -214,6 +214,7 @@ private:
     bool                    mIsClosing;
     bool                    mSetToUserPosition;
     bool                    mProcessingSearchUpdate; // Don't update search string from what user set it to
+    bool                    mSearchTextTyped = false; // <Kokua/> the location field holds text the user typed, not a tracked place
 
     LLVector3d              mTrackedLocation;
     LLTracker::ETrackingStatus mTrackedStatus;

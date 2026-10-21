@@ -815,6 +815,7 @@ void LLFloaterWorldMap::trackAvatar(const LLUUID& avatar_id, const std::string& 
     {
         LLTracker::stopTracking(false);
     }
+    mSearchTextTyped = false;   // <Kokua/>
     mTrackCtrlsPanel->setDefaultBtn(mTeleportButton);
 }
 
@@ -853,6 +854,7 @@ void LLFloaterWorldMap::trackLandmark(const LLUUID& landmark_item_id)
     {
         LLTracker::stopTracking(false);
     }
+    mSearchTextTyped = false;   // <Kokua/>
     mTrackCtrlsPanel->setDefaultBtn(mTeleportButton);
 }
 
@@ -862,6 +864,7 @@ void LLFloaterWorldMap::trackEvent(const LLItemInfo &event_info)
     mShowParcelInfo = false;
     mTrackedStatus = LLTracker::TRACKING_LOCATION;
     LLTracker::trackLocation(event_info.getGlobalPosition(), event_info.getName(), event_info.getToolTip(), LLTracker::LOCATION_EVENT);
+    mSearchTextTyped = false;   // <Kokua/>
     mTrackCtrlsPanel->setDefaultBtn(mTeleportButton);
 }
 
@@ -870,6 +873,7 @@ void LLFloaterWorldMap::trackGenericItem(const LLItemInfo &item)
     mShowParcelInfo = false;
     mTrackedStatus = LLTracker::TRACKING_LOCATION;
     LLTracker::trackLocation(item.getGlobalPosition(), item.getName(), item.getToolTip(), LLTracker::LOCATION_ITEM);
+    mSearchTextTyped = false;   // <Kokua/>
     mTrackCtrlsPanel->setDefaultBtn(mTeleportButton);
 }
 
@@ -930,6 +934,7 @@ void LLFloaterWorldMap::trackLocation(const LLVector3d& pos_global)
     // we have a valid region - turn on coord display
     enableTeleportCoordsDisplay( true );
 
+    mSearchTextTyped = false;   // <Kokua/>
     mTrackCtrlsPanel->setDefaultBtn(mTeleportButton);
 }
 
@@ -1048,11 +1053,13 @@ void LLFloaterWorldMap::trackURL(const std::string& region_name, S32 x_coord, S3
         local_pos.mV[VZ] = (F32)z_coord;
         LLVector3d global_pos = sim_info->getGlobalPos(local_pos);
         trackLocation(global_pos);
+        mSearchTextTyped = false;   // <Kokua/>
         mTrackCtrlsPanel->setDefaultBtn(mTeleportButton);
     }
     else
     {
         // fill in UI based on URL
+        mSearchTextTyped = false;   // <Kokua/>
         mLocationEditor->setValue(region_name);
 
         // Save local coords to highlight position after region global
@@ -1352,6 +1359,7 @@ void LLFloaterWorldMap::onComboTextEntry()
 
 void LLFloaterWorldMap::onSearchTextEntry( )
 {
+    mSearchTextTyped = true;    // <Kokua/>
     onComboTextEntry();
     updateSearchEnabled();
 }
@@ -1454,11 +1462,19 @@ void LLFloaterWorldMap::onLocationFocusChanged( LLFocusableElement* focus )
 
 void LLFloaterWorldMap::updateSearchEnabled()
 {
+    // <Kokua> Enter searches only for text the user typed. When the field just shows a
+    // tracked place (e.g. from llMapDestination), Enter keeps teleporting there.
     if (childHasKeyboardFocus("location") &&
-        mLocationEditor->getValue().asString().length() > 0)
+        mLocationEditor->getValue().asString().length() > 0 &&
+        mSearchTextTyped)
     {
         mTrackCtrlsPanel->setDefaultBtn(mSearchButton);
     }
+    else if (LLTracker::getTrackingStatus() != LLTracker::TRACKING_NOTHING)
+    {
+        mTrackCtrlsPanel->setDefaultBtn(mTeleportButton);
+    }
+    // </Kokua>
     else
     {
         mTrackCtrlsPanel->setDefaultBtn(nullptr);
@@ -1900,6 +1916,7 @@ void LLFloaterWorldMap::onCommitSearchResult(bool from_search)
             }
             trackLocation(pos_global);
             mProcessingSearchUpdate = from_search;
+            mSearchTextTyped = false;   // <Kokua/>
             mTrackCtrlsPanel->setDefaultBtn(mTeleportButton);
             break;
         }
