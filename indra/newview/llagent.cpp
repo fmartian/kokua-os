@@ -28,6 +28,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llagent.h"
+#include "lltracker.h"
 
 #include "pipeline.h"
 
@@ -4495,12 +4496,48 @@ void LLAgent::teleportRequest(
 }
 
 // Landmark ID = LLUUID::null means teleport home
+// <Kokua> Put the map beacon on the teleport destination. On arrival the beacon is removed
+// when we land within 5 m of it (process_agent_movement_complete); when a landing point
+// sends us elsewhere, it stays as a guide and the camera faces it.
+static void kokua_track_teleport_destination(const LLUUID& landmark_asset_id, const LLVector3d& pos_global)
+{
+    static LLCachedControl<bool> track_destination(gSavedSettings, "KokuaTrackTeleportDestination", true);
+    if (!track_destination || LLTracker::getTrackingStatus() == LLTracker::TRACKING_AVATAR)
+    {
+        return;
+    }
+    if (landmark_asset_id.notNull())
+    {
+        if (LLTracker::getTrackingStatus() != LLTracker::TRACKING_LANDMARK
+            || LLTracker::getTrackedLandmarkAssetID() != landmark_asset_id)
+        {
+            LLTracker::trackLandmark(landmark_asset_id, LLUUID::null, std::string());
+        }
+        return;
+    }
+    if (pos_global.isExactlyZero())
+    {
+        return;
+    }
+    std::string name;
+    if (LLSimInfo* sim_info = LLWorldMap::getInstance()->simInfoFromPosGlobal(pos_global))
+    {
+        name = llformat("%s (%d, %d, %d)", sim_info->getName().c_str(),
+                        ll_round((F32)fmod(pos_global.mdV[VX], 256.0)),
+                        ll_round((F32)fmod(pos_global.mdV[VY], 256.0)),
+                        ll_round((F32)pos_global.mdV[VZ]));
+    }
+    LLTracker::trackLocation(pos_global, name, std::string());
+}
+// </Kokua>
+
 void LLAgent::teleportViaLandmark(const LLUUID& landmark_asset_id)
 {
     if (landmark_asset_id.isNull())
     {
         gAgentCamera.resetView();
     }
+    kokua_track_teleport_destination(landmark_asset_id, LLVector3d::zero);  // <Kokua/>
     mTeleportRequest = LLTeleportRequestPtr(new LLTeleportRequestViaLandmark(landmark_asset_id));
     startTeleportRequest();
 }
@@ -4618,6 +4655,7 @@ void LLAgent::restoreCanceledTeleportRequest()
 
 void LLAgent::teleportViaLocation(const LLVector3d& pos_global)
 {
+    kokua_track_teleport_destination(LLUUID::null, pos_global);  // <Kokua/>
     mTeleportRequest = LLTeleportRequestPtr(new LLTeleportRequestViaLocation(pos_global));
     startTeleportRequest();
 }
@@ -4679,6 +4717,7 @@ void LLAgent::doTeleportViaLocation(const LLVector3d& pos_global)
 // Teleport to global position, but keep facing in the same direction
 void LLAgent::teleportViaLocationLookAt(const LLVector3d& pos_global)
 {
+    kokua_track_teleport_destination(LLUUID::null, pos_global);  // <Kokua/>
     mTeleportRequest = LLTeleportRequestPtr(new LLTeleportRequestViaLocationLookAt(pos_global));
     startTeleportRequest();
 }
