@@ -1838,9 +1838,26 @@ void LLInventoryPanel::updateFolderLabel(const LLUUID& folder_id)
     }
 }
 
+// <Kokua> Clear the filter of the inventory window we are creating in, not only the main
+// window's: a new item that doesn't match the filter stays hidden, and the auto rename then
+// lands on whatever else gets selected (an existing folder)
+static void reset_filter_of_inventory_window(LLView* view)
+{
+    LLPanelMainInventory* main_panel = view ? view->getParentByType<LLPanelMainInventory>() : nullptr;
+    if (main_panel)
+    {
+        main_panel->onFilterEdit("");
+    }
+    else
+    {
+        reset_inventory_filter();
+    }
+}
+// </Kokua>
+
 void LLInventoryPanel::doCreate(const LLSD& userdata)
 {
-    reset_inventory_filter();
+    reset_filter_of_inventory_window(this);    // <Kokua/> was reset_inventory_filter()
     menu_create_inventory_item(this, LLFolderBridge::sSelf.get(), userdata);
 }
 
@@ -2970,7 +2987,7 @@ void LLInventorySingleFolderPanel::doCreate(const LLSD& userdata)
     {
         changeFolderRoot(dest_id);
     }
-    reset_inventory_filter();
+    reset_filter_of_inventory_window(this);    // <Kokua/> was reset_inventory_filter()
     menu_create_inventory_item(this, dest_id, userdata);
 }
 

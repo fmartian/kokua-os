@@ -569,7 +569,8 @@ void LLPanelMainInventory::newFolderWindow(LLUUID folder_id, LLUUID item_to_sele
 
 void LLPanelMainInventory::doCreate(const LLSD& userdata)
 {
-    reset_inventory_filter();
+    // <Kokua> Clear this window's filter, not only the main window's, so the new item shows
+    onFilterEdit("");
     if(mSingleFolderMode)
     {
         if(isListViewMode() || isCombinationViewMode())
