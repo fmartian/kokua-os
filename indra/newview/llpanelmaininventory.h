@@ -226,6 +226,9 @@ private:
     LLButton* mUpBtn;
     LLButton* mViewModeBtn;
     LLLayoutPanel* mNavigationBtnsPanel;
+    LLPanel* mSFDropZone;          // <Kokua/> strip under the toolbar that takes drops into the open folder
+    U32 mSFDropZoneHoverFrame;     // <Kokua/> last frame a drag was over the strip
+    U32 mSFOpenFolderDropFrame;    // <Kokua/> last frame a drag would drop into the open folder
 
     LLPanel* mDefaultViewPanel;
     LLPanel* mCombinationViewPanel;

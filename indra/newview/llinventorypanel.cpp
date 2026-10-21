@@ -731,10 +731,21 @@ void LLInventoryPanel::itemChanged(const LLUUID& item_id, U32 mask, const LLInve
             }
 
             // Select any newly created object that has the auto rename at top of folder root set.
+            // <Kokua> Only the item being created: the first one added after arming, or the expected id.
+            // Selecting any added item let the rename land on items that only arrived or moved meanwhile.
             if(mFolderRoot.get() && mFolderRoot.get()->getRoot()->needsAutoRename())
             {
-                setSelection(item_id, false);
+                if (mAutoRenameID.isNull() && !mAutoRenameTaken)
+                {
+                    mAutoRenameID = item_id;
+                    mAutoRenameTaken = true;
+                }
+                if (item_id == mAutoRenameID)
+                {
+                    setSelection(item_id, false);
+                }
             }
+            // </Kokua>
             updateFolderLabel(model_item->getParentUUID());
 
             if (get_is_favorite(model_item))
@@ -1715,6 +1726,27 @@ void LLInventoryPanel::setSelectCallback(const std::function<void (const std::de
     mSelectionCallback = cb;
 }
 
+// <Kokua>
+void LLInventoryPanel::armAutoRename(const LLUUID& expected_id)
+{
+    mAutoRenameID = expected_id;
+    mAutoRenameTaken = expected_id.notNull();
+    if (mFolderRoot.get())
+    {
+        mFolderRoot.get()->setNeedsAutoRename(true);
+    }
+}
+
+void LLInventoryPanel::setAutoRenameTarget(const LLUUID& id)
+{
+    if (mFolderRoot.get() && mFolderRoot.get()->needsAutoRename())
+    {
+        mAutoRenameID = id;
+        mAutoRenameTaken = true;
+    }
+}
+// </Kokua>
+
 void LLInventoryPanel::clearSelection()
 {
     mSelectThisID.setNull();
@@ -1754,15 +1786,21 @@ void LLInventoryPanel::onSelectionChange(const std::deque<LLFolderViewItem*>& it
     LLFolderView* fv = mFolderRoot.get();
     if (fv->needsAutoRename()) // auto-selecting a new user-created asset and preparing to rename
     {
-        fv->setNeedsAutoRename(false);
-        if (items.size()) // new asset is visible and selected
+        // <Kokua> Rename only the item that was created. Renaming whatever got selected renamed existing
+        // folders when the new item was hidden (filter) or another item arrived first; keep waiting instead.
+        LLFolderViewModelItemInventory* selected_model = (items.size() == 1)
+            ? static_cast<LLFolderViewModelItemInventory*>(items.front()->getViewModelItem()) : nullptr;
+        if (selected_model && mAutoRenameID.notNull() && selected_model->getUUID() == mAutoRenameID)
         {
+            fv->setNeedsAutoRename(false);
+            mAutoRenameID.setNull();
             fv->startRenamingSelectedItem();
         }
         else
         {
-            LL_DEBUGS("Inventory") << "Failed to start renamer, no items selected" << LL_ENDL;
+            LL_DEBUGS("Inventory") << "Not starting renamer, the selection is not the new item" << LL_ENDL;
         }
+        // </Kokua>
     }
 
     std::set<LLFolderViewItem*> selected_items = mFolderRoot.get()->getSelectionList();
@@ -1838,9 +1876,26 @@ void LLInventoryPanel::updateFolderLabel(const LLUUID& folder_id)
     }
 }
 
+// <Kokua> Clear the filter of the inventory window we are creating in, not only the main
+// window's: a new item that doesn't match the filter stays hidden, and the auto rename then
+// lands on whatever else gets selected (an existing folder)
+static void reset_filter_of_inventory_window(LLView* view)
+{
+    LLPanelMainInventory* main_panel = view ? view->getParentByType<LLPanelMainInventory>() : nullptr;
+    if (main_panel)
+    {
+        main_panel->onFilterEdit("");
+    }
+    else
+    {
+        reset_inventory_filter();
+    }
+}
+// </Kokua>
+
 void LLInventoryPanel::doCreate(const LLSD& userdata)
 {
-    reset_inventory_filter();
+    reset_filter_of_inventory_window(this);    // <Kokua/> was reset_inventory_filter()
     menu_create_inventory_item(this, LLFolderBridge::sSelf.get(), userdata);
 }
 
@@ -2970,7 +3025,7 @@ void LLInventorySingleFolderPanel::doCreate(const LLSD& userdata)
     {
         changeFolderRoot(dest_id);
     }
-    reset_inventory_filter();
+    reset_filter_of_inventory_window(this);    // <Kokua/> was reset_inventory_filter()
     menu_create_inventory_item(this, dest_id, userdata);
 }
 

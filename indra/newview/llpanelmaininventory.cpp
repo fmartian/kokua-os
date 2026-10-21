@@ -146,6 +146,9 @@ LLPanelMainInventory::LLPanelMainInventory(const LLPanel::Params& p)
       mNeedUploadCost(true),
       mMenuViewDefault(NULL),
       mSingleFolderMode(false),
+      mSFDropZone(nullptr),
+      mSFDropZoneHoverFrame(0),
+      mSFOpenFolderDropFrame(0),
       mForceShowInvLayout(false),
       mViewMode(MODE_COMBINATION),
       mListViewRootUpdatedConnection(),
@@ -311,6 +314,7 @@ bool LLPanelMainInventory::postBuild()
     mUpBtn = getChild<LLButton>("up_btn");
     mViewModeBtn = getChild<LLButton>("view_mode_btn");
     mNavigationBtnsPanel = getChild<LLLayoutPanel>("nav_buttons");
+    mSFDropZone = getChild<LLPanel>("sf_drop_zone");
 
     mDefaultViewPanel = getChild<LLPanel>("default_inventory_panel");
     mCombinationViewPanel = getChild<LLPanel>("combination_view_inventory");
@@ -569,7 +573,8 @@ void LLPanelMainInventory::newFolderWindow(LLUUID folder_id, LLUUID item_to_sele
 
 void LLPanelMainInventory::doCreate(const LLSD& userdata)
 {
-    reset_inventory_filter();
+    // <Kokua> Clear this window's filter, not only the main window's, so the new item shows
+    onFilterEdit("");
     if(mSingleFolderMode)
     {
         if(isListViewMode() || isCombinationViewMode())
@@ -1021,7 +1026,59 @@ bool LLPanelMainInventory::handleDragAndDrop(S32 x, S32 y, MASK mask, bool drop,
         }
     }
 
+    // <Kokua> In single folder view, the strip under the toolbar drops into the open folder,
+    // the same as dropping on an item of the list, even when the list is full of subfolders
+    if (mSingleFolderMode && mSFDropZone && mSFDropZone->getVisible())
+    {
+        S32 local_x, local_y;
+        localPointToOtherView(x, y, &local_x, &local_y, mSFDropZone);
+        LLFolderView* root = mCombinationInventoryPanel->getRootFolder();
+        if (mSFDropZone->pointInView(local_x, local_y) && root && root->getViewModelItem())
+        {
+            mSFDropZoneHoverFrame = LLFrameTimer::getFrameCount();
+            bool accepted = root->getViewModelItem()->dragOrDrop(mask, drop, cargo_type, cargo_data, tooltip_msg);
+            *accept = accepted ? ACCEPT_YES_MULTI : ACCEPT_NO;
+            if (accepted)
+            {
+                mSFOpenFolderDropFrame = mSFDropZoneHoverFrame;
+            }
+            return true;
+        }
+    }
+    // </Kokua>
+
     bool handled = LLPanel::handleDragAndDrop(x, y, mask, drop, cargo_type, cargo_data, accept, tooltip_msg);
+
+    // <Kokua> In single folder view, a drop on an item or on the empty space goes into the open
+    // folder, which has no row to light up: remember it so draw() outlines the whole list
+    if (handled && !drop && mSingleFolderMode && !isGalleryViewMode()
+        && (*accept == ACCEPT_YES_MULTI || *accept == ACCEPT_YES_SINGLE || *accept == ACCEPT_YES_COPY_MULTI
+            || *accept == ACCEPT_YES_COPY_SINGLE))
+    {
+        LLFolderView* root = mCombinationInventoryPanel->getRootFolder();
+        S32 local_x, local_y;
+        localPointToOtherView(x, y, &local_x, &local_y, mCombinationInventoryPanel);
+        bool over_subfolder = false;
+        if (root && mCombinationInventoryPanel->pointInView(local_x, local_y))
+        {
+            for (auto it = root->getFoldersBegin(); it != root->getFoldersEnd(); ++it)
+            {
+                LLFolderViewFolder* folder = *it;
+                S32 folder_x, folder_y;
+                localPointToOtherView(x, y, &folder_x, &folder_y, folder);
+                if (folder->getVisible() && folder->pointInView(folder_x, folder_y))
+                {
+                    over_subfolder = true;
+                    break;
+                }
+            }
+            if (!over_subfolder)
+            {
+                mSFOpenFolderDropFrame = LLFrameTimer::getFrameCount();
+            }
+        }
+    }
+    // </Kokua>
 
     return handled;
 }
@@ -1044,6 +1101,12 @@ void LLPanelMainInventory::setFocusOnFilterEditor()
 void LLPanelMainInventory::draw()
 {
     static LLCachedControl<bool> s_transfer(gSavedSettings, "InventoryFilterTransfer", false);
+    // <Kokua> Light up the drop strip while something is dragged over it
+    if (mSFDropZone)
+    {
+        mSFDropZone->setBackgroundVisible(LLFrameTimer::getFrameCount() - mSFDropZoneHoverFrame <= 1);
+    }
+    // </Kokua>
     if (mActivePanel && mFilterEditor)
     {
         mFilterEditor->setText(mFilterSubString);
@@ -1073,6 +1136,18 @@ void LLPanelMainInventory::draw()
         mWornItemsPanel->getFilter().setModified(LLFolderViewFilter::FILTER_MORE_RESTRICTIVE);
     }
     LLPanel::draw();
+
+    // <Kokua> Outline the list while a drag would drop into the open folder
+    if (mSingleFolderMode && LLFrameTimer::getFrameCount() - mSFOpenFolderDropFrame <= 1)
+    {
+        static LLUIColor kokua_color = LLUIColorTable::instance().getColor("Kokua", LLColor4::purple);
+        LLRect list_rect;
+        mCombinationInventoryPanel->localRectToOtherView(mCombinationInventoryPanel->getLocalRect(), &list_rect, this);
+        gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
+        gl_rect_2d(list_rect.mLeft, list_rect.mTop, list_rect.mRight, list_rect.mBottom, kokua_color.get(), false);
+        gl_rect_2d(list_rect.mLeft + 1, list_rect.mTop - 1, list_rect.mRight - 1, list_rect.mBottom + 1, kokua_color.get(), false);
+    }
+    // </Kokua>
     updateItemcountText();
     updateCombinationVisibility();
 }
@@ -2673,6 +2748,7 @@ void LLPanelMainInventory::updatePanelVisibility()
     mDefaultViewPanel->setVisible(!mSingleFolderMode);
     mCombinationViewPanel->setVisible(mSingleFolderMode);
     mNavigationBtnsPanel->setVisible(mSingleFolderMode);
+    mSFDropZone->setVisible(mSingleFolderMode && !isGalleryViewMode());   // <Kokua/> the gallery takes drops itself
     mViewModeBtn->setImageOverlay(mSingleFolderMode ? getString("default_mode_btn") : getString("single_folder_mode_btn"));
     mViewModeBtn->setEnabled(mSingleFolderMode || (getAllItemsPanel() == getActivePanel()));
     if (mSingleFolderMode)
@@ -2797,12 +2873,12 @@ void LLPanelMainInventory::updateCombinationVisibility()
         && mCombInvUUIDNeedsRename.notNull()
         && mCombinationInventoryPanel->areViewsInitialized())
     {
+        mCombinationInventoryPanel->armAutoRename(mCombInvUUIDNeedsRename);    // <Kokua/> only this item
         mCombinationInventoryPanel->setSelectionByID(mCombInvUUIDNeedsRename, true);
         LLFolderView* root = mCombinationInventoryPanel->getRootFolder();
         if (root)
         {
             root->scrollToShowSelection();
-            root->setNeedsAutoRename(true);
         }
         mCombInvUUIDNeedsRename.setNull();
     }

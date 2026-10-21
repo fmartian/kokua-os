@@ -252,8 +252,8 @@ void LLPanelMarketplaceListings::onAddButtonClicked()
         if (panel)
         {
             gInventory.notifyObservers();
+            panel->armAutoRename(new_cat_id);   // <Kokua/> was getRootFolder()->setNeedsAutoRename(true)
             panel->setSelectionByID(new_cat_id, true);
-            panel->getRootFolder()->setNeedsAutoRename(true);
         }
     }
     );
