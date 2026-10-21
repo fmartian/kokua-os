@@ -2798,12 +2798,12 @@ void LLPanelMainInventory::updateCombinationVisibility()
         && mCombInvUUIDNeedsRename.notNull()
         && mCombinationInventoryPanel->areViewsInitialized())
     {
+        mCombinationInventoryPanel->armAutoRename(mCombInvUUIDNeedsRename);    // <Kokua/> only this item
         mCombinationInventoryPanel->setSelectionByID(mCombInvUUIDNeedsRename, true);
         LLFolderView* root = mCombinationInventoryPanel->getRootFolder();
         if (root)
         {
             root->scrollToShowSelection();
-            root->setNeedsAutoRename(true);
         }
         mCombInvUUIDNeedsRename.setNull();
     }

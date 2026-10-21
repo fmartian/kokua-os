@@ -185,6 +185,12 @@ public:
     void setSelection(const LLUUID& obj_id, bool take_keyboard_focus);
     void setSelectCallback(const std::function<void (const std::deque<LLFolderViewItem*>& items, bool user_action)>& cb);
     void clearSelection();
+    // <Kokua> Rename the next item created in this panel once it is selected. With an id, only that
+    // item; without, the first item added to the panel after this call. Nothing else gets renamed.
+    void armAutoRename(const LLUUID& expected_id = LLUUID::null);
+    // Narrow a pending auto rename to the item the server created
+    void setAutoRenameTarget(const LLUUID& id);
+    // </Kokua>
     selected_items_t getSelectedItems() const;
 
     bool isSelectionRemovable();
@@ -292,6 +298,8 @@ protected:
     void onItemsCompletion();           // called when selected items are complete
 
     LLUUID                      mSelectThisID;
+    LLUUID                      mAutoRenameID;          // <Kokua/> item the pending auto rename is for
+    bool                        mAutoRenameTaken = false; // <Kokua/> the first added item already became the target
     LLInventoryModel*           mInventory;
     LLInventoryObserver*        mInventoryObserver;
     LLInvPanelComplObserver*    mCompletionObserver;

@@ -1998,6 +1998,7 @@ void menu_create_inventory_item(LLInventoryPanel* panel, LLUUID dest_id, const L
                 LLInventoryPanel* panel = static_cast<LLInventoryPanel*>(handle.get());
                 if (panel)
                 {
+                    panel->setAutoRenameTarget(new_category_id);   // <Kokua/>
                     panel->setSelectionByID(new_category_id, true);
                 }
                 LL_DEBUGS(LOG_INV) << "Done creating inventory: " << new_category_id << LL_ENDL;
@@ -2095,7 +2096,7 @@ void menu_create_inventory_item(LLInventoryPanel* panel, LLUUID dest_id, const L
     }
     if(panel)
     {
-        panel->getRootFolder()->setNeedsAutoRename(true);
+        panel->armAutoRename();   // <Kokua/> was getRootFolder()->setNeedsAutoRename(true)
     }
 }
 

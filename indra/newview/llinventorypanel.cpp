@@ -731,10 +731,21 @@ void LLInventoryPanel::itemChanged(const LLUUID& item_id, U32 mask, const LLInve
             }
 
             // Select any newly created object that has the auto rename at top of folder root set.
+            // <Kokua> Only the item being created: the first one added after arming, or the expected id.
+            // Selecting any added item let the rename land on items that only arrived or moved meanwhile.
             if(mFolderRoot.get() && mFolderRoot.get()->getRoot()->needsAutoRename())
             {
-                setSelection(item_id, false);
+                if (mAutoRenameID.isNull() && !mAutoRenameTaken)
+                {
+                    mAutoRenameID = item_id;
+                    mAutoRenameTaken = true;
+                }
+                if (item_id == mAutoRenameID)
+                {
+                    setSelection(item_id, false);
+                }
             }
+            // </Kokua>
             updateFolderLabel(model_item->getParentUUID());
 
             if (get_is_favorite(model_item))
@@ -1715,6 +1726,27 @@ void LLInventoryPanel::setSelectCallback(const std::function<void (const std::de
     mSelectionCallback = cb;
 }
 
+// <Kokua>
+void LLInventoryPanel::armAutoRename(const LLUUID& expected_id)
+{
+    mAutoRenameID = expected_id;
+    mAutoRenameTaken = expected_id.notNull();
+    if (mFolderRoot.get())
+    {
+        mFolderRoot.get()->setNeedsAutoRename(true);
+    }
+}
+
+void LLInventoryPanel::setAutoRenameTarget(const LLUUID& id)
+{
+    if (mFolderRoot.get() && mFolderRoot.get()->needsAutoRename())
+    {
+        mAutoRenameID = id;
+        mAutoRenameTaken = true;
+    }
+}
+// </Kokua>
+
 void LLInventoryPanel::clearSelection()
 {
     mSelectThisID.setNull();
@@ -1754,15 +1786,21 @@ void LLInventoryPanel::onSelectionChange(const std::deque<LLFolderViewItem*>& it
     LLFolderView* fv = mFolderRoot.get();
     if (fv->needsAutoRename()) // auto-selecting a new user-created asset and preparing to rename
     {
-        fv->setNeedsAutoRename(false);
-        if (items.size()) // new asset is visible and selected
+        // <Kokua> Rename only the item that was created. Renaming whatever got selected renamed existing
+        // folders when the new item was hidden (filter) or another item arrived first; keep waiting instead.
+        LLFolderViewModelItemInventory* selected_model = (items.size() == 1)
+            ? static_cast<LLFolderViewModelItemInventory*>(items.front()->getViewModelItem()) : nullptr;
+        if (selected_model && mAutoRenameID.notNull() && selected_model->getUUID() == mAutoRenameID)
         {
+            fv->setNeedsAutoRename(false);
+            mAutoRenameID.setNull();
             fv->startRenamingSelectedItem();
         }
         else
         {
-            LL_DEBUGS("Inventory") << "Failed to start renamer, no items selected" << LL_ENDL;
+            LL_DEBUGS("Inventory") << "Not starting renamer, the selection is not the new item" << LL_ENDL;
         }
+        // </Kokua>
     }
 
     std::set<LLFolderViewItem*> selected_items = mFolderRoot.get()->getSelectionList();
