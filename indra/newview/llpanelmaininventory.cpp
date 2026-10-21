@@ -573,7 +573,8 @@ void LLPanelMainInventory::newFolderWindow(LLUUID folder_id, LLUUID item_to_sele
 
 void LLPanelMainInventory::doCreate(const LLSD& userdata)
 {
-    reset_inventory_filter();
+    // <Kokua> Clear this window's filter, not only the main window's, so the new item shows
+    onFilterEdit("");
     if(mSingleFolderMode)
     {
         if(isListViewMode() || isCombinationViewMode())
@@ -2872,12 +2873,12 @@ void LLPanelMainInventory::updateCombinationVisibility()
         && mCombInvUUIDNeedsRename.notNull()
         && mCombinationInventoryPanel->areViewsInitialized())
     {
+        mCombinationInventoryPanel->armAutoRename(mCombInvUUIDNeedsRename);    // <Kokua/> only this item
         mCombinationInventoryPanel->setSelectionByID(mCombInvUUIDNeedsRename, true);
         LLFolderView* root = mCombinationInventoryPanel->getRootFolder();
         if (root)
         {
             root->scrollToShowSelection();
-            root->setNeedsAutoRename(true);
         }
         mCombInvUUIDNeedsRename.setNull();
     }
