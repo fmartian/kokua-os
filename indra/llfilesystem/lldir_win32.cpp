@@ -338,33 +338,6 @@ void LLDir_Win32::initAppDirs(const std::string &app_name,
     mCAFile = getExpandedFilename( LL_PATH_EXECUTABLE, "ca-bundle.crt" );
 }
 
-U32 LLDir_Win32::countFilesInDir(const std::string &dirname, const std::string &mask)
-{
-    HANDLE count_search_h;
-    U32 file_count;
-
-    file_count = 0;
-
-    WIN32_FIND_DATA FileData;
-
-    std::wstring pathname = ll_convert<std::wstring>(dirname);
-    pathname += ll_convert<std::wstring>(mask);
-
-    if ((count_search_h = FindFirstFile(pathname.c_str(), &FileData)) != INVALID_HANDLE_VALUE)
-    {
-        file_count++;
-
-        while (FindNextFile(count_search_h, &FileData))
-        {
-            file_count++;
-        }
-
-        FindClose(count_search_h);
-    }
-
-    return (file_count);
-}
-
 // get the next file in the directory
 // AO: Used by LGG selection beams & preferences backup
 bool LLDir_Win32::getNextFileInDir(const std::string &dirname, const std::string &mask, std::string &fname)

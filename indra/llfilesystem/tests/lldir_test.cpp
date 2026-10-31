@@ -110,16 +110,18 @@ struct LLDir_Dummy: public LLDir
         // Implement this when we write a test that needs it
     }
 
+    virtual bool getNextFileInDir(const std::string& dirname, ///< directory path - must end in trailing slash!
+                                  const std::string& mask,    ///< file pattern string (use "*" for all)
+                                  std::string&       fname)   ///< output: found file name
+    {
+        // Implement this when we write a test that needs it
+        return false;
+    }
+
     virtual std::string getCurPath()
     {
         // Implement this when we write a test that needs it
         return "";
-    }
-
-    virtual U32 countFilesInDir(const std::string& dirname, const std::string& mask)
-    {
-        // Implement this when we write a test that needs it
-        return 0;
     }
 
     virtual bool fileExists(const std::string& pathname) const
