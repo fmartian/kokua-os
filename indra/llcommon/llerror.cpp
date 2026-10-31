@@ -1558,14 +1558,40 @@ namespace LLError
 
     std::string utcTime()
     {
-        time_t now = time(NULL);
+//        time_t       now      = time(NULL);
+//        const size_t BUF_SIZE = 64;
+//        char         time_str[BUF_SIZE];
+
+//        auto chars = strftime(time_str, BUF_SIZE, "%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
+//        return chars ? time_str : "time error";
+        return utcTime(0);
+    }
+
+    std::string utcTime(int precision)
+    {
         const size_t BUF_SIZE = 64;
-        char time_str[BUF_SIZE];    /* Flawfinder: ignore */
-
-        auto chars = strftime(time_str, BUF_SIZE,
-                                  "%Y-%m-%dT%H:%M:%SZ",
-                                  gmtime(&now));
-
+        char         time_str[BUF_SIZE];
+        long         milliseconds = 0;
+        size_t       chars        = 0;
+#if LL_WINDOWS
+        SYSTEMTIME st;
+        GetSystemTime(&st);
+        chars        = sprintf(time_str, "%d-%02d-%02dT%02d:%02d:%02d", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+        milliseconds = st.wMilliseconds;
+#else
+        struct timeval now;
+        if (!gettimeofday(&now, nullptr))
+        {
+            size_t chars = strftime(time_str, BUF_SIZE, "%Y-%m-%dT%H:%M:%S", gmtime(&now.tv_sec));
+            milliseconds = now.tv_usec / 1000;Fmt
+        }
+#endif
+        if (precision > 0 && chars)
+        {
+            char fmt[16];
+            sprintf(fmt, ".%%0%ddZ", precision);
+            chars += sprintf(time_str + chars, fmt, milliseconds);
+        }
         return chars ? time_str : "time error";
     }
 }
