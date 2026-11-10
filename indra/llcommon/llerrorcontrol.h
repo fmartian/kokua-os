@@ -130,6 +130,7 @@ namespace LLError
 
     typedef std::string (*TimeFunction)();
     LL_COMMON_API std::string utcTime();
+    LL_COMMON_API std::string utcTime(int precision);
 
     LL_COMMON_API void setTimeFunction(TimeFunction);
         // The function is use to return the current time, formatted for

@@ -1558,14 +1558,68 @@ namespace LLError
 
     std::string utcTime()
     {
-        time_t now = time(NULL);
-        const size_t BUF_SIZE = 64;
-        char time_str[BUF_SIZE];    /* Flawfinder: ignore */
+        // Use 0 digits precision for compatibility
+        return utcTime(0);
+    }
 
-        auto chars = strftime(time_str, BUF_SIZE,
-                                  "%Y-%m-%dT%H:%M:%SZ",
-                                  gmtime(&now));
+#if LL_WINDOWS
+    typedef struct timeval
+    {
+        time_t tv_sec;  /* seconds */
+        long   tv_usec; /* and microseconds */
+    } timeval;
 
+    static int gettimeofday(struct timeval* tv, void* tz)
+    {
+        // This magic number is the number of 100 nanosecond intervals from
+        // January 1, 1601 00:00:00 UTC until January 1, 1970 00:00:00 UTC
+        static const ULONGLONG EPOCH = 116'444'736'000'000'000ULL;
+
+        FILETIME ftime;
+        GetSystemTimePreciseAsFileTime(&ftime);
+        ULARGE_INTEGER time = { .LowPart = ftime.dwLowDateTime, .HighPart = ftime.dwHighDateTime };
+
+        tv->tv_sec  = (time_t)((time.QuadPart - EPOCH) / 10'000'000ULL);
+        tv->tv_usec = (long)((time.QuadPart % 10'000'000ULL) / 10);
+        return 0;
+    }
+#endif
+
+#define FRACT_PRECISION_DIGITS 6
+
+    std::string utcTime(int precision)
+    {
+        struct timeval now;
+        const size_t BUF_SIZE = 32;
+        char time_str[BUF_SIZE];
+        size_t chars = 0;
+
+        if (!gettimeofday(&now, nullptr))
+        {
+            chars = strftime(time_str, BUF_SIZE, "%Y-%m-%dT%H:%M:%SZ", gmtime(&now.tv_sec));
+        }
+
+        if (chars > 0 && precision > 0)
+        {
+            // a positive precision
+            if (precision >= FRACT_PRECISION_DIGITS)
+            {
+                // limit to 6 digits
+                precision = FRACT_PRECISION_DIGITS;
+            }
+            else
+            {
+                // less than 6 digits wanted, scale the fraction to be the
+                // correct number of significant digits
+                for (int i = precision; i < FRACT_PRECISION_DIGITS; i++)
+                {
+                    now.tv_usec /= 10;
+                }
+            }
+            // -1 to backtrack over the Z character
+            chars--;
+            snprintf(time_str + chars, BUF_SIZE - chars, ".%0*ldZ", precision, (long)now.tv_usec);
+        }
         return chars ? time_str : "time error";
     }
 }
