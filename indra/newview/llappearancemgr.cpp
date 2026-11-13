@@ -1538,9 +1538,9 @@ void LLAppearanceMgr::wearItemsOnAvatar(const uuid_vec_t& item_ids_to_wear,
                         cb = new LLUpdateAppearanceAndEditWearableOnDestroy(item_id_to_wear);
                     }
                     LLWearableType::EType type = item_to_wear->getWearableType();
-                    S32 wearable_count = gAgentWearables.getWearableCount(type);
+                    U32 wearable_count = gAgentWearables.getWearableCount(type);
                     bool replace_item = needs_to_replace(item_to_wear, first_for_object, first_for_type, replace);
-                    if ((replace_item && wearable_count != 0) || !gAgentWearables.canAddWearable(type))
+                    if ((replace_item && wearable_count > 0) || !gAgentWearables.canAddWearable(type))
                     {
                         LLUUID item_id = gAgentWearables.getWearableItemID(item_to_wear->getWearableType(),
                                                                            wearable_count-1);
@@ -4045,29 +4045,29 @@ void LLAppearanceMgr::serverAppearanceUpdateCoro(LLCoreHttpUtil::HttpCoroutineAd
                     // Instead of giving up at this point we use HB's code fragment to try and
                     // get ourselves back to what the server expects us to have
 
-                        if (expectedCofVersion != cofVersion)
-                        {
-                      LL_WARNS("Avatar") << "Bake retry count exceeded - trying to refetch from server" << LL_ENDL;
-                            // We obviously went out of sync between viewer and server,
-                            // So try and refetch the COF with the proper version as
-                            // seen from the server...
-                            LL_INFOS("Avatar") << "Refetching the COF from the server" << LL_ENDL;
-                            gAgentAvatarp->mLastUpdateRequestCOFVersion =
-                                LLViewerInventoryCategory::VERSION_UNKNOWN;
-                            LLViewerInventoryCategory* cof =
-                                gInventory.getCategory(getCOF());
-                            cof->setVersion(LLViewerInventoryCategory::VERSION_UNKNOWN);
-                            cof->fetch();
-                            // HB's version of this routine exits by generating a new request so do it
-                            // here instead to maintain the existing routine's structure
-                            requestServerAppearanceUpdate();
-                      break;
-                        }
-                        else
-                        {
-                          // something else went wrong so chicken out
-                      LL_WARNS("Avatar") << "Bake retry count exceeded!" << LL_ENDL;
-                      break;
+                    if (expectedCofVersion != cofVersion)
+                    {
+                        LL_WARNS("Avatar") << "Bake retry count exceeded - trying to refetch from server" << LL_ENDL;
+                        // We obviously went out of sync between viewer and server,
+                        // So try and refetch the COF with the proper version as
+                        // seen from the server...
+                        LL_INFOS("Avatar") << "Refetching the COF from the server" << LL_ENDL;
+                        gAgentAvatarp->mLastUpdateRequestCOFVersion =
+                            LLViewerInventoryCategory::VERSION_UNKNOWN;
+                        LLViewerInventoryCategory* cof =
+                            gInventory.getCategory(getCOF());
+                        cof->setVersion(LLViewerInventoryCategory::VERSION_UNKNOWN);
+                        cof->fetch();
+                        // HB's version of this routine exits by generating a new request so do it
+                        // here instead to maintain the existing routine's structure
+                        requestServerAppearanceUpdate();
+                        break;
+                    }
+                    else
+                    {
+                        // something else went wrong so chicken out
+                        LL_WARNS("Avatar") << "Bake retry count exceeded!" << LL_ENDL;
+                        break;
                     }
                 }
                 F32 timeout = pow(BAKE_RETRY_TIMEOUT, static_cast<float>(retryCount)) - 1.0f;

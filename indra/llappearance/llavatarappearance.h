@@ -31,6 +31,7 @@
 #include "llavatarappearancedefines.h"
 #include "llavatarjointmesh.h"
 #include "lldriverparam.h"
+#include "lltexglobalcolor.h"
 #include "lltexlayer.h"
 #include "llviewervisualparam.h"
 #include "llxmltree.h"
@@ -116,6 +117,10 @@ public:
 
     bool isBuilt() const { return mIsBuilt; }
 
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    virtual bool    isUsingServerBakes() const = 0;
+#endif
 
 /**                    State
  **                                                                            **
@@ -165,7 +170,12 @@ protected:
     virtual bool        loadAvatar();
     virtual F32 getAvatarOffset();
 
-    bool                setupBone(const LLAvatarBoneInfo* info, LLJoint* parent, S32 &current_volume_num, S32 &current_joint_num);
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    virtual void        bodySizeChanged() = 0;
+#endif
+
+    bool                setupBone(const LLAvatarBoneInfo* info, LLJoint* parent, S32& current_volume_num, S32& current_joint_num);
     bool                allocateCharacterJoints(U32 num);
     bool                buildSkeleton(const LLAvatarSkeletonInfo *info);
 
@@ -247,7 +257,12 @@ public:
     // Composites
     //--------------------------------------------------------------------
 public:
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    virtual void    invalidateComposite(LLTexLayerSet* layerset, bool upload_result) = 0;
+#else
     virtual void    invalidateComposite(LLTexLayerSet* layerset) = 0;
+#endif
 
 /********************************************************************************
  **                                                                            **
@@ -282,7 +297,12 @@ protected:
     // Clothing colors (convenience functions to access visual parameters)
     //--------------------------------------------------------------------
 public:
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    void            setClothesColor(LLAvatarAppearanceDefines::ETextureIndex te, const LLColor4& new_color, bool upload_bake);
+#else
     void            setClothesColor(LLAvatarAppearanceDefines::ETextureIndex te, const LLColor4& new_color);
+#endif
     LLColor4        getClothesColor(LLAvatarAppearanceDefines::ETextureIndex te);
     static bool     teToColorParams(LLAvatarAppearanceDefines::ETextureIndex te, U32 *param_name);
 
@@ -291,7 +311,12 @@ public:
     //--------------------------------------------------------------------
 public:
     LLColor4        getGlobalColor(const std::string& color_name ) const;
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    virtual void    onGlobalColorChanged(const LLTexGlobalColor* global_color, bool upload_bake) = 0;
+#else
     virtual void    onGlobalColorChanged(const LLTexGlobalColor* global_color) = 0;
+#endif
 protected:
     LLTexGlobalColor* mTexSkinColor{ nullptr };
     LLTexGlobalColor* mTexHairColor{ nullptr };

@@ -261,6 +261,83 @@ void LLCharacter::removeAnimationData(std::string name)
 //-----------------------------------------------------------------------------
 // setVisualParamWeight()
 //-----------------------------------------------------------------------------
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+bool LLCharacter::setVisualParamWeight(const LLVisualParam* which_param, F32 weight, bool upload_bake)
+{
+    S32 index = which_param->getID();
+    visual_param_index_map_t::iterator index_iter = mVisualParamIndexMap.find(index);
+    if (index_iter != mVisualParamIndexMap.end())
+    {
+        // <FS:Ansariel> [Legacy Bake]
+        index_iter->second->setWeight(weight, upload_bake);
+        return true;
+    }
+    return false;
+}
+
+//-----------------------------------------------------------------------------
+// setVisualParamWeight()
+//-----------------------------------------------------------------------------
+// <FS:Ansariel> [Legacy Bake]
+bool LLCharacter::setVisualParamWeight(const char* param_name, F32 weight, bool upload_bake)
+{
+    std::string tname(param_name);
+    LLStringUtil::toLower(tname);
+    char* tableptr = sVisualParamNames.checkString(tname);
+    visual_param_name_map_t::iterator name_iter = mVisualParamNameMap.find(tableptr);
+    if (name_iter != mVisualParamNameMap.end())
+    {
+        // <FS:Ansariel> [Legacy Bake]
+        name_iter->second->setWeight(weight, upload_bake);
+        return true;
+    }
+    LL_WARNS() << "LLCharacter::setVisualParamWeight() Invalid visual parameter: " << param_name << LL_ENDL;
+    return false;
+}
+
+//-----------------------------------------------------------------------------
+// setVisualParamWeight()
+//-----------------------------------------------------------------------------
+// <FS:Ansariel> [Legacy Bake]
+bool LLCharacter::setVisualParamWeight(S32 index, F32 weight, bool upload_bake)
+{
+    visual_param_index_map_t::iterator index_iter = mVisualParamIndexMap.find(index);
+    if (index_iter != mVisualParamIndexMap.end())
+    {
+        // <FS:Ansariel> [Legacy Bake]
+        index_iter->second->setWeight(weight, upload_bake);
+        return true;
+    }
+    LL_WARNS() << "LLCharacter::setVisualParamWeight() Invalid visual parameter index: " << index << LL_ENDL;
+    return false;
+}
+
+//-----------------------------------------------------------------------------
+// setVisualParamWeight()
+//-----------------------------------------------------------------------------
+bool LLCharacter::setVisualParamWeight(S32 index, S32 type, F32 weight, bool upload_bake)
+{
+    visual_param_index_map_t::iterator index_iter = mVisualParamIndexMap.find(index);
+    if (index_iter != mVisualParamIndexMap.end())
+    {
+        LLVisualParam* param = index_iter->second;
+        if (param->getWearableType() == type)
+        {
+            param->setWeight(weight, upload_bake);
+            return true;
+        }
+        else
+        {
+            // setVisualParamWeight at the moment is only used in writeToAvatar.
+            // The type is supposed to match since wearable is a subset of avatar by type.
+            llassert(false);
+            LL_WARNS() << "Visual param index " << index << " is not of type " << type << LL_ENDL;
+        }
+    }
+    return false;
+}
+#else
 bool LLCharacter::setVisualParamWeight(const LLVisualParam* which_param, F32 weight)
 {
     S32 index = which_param->getID();
@@ -330,6 +407,7 @@ bool LLCharacter::setVisualParamWeight(S32 index, S32 type, F32 weight)
     }
     return false;
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // getVisualParamWeight()

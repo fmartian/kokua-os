@@ -395,27 +395,36 @@ public:
                 child->insert(data);
             }
         }
-        else if (parent)
-        {
-            //it's not in here, give it to the root
-            OCT_ERRS << "Octree insertion failed, starting over from root!" << LL_ENDL;
-
-            oct_node* node = this;
-
-            while (parent)
-            {
-                node = parent;
-                parent = node->getOctParent();
-            }
-
-            node->insert(data);
-        }
         else
         {
-            // It's not in here, and we are root.
-            // LLOctreeRoot::insert() should have expanded
-            // root by now, something is wrong
-            OCT_ERRS << "Octree insertion failed! Root expansion failed." << LL_ENDL;
+#if OPENSIM
+            // <FS:CR> FIRE-11593: Opensim "4096 Bug" Fix by Latif Khalifa
+            LL_WARNS() << "OPENSIM: !!! OCTREE INSERTING ELEMENT, IS THIS STILL AN ISSUE? |||" << LL_ENDL;
+#else
+            if (parent)
+            {
+
+                //it's not in here, give it to the root
+                OCT_ERRS << "Octree insertion failed, starting over from root!" << LL_ENDL;
+
+                oct_node* node = this;
+
+                while (parent)
+                {
+                    node = parent;
+                    parent = node->getOctParent();
+                }
+
+                node->insert(data);
+            }
+            else
+            {
+                // It's not in here, and we are root.
+                // LLOctreeRoot::insert() should have expanded
+                // root by now, something is wrong
+                OCT_ERRS << "Octree insertion failed! Root expansion failed." << LL_ENDL;
+            }
+#endif
         }
 
         return false;

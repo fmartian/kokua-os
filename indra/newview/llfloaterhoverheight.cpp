@@ -30,7 +30,7 @@
 #include "llfloaterhoverheight.h"
 #include "llsliderctrl.h"
 #include "llviewercontrol.h"
-#include "llsdserialize.h"
+//#include "llsdserialize.h"
 #include "llagent.h"
 #include "llviewerregion.h"
 #include "llvoavatarself.h"
@@ -47,6 +47,8 @@ void LLFloaterHoverHeight::syncFromPreferenceSetting(void *user_data, bool updat
     LLSliderCtrl* sldrCtrl = self->getChild<LLSliderCtrl>("HoverHeightSlider");
     sldrCtrl->setValue(value,false);
 
+#if !OPENSIM
+    // <FS:Ansariel> Legacy baking avatar z-offset
     if (isAgentAvatarValid() && update_offset)
     {
         LLVector3 offset(0.0, 0.0, llclamp(value,MIN_HOVER_Z,MAX_HOVER_Z));
@@ -54,6 +56,7 @@ void LLFloaterHoverHeight::syncFromPreferenceSetting(void *user_data, bool updat
         gAgentAvatarp->setHoverOffset(offset);
         //gAgentAvatarp->sendHoverHeight();
     }
+#endif
 }
 
 bool LLFloaterHoverHeight::postBuild()
@@ -106,7 +109,26 @@ void LLFloaterHoverHeight::onSliderMoved(LLUICtrl* ctrl, void* userData)
         F32 value = sldrCtrl->getValueF32();
         LLVector3 offset(0.0, 0.0, llclamp(value, MIN_HOVER_Z, MAX_HOVER_Z));
         LL_INFOS("Avatar") << "setting hover from slider moved" << offset[2] << LL_ENDL;
+#if OPENSIM
+        // <FS:Ansariel> Legacy baking avatar z-offset
+        if (gAgent.getRegion() && gAgent.getRegion()->avatarHoverHeightEnabled())
+        {
+            if (sldrCtrl->isMouseHeldDown())
+            {
+                gAgentAvatarp->setHoverOffset(offset, false);
+            }
+            else
+            {
+                gSavedPerAccountSettings.setF32("AvatarHoverOffsetZ", value);
+            }
+        }
+        else if (!gAgentAvatarp->isUsingServerBakes())
+        {
+            gSavedPerAccountSettings.setF32("AvatarHoverOffsetZ", value);
+        }
+#else
         gAgentAvatarp->setHoverOffset(offset, false);
+#endif
     }
 }
 
@@ -144,6 +166,13 @@ void LLFloaterHoverHeight::onSimulatorFeaturesReceived(const LLUUID &region_id)
 void LLFloaterHoverHeight::updateEditEnabled()
 {
     bool enabled = gAgent.getRegion() && gAgent.getRegion()->avatarHoverHeightEnabled();
+#if OPENSIM
+    // <FS:Ansariel> Legacy baking avatar z-offset
+    if (!enabled && isAgentAvatarValid() && !gAgentAvatarp->isUsingServerBakes())
+    {
+        enabled = true;
+    }
+#endif
     LLSliderCtrl* sldrCtrl = getChild<LLSliderCtrl>("HoverHeightSlider");
     sldrCtrl->setEnabled(enabled);
     if (enabled)

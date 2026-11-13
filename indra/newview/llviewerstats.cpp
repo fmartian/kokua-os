@@ -27,7 +27,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llviewerstats.h"
-#include "llviewerthrottle.h"
+//#include "llviewerthrottle.h"
 
 #include "message.h"
 #include "llfloaterreg.h"
@@ -37,20 +37,20 @@
 #include "llappviewer.h"
 
 #include "pipeline.h"
-#include "lltexturefetch.h"
-#include "llviewerobjectlist.h"
-#include "llviewertexturelist.h"
-#include "lltexlayer.h"
-#include "lltexlayerparams.h"
-#include "llsurface.h"
+//#include "lltexturefetch.h"
+//#include "llviewerobjectlist.h"
+//#include "llviewertexturelist.h"
+//#include "lltexlayer.h"
+//#include "lltexlayerparams.h"
+//#include "llsurface.h"
 #include "llvlmanager.h"
 #include "llagent.h"
 #include "llagentcamera.h"
 #include "llviewercontrol.h"
 #include "llversioninfo.h"
-#include "llfloatertools.h"
-#include "lldebugview.h"
-#include "llfasttimerview.h"
+//#include "llfloatertools.h"
+//#include "lldebugview.h"
+//#include "llfasttimerview.h"
 #include "llviewerregion.h"
 #include "llvoavatar.h"
 #include "llvoavatarself.h"
@@ -60,7 +60,7 @@
 #include "llmeshrepository.h" //for LLMeshRepository::sBytesReceived
 #include "llperfstats.h"
 #include "llsdserialize.h"
-#include "llsdutil.h"
+//#include "llsdutil.h"
 #include "llcorehttputil.h"
 #include "llinventorymodel.h"
 #include "lluiusage.h"
@@ -140,13 +140,13 @@ LLTrace::CountStatHandle<>  FPS("FPS", "Frames rendered"),
                             TEX_REBAKES("texrebakes", "Number of times avatar textures have been forced to rebake"),
                             NUM_NEW_OBJECTS("numnewobjectsstat", "Number of objects in scene that were not previously in cache");
 
-LLTrace::CountStatHandle<LLUnit<F64, LLUnits::Kilotriangles> >
+LLTrace::CountStatHandle<LLUnit<F64, LLUnits::Kilotriangles>>
                             TRIANGLES_DRAWN("trianglesdrawnstat");
 
-LLTrace::EventStatHandle<LLUnit<F64, LLUnits::Kilotriangles> >
+LLTrace::EventStatHandle<LLUnit<F64, LLUnits::Kilotriangles>>
                             TRIANGLES_DRAWN_PER_FRAME("trianglesdrawnperframestat");
 
-LLTrace::CountStatHandle<F64Kilobytes >
+LLTrace::CountStatHandle<F64Kilobytes>
                             ACTIVE_MESSAGE_DATA_RECEIVED("activemessagedatareceived", "Message system data received on all active regions"),
                             LAYERS_NETWORK_DATA_RECEIVED("layersdatareceived", "Network data received for layer data (terrain)"),
                             OBJECT_NETWORK_DATA_RECEIVED("objectdatareceived", "Network data received for objects"),
@@ -166,6 +166,10 @@ SimMeasurement<>            SIM_TIME_DILATION("simtimedilation", "Simulator time
                             SIM_OBJECTS("simobjects", "", LL_SIM_STAT_NUMTASKS),
                             SIM_ACTIVE_OBJECTS("simactiveobjects", "Number of scripted and/or moving objects", LL_SIM_STAT_NUMTASKSACTIVE),
                             SIM_ACTIVE_SCRIPTS("simactivescripts", "Number of scripted objects", LL_SIM_STAT_NUMSCRIPTSACTIVE),
+#if OPENSIM
+                            SIM_LSLIPS("simlslips", "", LL_SIM_STAT_LSLIPS), SIM_REGION_IDLE("simregionidle", "", LL_SIM_STAT_REGION_IDLE),
+                            SIM_REGION_IDLE_POSSIBLE("simregionidlepossible", "", LL_SIM_STAT_REGION_IDLE_POSSIBLE),
+#endif
                             SIM_IN_PACKETS_PER_SEC("siminpps", "", LL_SIM_STAT_INPPS),
                             SIM_OUT_PACKETS_PER_SEC("simoutpps", "", LL_SIM_STAT_OUTPPS),
                             SIM_PENDING_DOWNLOADS("simpendingdownloads", "", LL_SIM_STAT_PENDING_DOWNLOADS),
@@ -174,7 +178,7 @@ SimMeasurement<>            SIM_TIME_DILATION("simtimedilation", "Simulator time
                             SIM_PHYSICS_PINNED_TASKS("physicspinnedtasks", "", LL_SIM_STAT_PHYSICS_PINNED_TASKS),
                             SIM_PHYSICS_LOD_TASKS("physicslodtasks", "", LL_SIM_STAT_PHYSICS_LOD_TASKS);
 
-SimMeasurement<LLUnit<F64, LLUnits::Percent> >
+SimMeasurement<LLUnit<F64, LLUnits::Percent>>
                             SIM_PERCENTAGE_SCRIPTS_RUN("simpctscriptsrun", "", LL_SIM_STAT_PCTSCRIPTSRUN),
                             SIM_SKIPPED_CHARACTERS_PERCENTAGE("simsimpctsteppedcharacters", "", LL_SIM_STAT_PCTSTEPPEDCHARACTERS);
 
@@ -191,46 +195,55 @@ LLTrace::SampleStatHandle<> FPS_SAMPLE("fpssample"),
                             WINDOW_WIDTH("windowwidth", "Window width"),
                             WINDOW_HEIGHT("windowheight", "Window height");
 
-LLTrace::SampleStatHandle<LLUnit<F32, LLUnits::Percent> >
+LLTrace::SampleStatHandle<LLUnit<F32, LLUnits::Percent>>
                             PACKETS_LOST_PERCENT("packetslostpercentstat");
 
 static LLTrace::SampleStatHandle<bool>
                             CHAT_BUBBLES("chatbubbles", "Chat Bubbles Enabled");
 
-LLTrace::SampleStatHandle<F64Megabytes > FORMATTED_MEM("formattedmemstat");
+LLTrace::SampleStatHandle<F64Megabytes>
+                            FORMATTED_MEM("formattedmemstat");
 
-SimMeasurement<F64Milliseconds >    SIM_FRAME_TIME("simframemsec", "", LL_SIM_STAT_FRAMEMS),
-                                                    SIM_NET_TIME("simnetmsec", "", LL_SIM_STAT_NETMS),
-                                                    SIM_OTHER_TIME("simsimothermsec", "", LL_SIM_STAT_SIMOTHERMS),
-                                                    SIM_PHYSICS_TIME("simsimphysicsmsec", "", LL_SIM_STAT_SIMPHYSICSMS),
-                                                    SIM_PHYSICS_STEP_TIME("simsimphysicsstepmsec", "", LL_SIM_STAT_SIMPHYSICSSTEPMS),
-                                                    SIM_PHYSICS_SHAPE_UPDATE_TIME("simsimphysicsshapeupdatemsec", "", LL_SIM_STAT_SIMPHYSICSSHAPEMS),
-                                                    SIM_PHYSICS_OTHER_TIME("simsimphysicsothermsec", "", LL_SIM_STAT_SIMPHYSICSOTHERMS),
-                                                    SIM_AI_TIME("simsimaistepmsec", "", LL_SIM_STAT_SIMAISTEPTIMEMS),
-                                                    SIM_AGENTS_TIME("simagentmsec", "", LL_SIM_STAT_AGENTMS),
-                                                    SIM_IMAGES_TIME("simimagesmsec", "", LL_SIM_STAT_IMAGESMS),
-                                                    SIM_SCRIPTS_TIME("simscriptmsec", "", LL_SIM_STAT_SCRIPTMS),
-                                                    SIM_SPARE_TIME("simsparemsec", "", LL_SIM_STAT_SIMSPARETIME),
-                                                    SIM_SLEEP_TIME("simsleepmsec", "", LL_SIM_STAT_SIMSLEEPTIME),
-                                                    SIM_PUMP_IO_TIME("simpumpiomsec", "", LL_SIM_STAT_IOPUMPTIME);
+SimMeasurement<F64Milliseconds>
+                            SIM_FRAME_TIME("simframemsec", "", LL_SIM_STAT_FRAMEMS),
+                            SIM_NET_TIME("simnetmsec", "", LL_SIM_STAT_NETMS),
+                            SIM_OTHER_TIME("simsimothermsec", "", LL_SIM_STAT_SIMOTHERMS),
+                            SIM_PHYSICS_TIME("simsimphysicsmsec", "", LL_SIM_STAT_SIMPHYSICSMS),
+                            SIM_PHYSICS_STEP_TIME("simsimphysicsstepmsec", "", LL_SIM_STAT_SIMPHYSICSSTEPMS),
+                            SIM_PHYSICS_SHAPE_UPDATE_TIME("simsimphysicsshapeupdatemsec", "", LL_SIM_STAT_SIMPHYSICSSHAPEMS),
+                            SIM_PHYSICS_OTHER_TIME("simsimphysicsothermsec", "", LL_SIM_STAT_SIMPHYSICSOTHERMS),
+                            SIM_AI_TIME("simsimaistepmsec", "", LL_SIM_STAT_SIMAISTEPTIMEMS),
+                            SIM_AGENTS_TIME("simagentmsec", "", LL_SIM_STAT_AGENTMS),
+                            SIM_IMAGES_TIME("simimagesmsec", "", LL_SIM_STAT_IMAGESMS),
+                            SIM_SCRIPTS_TIME("simscriptmsec", "", LL_SIM_STAT_SCRIPTMS),
+                            SIM_SPARE_TIME("simsparemsec", "", LL_SIM_STAT_SIMSPARETIME),
+                            SIM_SLEEP_TIME("simsleepmsec", "", LL_SIM_STAT_SIMSLEEPTIME),
+                            SIM_PUMP_IO_TIME("simpumpiomsec", "", LL_SIM_STAT_IOPUMPTIME);
 
-SimMeasurement<F64Kilobytes >   SIM_UNACKED_BYTES("simtotalunackedbytes", "", LL_SIM_STAT_TOTAL_UNACKED_BYTES);
-SimMeasurement<F64Megabytes >   SIM_PHYSICS_MEM("physicsmemoryallocated", "", LL_SIM_STAT_SIMPHYSICSMEMORY);
+#if OPENSIM
+SimMeasurement<F64Kilobytes> SIM_UNACKED_BYTES("simtotalunackedbytes", "", LL_SIM_STAT_TOTAL_UNACKED_BYTES),
+                             SIM_VIRTUAL_SIZE_KB("simvirtualsizekb", "", LL_SIM_STAT_VIRTUAL_SIZE_KB),
+                             SIM_RESIDENT_SIZE_KB("simresidentsizekb", "", LL_SIM_STAT_RESIDENT_SIZE_KB);
+#else
+SimMeasurement<F64Kilobytes> SIM_UNACKED_BYTES("simtotalunackedbytes", "", LL_SIM_STAT_TOTAL_UNACKED_BYTES);
+#endif
+SimMeasurement<F64Megabytes> SIM_PHYSICS_MEM("physicsmemoryallocated", "", LL_SIM_STAT_SIMPHYSICSMEMORY);
 
-LLTrace::SampleStatHandle<F64Milliseconds > FRAMETIME_JITTER("frametimejitter", "Average delta between successive frame times"),
-                                            FRAMETIME("frametime", "Measured frame time"),
-                                            SIM_PING("simpingstat"),
-                                            FRAMETIME_JITTER_99TH("frametimejitter99", "99th percentile of frametime jitter over the last 5 seconds."),
-                                            FRAMETIME_JITTER_95TH("frametimejitter95", "99th percentile of frametime jitter over the last 5 seconds."),
-                                            FRAMETIME_99TH("frametime99", "99th percentile of frametime over the last 5 seconds."),
-                                            FRAMETIME_95TH("frametime95", "99th percentile of frametime over the last 5 seconds."),
-                                            FRAMETIME_JITTER_CUMULATIVE("frametimejitcumulative", "Cumulative frametime jitter over the session."),
-                                            FRAMETIME_JITTER_STDDEV("frametimejitterstddev", "Standard deviation of frametime jitter in a 5 second period."),
-                                            FRAMETIME_STDDEV("frametimestddev", "Standard deviation of frametime in a 5 second period.");
+LLTrace::SampleStatHandle<F64Milliseconds>
+                            FRAMETIME_JITTER("frametimejitter", "Average delta between successive frame times"),
+                            FRAMETIME("frametime", "Measured frame time"),
+                            SIM_PING("simpingstat"),
+                            FRAMETIME_JITTER_99TH("frametimejitter99", "99th percentile of frametime jitter over the last 5 seconds."),
+                            FRAMETIME_JITTER_95TH("frametimejitter95", "99th percentile of frametime jitter over the last 5 seconds."),
+                            FRAMETIME_99TH("frametime99", "99th percentile of frametime over the last 5 seconds."),
+                            FRAMETIME_95TH("frametime95", "99th percentile of frametime over the last 5 seconds."),
+                            FRAMETIME_JITTER_CUMULATIVE("frametimejitcumulative", "Cumulative frametime jitter over the session."),
+                            FRAMETIME_JITTER_STDDEV("frametimejitterstddev", "Standard deviation of frametime jitter in a 5 second period."),
+                            FRAMETIME_STDDEV("frametimestddev", "Standard deviation of frametime in a 5 second period.");
 
 LLTrace::SampleStatHandle<U32> FRAMETIME_JITTER_EVENTS("frametimeevents", "Number of frametime events in the session.  Applies when jitter exceeds 10% of the previous frame."),
-                                FRAMETIME_JITTER_EVENTS_PER_MINUTE("frametimeeventspm", "Average number of frametime events per minute."),
-                                FRAMETIME_JITTER_EVENTS_LAST_MINUTE("frametimeeventslastmin", "Number of frametime events in the last minute.");
+                               FRAMETIME_JITTER_EVENTS_PER_MINUTE("frametimeeventspm", "Average number of frametime events per minute."),
+                               FRAMETIME_JITTER_EVENTS_LAST_MINUTE("frametimeeventslastmin", "Number of frametime events in the last minute.");
 
 LLTrace::SampleStatHandle<U64> DOFRAME_TIME_US("doframetimeus", "doFrame wall time in microseconds.");
 
@@ -238,46 +251,46 @@ LLTrace::SampleStatHandle<F64> NOTRMALIZED_FRAMETIME_JITTER_SESSION("normalizedf
 LLTrace::SampleStatHandle<F64> NFTV("nftv", "Normalized frametime variation.");
 LLTrace::SampleStatHandle<F64> NORMALIZED_FRAMTIME_JITTER_PERIOD("normalizedframetimejitterperiod", "Normalized frametime jitter over the last 5 seconds.");
 
-LLTrace::EventStatHandle<LLUnit<F64, LLUnits::Meters> > AGENT_POSITION_SNAP("agentpositionsnap", "agent position corrections");
+LLTrace::EventStatHandle<LLUnit<F64, LLUnits::Meters>>
+                            AGENT_POSITION_SNAP("agentpositionsnap", "agent position corrections");
 
 LLTrace::EventStatHandle<>  LOADING_WEARABLES_LONG_DELAY("loadingwearableslongdelay", "Wearables took too long to load");
 
-LLTrace::EventStatHandle<F64Milliseconds >  REGION_CROSSING_TIME("regioncrossingtime", "CROSSING_AVG"),
-                                                                FRAME_STACKTIME("framestacktime", "FRAME_SECS"),
-                                                                UPDATE_STACKTIME("updatestacktime", "UPDATE_SECS"),
-                                                                NETWORK_STACKTIME("networkstacktime", "NETWORK_SECS"),
-                                                                IMAGE_STACKTIME("imagestacktime", "IMAGE_SECS"),
-                                                                REBUILD_STACKTIME("rebuildstacktime", "REBUILD_SECS"),
-                                                                RENDER_STACKTIME("renderstacktime", "RENDER_SECS");
+LLTrace::EventStatHandle<F64Milliseconds>
+                            REGION_CROSSING_TIME("regioncrossingtime", "CROSSING_AVG"),
+                            FRAME_STACKTIME("framestacktime", "FRAME_SECS"),
+                            UPDATE_STACKTIME("updatestacktime", "UPDATE_SECS"),
+                            NETWORK_STACKTIME("networkstacktime", "NETWORK_SECS"),
+                            IMAGE_STACKTIME("imagestacktime", "IMAGE_SECS"),
+                            REBUILD_STACKTIME("rebuildstacktime", "REBUILD_SECS"),
+                            RENDER_STACKTIME("renderstacktime", "RENDER_SECS");
 
-LLTrace::EventStatHandle<F64Seconds >   AVATAR_EDIT_TIME("avataredittime", "Seconds in Edit Appearance"),
-                                                            TOOLBOX_TIME("toolboxtime", "Seconds using Toolbox"),
-                                                            MOUSELOOK_TIME("mouselooktime", "Seconds in Mouselook");
+LLTrace::EventStatHandle<F64Seconds>
+                            AVATAR_EDIT_TIME("avataredittime", "Seconds in Edit Appearance"),
+                            TOOLBOX_TIME("toolboxtime", "Seconds using Toolbox"),
+                            MOUSELOOK_TIME("mouselooktime", "Seconds in Mouselook");
 
-LLTrace::EventStatHandle<LLUnit<F32, LLUnits::Percent> > OBJECT_CACHE_HIT_RATE("object_cache_hits");
+LLTrace::EventStatHandle<LLUnit<F32, LLUnits::Percent>> OBJECT_CACHE_HIT_RATE("object_cache_hits");
 
-LLTrace::EventStatHandle<F64Seconds >   TEXTURE_FETCH_TIME("texture_fetch_time");
+LLTrace::EventStatHandle<F64Seconds> TEXTURE_FETCH_TIME("texture_fetch_time");
 
-LLTrace::SampleStatHandle<LLUnit<F32, LLUnits::Percent> >  SCENERY_FRAME_PCT("scenery_frame_pct");
-LLTrace::SampleStatHandle<LLUnit<F32, LLUnits::Percent> >  AVATAR_FRAME_PCT("avatar_frame_pct");
-LLTrace::SampleStatHandle<LLUnit<F32, LLUnits::Percent> >  HUDS_FRAME_PCT("huds_frame_pct");
-LLTrace::SampleStatHandle<LLUnit<F32, LLUnits::Percent> >  UI_FRAME_PCT("ui_frame_pct");
-LLTrace::SampleStatHandle<LLUnit<F32, LLUnits::Percent> >  SWAP_FRAME_PCT("swap_frame_pct");
-LLTrace::SampleStatHandle<LLUnit<F32, LLUnits::Percent> >  IDLE_FRAME_PCT("idle_frame_pct");
-
-
+LLTrace::SampleStatHandle<LLUnit<F32, LLUnits::Percent>> SCENERY_FRAME_PCT("scenery_frame_pct");
+LLTrace::SampleStatHandle<LLUnit<F32, LLUnits::Percent>> AVATAR_FRAME_PCT("avatar_frame_pct");
+LLTrace::SampleStatHandle<LLUnit<F32, LLUnits::Percent>> HUDS_FRAME_PCT("huds_frame_pct");
+LLTrace::SampleStatHandle<LLUnit<F32, LLUnits::Percent>> UI_FRAME_PCT("ui_frame_pct");
+LLTrace::SampleStatHandle<LLUnit<F32, LLUnits::Percent>> SWAP_FRAME_PCT("swap_frame_pct");
+LLTrace::SampleStatHandle<LLUnit<F32, LLUnits::Percent>> IDLE_FRAME_PCT("idle_frame_pct");
 
 LLTrace::SampleStatHandle<U32> WEBRTC_PACKETS_IN_LOST("webrtc_packets_in_lost", "Lost incoming packets"),
-    WEBRTC_PACKETS_IN_RECEIVED("webrtc_packets_in_recv", "Incoming packets received"),
-    WEBRTC_PACKETS_OUT_SENT("webrtc_packets_out_sent", "Outgoing packets sent"),
-    WEBRTC_PACKETS_OUT_LOST("webrtc_packets_out_lost", "Lost outgoing packets");
+                               WEBRTC_PACKETS_IN_RECEIVED("webrtc_packets_in_recv", "Incoming packets received"),
+                               WEBRTC_PACKETS_OUT_SENT("webrtc_packets_out_sent", "Outgoing packets sent"),
+                               WEBRTC_PACKETS_OUT_LOST("webrtc_packets_out_lost", "Lost outgoing packets");
 
 LLTrace::SampleStatHandle<F32> WEBRTC_JITTER_OUT("webrtc_jitter_out", "Timing variation of outgoing audio"),
-    WEBRTC_JITTER_IN("webrtc_jitter_in", "Timing variation of incoming audio"),
-    WEBRTC_LATENCY("webrtc_latency", "Round-trip audio delay"),
-    WEBRTC_UPLOAD_BANDWIDTH("webrtc_upload_bandwidth", "Estimated upload bandwidth"),
-    WEBRTC_JITTER_BUFFER("webrtc_jitter_buffer", "Average delay added to smooth incoming audio");
-
+                               WEBRTC_JITTER_IN("webrtc_jitter_in", "Timing variation of incoming audio"),
+                               WEBRTC_LATENCY("webrtc_latency", "Round-trip audio delay"),
+                               WEBRTC_UPLOAD_BANDWIDTH("webrtc_upload_bandwidth", "Estimated upload bandwidth"),
+                               WEBRTC_JITTER_BUFFER("webrtc_jitter_buffer", "Average delay added to smooth incoming audio");
 }
 
 LLViewerStats::LLViewerStats()

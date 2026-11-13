@@ -33,6 +33,10 @@
 #include "llworld.h"
 #include "xform.h"
 
+#if OPENSIM
+#include "lfsimfeaturehandler.h"
+#endif
+
 #define FOLLOW_PERMS 1
 
 bool FSExportPermsCheck::canExportNode(LLSelectNode* node, bool dae)
@@ -58,6 +62,30 @@ bool FSExportPermsCheck::canExportNode(LLSelectNode* node, bool dae)
                 || creator == gAgentID);
         }
     }
+
+#if OPENSIM
+    else if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        switch (LFSimFeatureHandler::instance().exportPolicy())
+        {
+            case EXPORT_ALLOWED:
+            {
+                exportable = node->mPermissions->allowOpenSimExportBy(gAgentID);
+                break;
+            }
+            /// TODO: Once enough grids adopt a version supporting exports, get consensus
+            /// on whether we should allow full perm exports anymore.
+            case EXPORT_UNDEFINED:
+            {
+                exportable = (object->permYouOwner() && object->permModify() && object->permCopy() && object->permTransfer());
+                break;
+            }
+            case EXPORT_DENIED:
+            default:
+                exportable = (object->permYouOwner() && gAgentID == node->mPermissions->getCreator());
+        }
+    }
+#endif
 
     // We've got perms on the object itself, let's check for sculptmaps and meshes!
     if (exportable)
@@ -116,6 +144,47 @@ bool FSExportPermsCheck::canExportNode(LLSelectNode* node, bool dae)
                     LL_INFOS("export") << "Sculpt map has failed permissions check." << LL_ENDL;
                 }
             }
+#if OPENSIM
+            else if (LLGridManager::getInstance()->isInOpenSim())
+            {
+                if (sculpt_params && !volobjp->isMesh())
+                {
+                    LLUUID                                 asset_id = sculpt_params->getSculptTexture();
+                    LLViewerInventoryCategory::cat_array_t cats;
+                    LLViewerInventoryItem::item_array_t    items;
+                    LLAssetIDMatches                       asset_id_matches(asset_id);
+                    gInventory.collectDescendentsIf(LLUUID::null, cats, items, LLInventoryModel::INCLUDE_TRASH, asset_id_matches);
+
+                    for (S32 i = 0; i < items.size() && !exportable; ++i)
+                    {
+                        const LLPermissions perms = items[i]->getPermissions();
+                        switch (LFSimFeatureHandler::instance().exportPolicy())
+                        {
+                            case EXPORT_ALLOWED:
+                                exportable = (perms.getMaskOwner() & PERM_EXPORT) == PERM_EXPORT;
+                                break;
+                            /// TODO: Once enough grids adopt a version supporting exports, get consensus
+                            /// on whether we should allow full perm exports anymore.
+                            case EXPORT_UNDEFINED:
+                                exportable = (perms.getMaskBase() & PERM_ITEM_UNRESTRICTED) == PERM_ITEM_UNRESTRICTED;
+                                break;
+                            case EXPORT_DENIED:
+                            default:
+                                exportable = perms.getCreator() == gAgentID;
+                        }
+                    }
+
+                    if (!exportable)
+                    {
+                        LL_INFOS("export") << "Sculpt map has failed permissions check." << LL_ENDL;
+                    }
+                }
+                else
+                {
+                    exportable = true;
+                }
+            }
+#endif // OPENSIM
         }
         else
         {
@@ -149,15 +218,33 @@ bool FSExportPermsCheck::canExportAsset(LLUUID asset_id, std::string* name, std:
         (*name) = items[0]->getName();
         (*description) = items[0]->getDescription();
 
-        for (S32 i = 0; i < items.size(); ++i)
+        for (S32 i = 0; i < items.size() && !exportable; ++i)
         {
-            if (!exportable)
+            LLPermissions perms = items[i]->getPermissions();
+#ifdef OPENSIM
+            if (LLGridManager::getInstance()->isInOpenSim())
             {
-                LLPermissions perms = items[i]->getPermissions();
-                if (perms.getCreator() == gAgentID)
+                switch (LFSimFeatureHandler::instance().exportPolicy())
                 {
-                    exportable = true;
+                    case EXPORT_ALLOWED:
+                        exportable = (perms.getMaskOwner() & PERM_EXPORT) == PERM_EXPORT;
+                        break;
+                    /// TODO: Once enough grids adopt a version supporting exports, get consensus
+                    /// on whether we should allow full perm exports anymore.
+                    case EXPORT_UNDEFINED:
+                        exportable = (perms.getMaskBase() & PERM_ITEM_UNRESTRICTED) == PERM_ITEM_UNRESTRICTED;
+                        break;
+                    case EXPORT_DENIED:
+                    default:
+                        exportable = perms.getCreator() == gAgentID;
+                        break;
                 }
+            }
+            else
+#endif
+            if (perms.getCreator() == gAgentID)
+            {
+                exportable = true;
             }
         }
     }

@@ -37,19 +37,19 @@
 
 #include "llavatarappearance.h"
 #include "llchat.h"
-#include "lldrawpoolalpha.h"
+//#include "lldrawpoolalpha.h"
 #include "llviewerobject.h"
 #include "llcharacter.h"
-#include "llcontrol.h"
+//#include "llcontrol.h"
 #include "llviewerjointmesh.h"
 #include "llviewerjointattachment.h"
 #include "llrendertarget.h"
 #include "llavatarappearancedefines.h"
-#include "lltexglobalcolor.h"
-#include "lldriverparam.h"
+//#include "lltexglobalcolor.h"
+//#include "lldriverparam.h"
 #include "llviewertexlayer.h"
 #include "material_codes.h"     // LL_MCODE_END
-#include "llrigginginfo.h"
+//#include "llrigginginfo.h"
 #include "llviewerstats.h"
 #include "llvovolume.h"
 #include "llavatarrendernotifier.h"
@@ -427,7 +427,10 @@ public:
     void            logPendingPhases();
     static void     logPendingPhasesAllAvatars();
     void            logMetricsTimerRecord(const std::string& phase_name, F32 elapsed, bool completed);
-
+#if OPENSIM
+    S32 getNumBakes() const; //<FS:Beq/> BOM bake limits
+    // U8           getNumTEs() const override;//<FS:Beq/> BOM bake limits
+#endif
     void            calcMutedAVColor();
 
 protected:
@@ -695,7 +698,12 @@ public:
     // Global colors
     //--------------------------------------------------------------------
 public:
-    /*virtual*/void onGlobalColorChanged(const LLTexGlobalColor* global_color);
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    /*virtual*/ void onGlobalColorChanged(const LLTexGlobalColor* global_color, bool upload_bake);
+#else
+    /*virtual*/ void onGlobalColorChanged(const LLTexGlobalColor* global_color);
+#endif
 
     //--------------------------------------------------------------------
     // Visibility
@@ -860,7 +868,11 @@ protected:
     // Composites
     //--------------------------------------------------------------------
 public:
+#if OPENSIM
+    virtual void    invalidateComposite(LLTexLayerSet* layerset, bool upload_bake = false);
+#else
     virtual void    invalidateComposite(LLTexLayerSet* layerset);
+#endif
     virtual void    invalidateAll();
     virtual void    setCompositeUpdatesEnabled(bool b) {}
     virtual void    setCompositeUpdatesEnabled(U32 index, bool b) {}
@@ -894,7 +906,11 @@ private:
 public:
     void            debugColorizeSubMeshes(U32 i, const LLColor4& color);
     virtual void    updateMeshTextures();
-    void            updateSexDependentLayerSets();
+#if OPENSIM
+    void updateSexDependentLayerSets(bool upload_bake = false);
+#else
+    void                    updateSexDependentLayerSets();
+#endif
     virtual void    dirtyMesh(); // Dirty the avatar mesh
     void            updateMeshData();
     void            updateMeshVisibility();
@@ -979,6 +995,10 @@ public:
     void            hideHair();
     void            hideSkirt();
     void            startAppearanceAnimation();
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    /*virtual*/ void bodySizeChanged();
+#endif
 
     //--------------------------------------------------------------------
     // Appearance morphing
@@ -990,6 +1010,14 @@ public:
     // instead of baked textures, as for example during wearable
     // editing or when waiting for a subsequent server rebake.
     /*virtual*/ bool    isUsingLocalAppearance() const { return mUseLocalAppearance; }
+
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    // True if this avatar should fetch its baked textures via the new
+    // appearance mechanism.
+    bool            isUsingServerBakes() const;
+    void            setIsUsingServerBakes(bool newval);
+#endif
 
     // True if we are currently in appearance editing mode. Often but
     // not always the same as isUsingLocalAppearance().
@@ -1005,6 +1033,11 @@ private:
     bool            mUseLocalAppearance; // flag for if we're using a local composite
 
     static uuid_list_t  sEarlyAppearanceList;
+
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    bool            mUseServerBakes; // flag for if baked textures should be fetched from baking service (false if they're temporary uploads)
+#endif
 
     //--------------------------------------------------------------------
     // Visibility
@@ -1218,6 +1251,10 @@ protected:
 private:
     bool            mNameIsSet;
     std::string     mTitle;
+#if OPENSIM
+    LLSD            mClientTagData;
+    bool            mHasClientTagColor;
+#endif
     bool            mNameAway;
     bool            mNameDoNotDisturb;
 //MK

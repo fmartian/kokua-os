@@ -64,6 +64,7 @@
 #include "llviewerobjectlist.h"
 #include "llviewerobject.h"
 #include "llviewerparcelmgr.h"
+#include "llviewerregion.h"
 #include "llviewerwindow.h"
 #include "llviewerinput.h"
 #include "llviewermedia.h"

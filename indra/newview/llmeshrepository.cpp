@@ -27,19 +27,19 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llapr.h"
-#include "apr_portable.h"
+//#include "apr_portable.h"
 #include "apr_pools.h"
-#include "apr_dso.h"
+//#include "apr_dso.h"
 #include "llhttpconstants.h"
 #include "llmeshrepository.h"
 
 #include "llagent.h"
 #include "llappviewer.h"
-#include "llbufferstream.h"
+//#include "llbufferstream.h"
 #include "llcallbacklist.h"
-#include "lldatapacker.h"
+//#include "lldatapacker.h"
 #include "lldeadmantimer.h"
-#include "llfloatermodelpreview.h"
+//#include "llfloatermodelpreview.h"
 #include "llfloaterperms.h"
 #include "llimagej2c.h"
 #include "llhost.h"
@@ -52,7 +52,7 @@
 #include "llfilesystem.h"
 #include "llviewercontrol.h"
 #include "llviewerinventory.h"
-#include "llviewermenufile.h"
+//#include "llviewermenufile.h"
 #include "llviewermessage.h"
 #include "llviewerobjectlist.h"
 #include "llviewerregion.h"
@@ -66,10 +66,10 @@
 #include "pipeline.h"
 #include "llinventorymodel.h"
 #include "llfoldertype.h"
-#include "llviewerparcelmgr.h"
+//#include "llviewerparcelmgr.h"
 #include "lluploadfloaterobservers.h"
 #include "bufferarray.h"
-#include "bufferstream.h"
+//#include "bufferstream.h"
 #include "llfasttimer.h"
 #include "llcorehttputil.h"
 #include "lltrans.h"
@@ -82,7 +82,11 @@
 
 #include "boost/iostreams/device/array.hpp"
 #include "boost/iostreams/stream.hpp"
-#include "boost/lexical_cast.hpp"
+//#include "boost/lexical_cast.hpp"
+
+#if OPENSIM
+#include "llviewernetwork.h"
+#endif
 
 #ifndef LL_WINDOWS
 #include "netdb.h"
@@ -6154,6 +6158,18 @@ bool LLMeshRepository::meshUploadEnabled()
 bool LLMeshRepository::meshRezEnabled()
 {
     static LLCachedControl<bool> mesh_enabled(gSavedSettings, "MeshEnabled");
+#ifdef OPENSIM
+    // <FS:Beq> FIRE-35602 etc - Mesh not appearing after TP/login (opensim only)
+    // For OpenSim there is still an outside chance that mesh rezzing is disabled on the sim/region
+    // restore the old behaviour but keep the bias to mesh_enabled == true in the underlying checks.
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        if (LLViewerRegion* region = gAgent.getRegion(); mesh_enabled && region)
+        {
+            return region->meshRezEnabled();
+        }
+    }
+#endif // OPENSIM
     return mesh_enabled;
 }
 

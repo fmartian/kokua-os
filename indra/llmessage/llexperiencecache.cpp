@@ -27,11 +27,11 @@
 
 #include "llexperiencecache.h"
 
-#include "llavatarname.h"
+//#include "llavatarname.h"
 #include "llsdserialize.h"
 #include "llcoros.h"
-#include "lleventcoro.h"
-#include "lleventfilter.h"
+//#include "lleventcoro.h"
+//#include "lleventfilter.h"
 #include "llcoproceduremanager.h"
 #include "lldir.h"
 #include <set>
@@ -219,8 +219,8 @@ void LLExperienceCache::processExperience(const LLUUID& public_key, const LLSD& 
 {
     if (!gSavedSettings.getBOOL("KokuaSuppressPeriodicLogging"))
     {
-    LL_INFOS("ExperienceCache") << "Processing experience \"" << experience[NAME] << "\" with key " << public_key.asString() << LL_ENDL;
-  }
+        LL_INFOS("ExperienceCache") << "Processing experience \"" << experience[NAME] << "\" with key " << public_key.asString() << LL_ENDL;
+    }
 
     mCache[public_key]=experience;
     LLSD & row = mCache[public_key];
@@ -329,7 +329,6 @@ void LLExperienceCache::requestExperiencesCoro(LLCoreHttpUtil::HttpCoroutineAdap
 
 }
 
-
 void LLExperienceCache::requestExperiences()
 {
     if (mCapability == nullptr)
@@ -341,7 +340,16 @@ void LLExperienceCache::requestExperiences()
     std::string urlBase = mCapability("GetExperienceInfo");
     if (urlBase.empty())
     {
-        LL_WARNS("ExperienceCache") << "No Experience capability." << LL_ENDL;
+#if OPENSIM
+        // <FS:Beq> FIRE-33046 reduce logging of warning in OS grids with no experiences capability
+        if (mIsInOpenSim)
+        {
+            // In Opensim this can occur if the grid does not have experiences capability. make it a debug
+            LL_DEBUGS("ExperienceCache") << "No Experience capability." << LL_ENDL;
+        }
+        else
+#endif
+            LL_WARNS("ExperienceCache") << "No Experience capability." << LL_ENDL;
         return;
     }
 
@@ -350,7 +358,6 @@ void LLExperienceCache::requestExperiences()
         urlBase += "/";
     }
     urlBase += "id/";
-
 
     F64 now = LLFrameTimer::getTotalSeconds();
 

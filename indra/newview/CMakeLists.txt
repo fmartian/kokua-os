@@ -51,7 +51,6 @@ include(ViewerMiscLibs)
 include(ViewerManager)
 include(VisualLeakDetector)
 include(ZLIBNG)
-include(LLPrimitive)
 
 if (HAVOK)
    # When using HAVOK_TPV, the library is precompiled, so no need for this
@@ -88,12 +87,12 @@ set(viewer_SOURCE_FILES
     ao.cpp
     aoengine.cpp
     aoset.cpp
-    chatbar_as_cmdline.cpp	
+    chatbar_as_cmdline.cpp
     daeexport.cpp
     exogroupmutelist.cpp
     fscommon.cpp
     fsareasearch.cpp
-    fsareasearchmenu.cpp    
+    fsareasearchmenu.cpp
     fsavatarsearchmenu.cpp
     fsexportperms.cpp
     fsfloateraddtocontactset.cpp
@@ -216,7 +215,7 @@ set(viewer_SOURCE_FILES
     llflexibleobject.cpp
     llfloater360capture.cpp
     llfloaterabout.cpp
-	llfloateradvancedbuildoptions.cpp
+    llfloateradvancedbuildoptions.cpp
     llfloateravatarwelcomepack.cpp
     llfloaterbvhpreview.cpp
     llfloaterauction.cpp
@@ -793,13 +792,13 @@ set(viewer_SOURCE_FILES
     viewerinfo.cpp
     sanitycheck.cpp
     streamtitledisplay.cpp
-	NACLfloaterexploresounds.cpp
-	  kokuachatbar.cpp
-	  kokuafloateravatarattachments.cpp
-	  kokuafloaterbulkrename.cpp
-	  kokuafontpreview.cpp
-	  kokuafloaterstreaminfo.cpp
-	  kokuafloaterwind.cpp
+    NACLfloaterexploresounds.cpp
+    kokuachatbar.cpp
+    kokuafloateravatarattachments.cpp
+    kokuafloaterbulkrename.cpp
+    kokuafontpreview.cpp
+    kokuafloaterstreaminfo.cpp
+    kokuafloaterwind.cpp
     )
 
 set(VIEWER_BINARY_NAME "kokua-bin" CACHE STRING
@@ -808,7 +807,7 @@ set(VIEWER_BINARY_NAME "kokua-bin" CACHE STRING
 set(viewer_HEADER_FILES
     CMakeLists.txt
     ViewerInstall.cmake
-    animationexplorer.h	
+    animationexplorer.h
     ao.h
     aoengine.h
     aoset.h
@@ -816,14 +815,14 @@ set(viewer_HEADER_FILES
     daeexport.h
     exogroupmutelist.h
     floaterhop.h
-	fsareasearch.h
+    fsareasearch.h
     fsareasearchmenu.h
     fsavatarsearchmenu.h
     fscommon.h
     fsexportperms.h
     fsfloateraddtocontactset.h
     fsfloatercontactsetconfiguration.h
-    fsfloaterexport.h    
+    fsfloaterexport.h
     fsfloaterimport.h
     fsfloaterposestand.h
     fsfloaterwearablefavorites.h
@@ -944,7 +943,7 @@ set(viewer_HEADER_FILES
     llflexibleobject.h
     llfloater360capture.h
     llfloaterabout.h
-	llfloateradvancedbuildoptions.h
+    llfloateradvancedbuildoptions.h
     llfloateravatarwelcomepack.h
     llfloaterbvhpreview.h
     llfloaterauction.h
@@ -1515,24 +1514,30 @@ set(viewer_HEADER_FILES
     streamtitledisplay.h
     utilitybar.h
     viewerinfo.h
-	NACLfloaterexploresounds.h
-	  kokuachatbar.h
-	  kokuafloateravatarattachments.h
-	  kokuafloaterbulkrename.h
-	  kokuafontpreview.h
-	  kokuafloaterstreaminfo.h
-	  kokuafloaterwind.h
+    NACLfloaterexploresounds.h
+    kokuachatbar.h
+    kokuafloateravatarattachments.h
+    kokuafloaterbulkrename.h
+    kokuafontpreview.h
+    kokuafloaterstreaminfo.h
+    kokuafloaterwind.h
     )
-    
-# Generate the build version here to avoid rebuilding all of newview each time
-# @ONLY restricts the substitute to @variable@ constructs so any ${VAR} won't be
-# accidentally impacted
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/kokuabuildversion.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/kokuabuildversion.h
-    @ONLY
-)
-list(APPEND viewer_HEADER_FILES ${CMAKE_CURRENT_BINARY_DIR}/kokuabuildversion.h)
+
+if (OPENSIM)
+list(APPEND viewer_SOURCE_FILES
+    kokuapanelpreferenceopensim.cpp
+    kokuaviewernetwork.cpp
+    lfsimfeaturehandler.cpp
+    llagentwearablesfetch.cpp
+    llpanelopenregionsettings.cpp
+    )
+
+list(APPEND viewer_HEADER_FILES
+    kokuapanelpreferenceopensim.h
+    lfsimfeaturehandler.h
+    llagentwearablesfetch.h
+    )
+endif (OPENSIM)
 
 source_group("CMake Rules" FILES ViewerInstall.cmake)
 
@@ -1671,7 +1676,6 @@ if (WINDOWS)
     elseif(channel_lower MATCHES "^kokua project")
         set(ICON_PATH "project")
         set(VIEWER_MACOSX_PHASE "a")
-
     endif()
     message(STATUS "Copying icons for ${ICON_PATH}")
     execute_process(
@@ -1838,7 +1842,7 @@ set_source_files_properties(${viewer_SHADER_FILES}
                             PROPERTIES HEADER_FILE_ONLY TRUE)
 list(APPEND viewer_SOURCE_FILES ${viewer_SHADER_FILES})
 
-# note that the scripts which publish these files are sensitive to the file 
+# note that the scripts which publish these files are sensitive to the file
 # extensions. Be cautious about adding new file types here.
 set(viewer_APPSETTINGS_FILES
     app_settings/anim.ini
@@ -1937,7 +1941,6 @@ if(USE_PRECOMPILED_HEADERS)
 endif(USE_PRECOMPILED_HEADERS)
 
 if (WINDOWS)
-
     set_target_properties(${VIEWER_BINARY_NAME}
         PROPERTIES
         # *TODO -reenable this once we get server usage sorted out
@@ -1975,7 +1978,6 @@ if (WINDOWS)
       media_plugin_libvlc
       media_plugin_example
       )
-
 
     if (TARGET ll::discord_sdk)
         list(APPEND COPY_INPUT_DEPENDENCIES
@@ -2201,7 +2203,6 @@ endif (WINDOWS)
 #      => -lgdk-x11-2.0
 #        => libz.so.1
 #      => -lz
-
 #
 # We generally want the newest version of the library to provide all symbol
 # resolution.  To that end, when using static archives, the *_PRELOAD_ARCHIVES
@@ -2354,7 +2355,6 @@ if (LINUX)
 
   if (PACKAGE)
   endif (PACKAGE)
-
 
   add_custom_command(
     OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/.${product}.copy_touched
@@ -2570,14 +2570,14 @@ if (LL_TESTS)
     llworldmipmap.cpp
   )
 
-  set_source_files_properties(
-    llworldmap.cpp
-    llworldmipmap.cpp
-    PROPERTIES
-    LL_TEST_ADDITIONAL_SOURCE_FILES
-    tests/llviewertexture_stub.cpp
-    #llviewertexturelist.cpp
-  )
+#  set_source_files_properties(
+#    llworldmap.cpp
+#    llworldmipmap.cpp
+#    PROPERTIES
+#    LL_TEST_ADDITIONAL_SOURCE_FILES
+#    tests/llviewertexture_stub.cpp
+#    #llviewertexturelist.cpp
+#  )
 
 #  set_source_files_properties(
 #    llvocache.cpp
@@ -2603,7 +2603,7 @@ if (LL_TESTS)
   set_property(SOURCE
     ${viewer_TEST_SOURCE_FILES}
     PROPERTY
-    LL_TEST_ADDITIONAL_LIBRARIES 
+    LL_TEST_ADDITIONAL_LIBRARIES
     ${test_libs}
   )
 
@@ -2645,8 +2645,27 @@ if (LL_TESTS)
     llviewernetwork.cpp
   )
 
+  set(llviewernetwork_test_sources
+    llviewernetwork.cpp
+  )
+
+if (OPENSIM)
+list(APPEND llslurl_test_sources
+    kokuaviewernetwork.cpp
+  )
+
+list(APPEND llviewernetwork_test_sources
+    kokuaviewernetwork.cpp
+  )
+endif ()
+
   LL_ADD_INTEGRATION_TEST(llslurl
     "${llslurl_test_sources}"
+    "${test_libs}"
+  )
+
+  LL_ADD_INTEGRATION_TEST(llviewernetwork
+    "${llviewernetwork_test_sources}"
     "${test_libs}"
   )
 
@@ -2660,11 +2679,6 @@ if (LL_TESTS)
 
   LL_ADD_INTEGRATION_TEST(llviewercontrollistener
     "${llviewercontrollistener_test_sources}"
-    "${test_libs}"
-  )
-
-  LL_ADD_INTEGRATION_TEST(llviewernetwork
-    llviewernetwork.cpp
     "${test_libs}"
   )
 

@@ -47,10 +47,10 @@
 
 // linden library headers
 #include "llapp.h"
-#include "indra_constants.h"
-#include "lldir.h"
+//#include "indra_constants.h"
+//#include "lldir.h"
 #include "llerror.h"
-#include "llfasttimer.h"
+//#include "llfasttimer.h"
 #include "llhttpnodeadapter.h"
 #include "llmd5.h"
 #include "llmessagebuilder.h"
@@ -214,7 +214,9 @@ LLMessageSystem::LLMessageSystem(const std::string& filename, U32 port,
     mLastMessageFromTrustedMessageService(false)
 {
     init();
-
+#if OPENSIM
+    mIsInOpenSim = false,
+#endif
     mSendSize = 0;
 
     mSystemVersionMajor = version_major;
@@ -603,9 +605,9 @@ bool LLMessageSystem::checkMessages(LockMessageChecker&, S64 frame_count )
             {
                 recv_reliable = true;
             }
-            
+
             // Duplicates can be created in the network as well as by resends, so this routine is adjusted to always check for dupes
-            
+
             //if (buffer[0] & LL_RESENT_FLAG)
             {
                 if (buffer[0] & LL_RESENT_FLAG)
@@ -4234,6 +4236,16 @@ void LLMessageSystem::sendUntrustedSimulatorMessageCoro(std::string url, std::st
         httpAdapter = std::make_shared<LLCoreHttpUtil::HttpCoroutineAdapter>("untrustedSimulatorMessage", httpPolicy);
     LLCore::HttpRequest::ptr_t httpRequest = std::make_shared<LLCore::HttpRequest>();
     LLCore::HttpOptions::ptr_t httpOpts = std::make_shared<LLCore::HttpOptions>();
+
+#if OPENSIM
+    // <FS:Ansariel> Restore original LLMessageSystem HTTP options for OpenSim
+    if (mIsInOpenSim)
+    {
+        httpOpts->setRetries(0);
+        httpOpts->setTimeout(60);
+        httpOpts->setTransferTimeout(60);
+    }
+#endif
 
 
     if (url.empty())

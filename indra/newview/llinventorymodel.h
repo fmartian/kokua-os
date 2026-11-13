@@ -32,11 +32,11 @@
 #include <string>
 #include <vector>
 
-#include "llassettype.h"
+//#include "llassettype.h"
 #include "llfoldertype.h"
-#include "llframetimer.h"
+//#include "llframetimer.h"
 #include "lluuid.h"
-#include "llpermissionsflags.h"
+//#include "llpermissionsflags.h"
 #include "llviewerinventory.h"
 #include "llstring.h"
 #include "httpcommon.h"
@@ -44,8 +44,9 @@
 #include "httpoptions.h"
 #include "httpheaders.h"
 #include "httphandler.h"
-#include "lleventcoro.h"
+//#include "lleventcoro.h"
 #include "llcoros.h"
+#include "stdtypes.h"
 // <FS:TT> ReplaceWornItemsOnly
 #include "llviewerobjectlist.h"
 #include "llvoavatarself.h"
@@ -83,6 +84,9 @@ public:
 
     std::set<LLFolderType::EType> mMissingRequiredSystemFolders;
     std::set<LLFolderType::EType> mDuplicateRequiredSystemFolders;
+#if OPENSIM
+    std::ostringstream mLog; // <FS:Beq/> Extra validation logs for OpenSim.
+#endif
 };
 std::ostream& operator<<(std::ostream& s, const LLInventoryValidationInfo& v);
 
@@ -321,6 +325,11 @@ public:
     };
     // Follow parent chain to the top.
     EAncestorResult getObjectTopmostAncestor(const LLUUID& object_id, LLUUID& result) const;
+
+#if OPENSIM
+    // <FS:Beq> [OPENSIM] FIRE-31674 Exclude suitcase and descendents from validation when in OpenSim
+    bool isInSuitcase(const LLInventoryCategory* cat) const;
+#endif
 
     //--------------------------------------------------------------------
     // Find
@@ -726,6 +735,11 @@ public:
     static void processSaveAssetIntoInventory(LLMessageSystem* msg, void**);
     static void processBulkUpdateInventory(LLMessageSystem* msg, void**);
     static void processMoveInventoryItem(LLMessageSystem* msg, void**);
+#if OPENSIM
+    // <FS:Ansariel> [UDP-Msg]
+    static void processInventoryDescendents(LLMessageSystem* msg, void**);
+    static void processFetchInventoryReply(LLMessageSystem* msg, void**);
+#endif
 protected:
     bool messageUpdateCore(LLMessageSystem* msg, bool do_accounting, U32 mask = 0x0);
 

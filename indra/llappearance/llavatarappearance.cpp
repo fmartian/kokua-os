@@ -551,6 +551,10 @@ void LLAvatarAppearance::computeBodySize()
     {
         mBodySize = new_body_size;
 
+#if OPENSIM
+        // <FS:Ansariel> [Legacy Bake]
+        bodySizeChanged();
+#endif
         compareJointStateMaps(mLastBodySizeState, mCurrBodySizeState);
     }
 }
@@ -1277,7 +1281,6 @@ LLJoint *LLAvatarAppearance::getCharacterJoint( U32 num )
     return mSkeleton[num];
 }
 
-
 //-----------------------------------------------------------------------------
 // getVolumePos()
 //-----------------------------------------------------------------------------
@@ -1328,7 +1331,6 @@ LLPolyMesh* LLAvatarAppearance::getHeadMesh()
     return mMeshLOD[MESH_ID_HEAD]->mMeshParts[0]->getMesh();
 }
 
-
 //-----------------------------------------------------------------------------
 // LLAvatarAppearance::getUpperBodyMesh()
 //-----------------------------------------------------------------------------
@@ -1336,8 +1338,6 @@ LLPolyMesh* LLAvatarAppearance::getUpperBodyMesh()
 {
     return mMeshLOD[MESH_ID_UPPER_BODY]->mMeshParts[0]->getMesh();
 }
-
-
 
 // virtual
 bool LLAvatarAppearance::isValid() const
@@ -1350,7 +1350,6 @@ bool LLAvatarAppearance::isValid() const
     return true;
 }
 
-
 // adds a morph mask to the appropriate baked texture structure
 void LLAvatarAppearance::addMaskedMorph(EBakedTextureIndex index, LLVisualParam* morph_target, bool invert, std::string layer)
 {
@@ -1360,7 +1359,6 @@ void LLAvatarAppearance::addMaskedMorph(EBakedTextureIndex index, LLVisualParam*
         mBakedTextureDatas[index].mMaskedMorphs.push_front(morph);
     }
 }
-
 
 //static
 bool LLAvatarAppearance::teToColorParams( ETextureIndex te, U32 *param_name )
@@ -1453,16 +1451,30 @@ bool LLAvatarAppearance::teToColorParams( ETextureIndex te, U32 *param_name )
     return true;
 }
 
-void LLAvatarAppearance::setClothesColor( ETextureIndex te, const LLColor4& new_color)
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+void LLAvatarAppearance::setClothesColor(ETextureIndex te, const LLColor4& new_color, bool upload_bake)
 {
     U32 param_name[3];
-    if( teToColorParams( te, param_name ) )
+    if (teToColorParams(te, param_name))
     {
-        setVisualParamWeight( param_name[0], new_color.mV[VRED]);
-        setVisualParamWeight( param_name[1], new_color.mV[VGREEN]);
-        setVisualParamWeight( param_name[2], new_color.mV[VBLUE]);
+        setVisualParamWeight(param_name[0], new_color.mV[VRED], upload_bake);
+        setVisualParamWeight(param_name[1], new_color.mV[VGREEN], upload_bake);
+        setVisualParamWeight(param_name[2], new_color.mV[VBLUE], upload_bake);
     }
 }
+#else
+void LLAvatarAppearance::setClothesColor(ETextureIndex te, const LLColor4& new_color)
+{
+    U32 param_name[3];
+    if (teToColorParams(te, param_name))
+    {
+        setVisualParamWeight(param_name[0], new_color.mV[VRED]);
+        setVisualParamWeight(param_name[1], new_color.mV[VGREEN]);
+        setVisualParamWeight(param_name[2], new_color.mV[VBLUE]);
+    }
+}
+#endif
 
 LLColor4 LLAvatarAppearance::getClothesColor( ETextureIndex te )
 {

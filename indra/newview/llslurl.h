@@ -50,6 +50,9 @@ public:
     static const char* SIM_LOCATION_LAST;
     static const char* SLURL_APP_PATH;
     static const char* SLURL_REGION_PATH;
+#if OPENSIM
+    static const char* HOP_SCHEME; // <AW: hop:// protocol>
+#endif
 
     // if you modify this enumeration, update typeName as well
     enum SLURL_TYPE {
@@ -72,6 +75,10 @@ public:
     LLSLURL(const std::string& grid, const std::string& region, const LLVector3d& global_position);
     LLSLURL(const std::string& region, const LLVector3d& global_position);
     LLSLURL(const std::string& command, const LLUUID&id, const std::string& verb);
+#if OPENSIM
+    //<AW: opensim>
+    LLSLURL(const LLSD& path_array, bool from_app);
+#endif
 
     SLURL_TYPE getType() const { return mType; }
 
@@ -93,7 +100,9 @@ public:
     bool operator!=(const LLSLURL&rhs);
 
     std::string asString() const ;
-
+#if OPENSIM
+    bool getHypergrid() const { return mHypergrid; } //<AW: opensim>
+#endif
 protected:
     static const std::string typeName[NUM_SLURL_TYPES];
     /// Get a human-readable version of the type for logging
@@ -110,6 +119,9 @@ protected:
     std::string mGrid;  // reference to grid manager grid
     std::string mRegion;
     LLVector3  mPosition;
+#if OPENSIM
+    bool mHypergrid = false; //<AW: opensim>
+#endif
 };
 
 #endif // LLSLURL_H

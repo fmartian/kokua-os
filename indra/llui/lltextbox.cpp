@@ -54,7 +54,7 @@ LLTextBox::~LLTextBox()
 
 bool LLTextBox::handleMouseDown(S32 x, S32 y, MASK mask)
 {
-    bool    handled = LLTextBase::handleMouseDown(x, y, mask);
+    bool handled = LLTextBase::handleMouseDown(x, y, mask);
 
     if (getSoundFlags() & MOUSE_DOWN)
     {
@@ -71,7 +71,6 @@ bool LLTextBox::handleMouseDown(S32 x, S32 y, MASK mask)
         // Route future Mouse messages here preemptively.  (Release on mouse up.)
         gFocusMgr.setMouseCapture( this );
     }
-
     return handled;
 }
 

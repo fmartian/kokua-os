@@ -28,7 +28,7 @@
 
 #include "llfloatertools.h"
 
-#include "llfontgl.h"
+//#include "llfontgl.h"
 #include "llcoord.h"
 //#include "llgl.h"
 
@@ -40,14 +40,14 @@
 #include "lldraghandle.h"
 #include "llerror.h"
 #include "llfloaterbuildoptions.h"
-#include "llfloatermediasettings.h"
+//#include "llfloatermediasettings.h"
 #include "llfloateropenobject.h"
 #include "llfloaterobjectweights.h"
 #include "llfloaterreg.h"
 #include "llfocusmgr.h"
-#include "llmediaentry.h"
+//#include "llmediaentry.h"
 #include "llmenugl.h"
-#include "llnotificationsutil.h"
+//#include "llnotificationsutil.h"
 #include "llpanelcontents.h"
 #include "llpanelface.h"
 #include "llpanelland.h"
@@ -60,8 +60,8 @@
 #include "llresmgr.h"
 #include "llselectmgr.h"
 #include "llslider.h"
-#include "llspinctrl.h"
-#include "llstatusbar.h"
+//#include "llspinctrl.h"
+//#include "llstatusbar.h"
 #include "lltabcontainer.h"
 #include "lltextbox.h"
 #include "lltoolbrush.h"
@@ -70,7 +70,7 @@
 #include "lltoolface.h"
 #include "lltoolfocus.h"
 #include "lltoolgrab.h"
-#include "lltoolgrab.h"
+//#include "lltoolgrab.h"
 #include "lltoolindividual.h"
 #include "lltoolmgr.h"
 #include "lltoolpie.h"
@@ -86,11 +86,11 @@
 #include "llviewernetwork.h"
 #include "llviewerparcelmgr.h"
 #include "llviewerwindow.h"
-#include "llvovolume.h"
-#include "lluictrlfactory.h"
+//#include "llvovolume.h"
+//#include "lluictrlfactory.h"
 #include "qtoolalign.h"
 #include "llmeshrepository.h"
-#include "llworld.h"
+//#include "llworld.h"
 
 // additional includes for right click passes to selection feature
 #include "llmutelist.h"
@@ -331,6 +331,14 @@ bool    LLFloaterTools::postBuild()
 
     return true;
 }
+
+#if OPENSIM
+// <FS:CR> OpenSim VarRegion
+void LLFloaterTools::updateToolsSizeLimits()
+{
+    mPanelObject->updateLimits(false);
+}
+#endif
 
 // Create the popupview with a dummy center.  It will be moved into place
 // during LLViewerWindow's per-frame hover processing.
@@ -679,7 +687,13 @@ void LLFloaterTools::refresh()
 
         LLStringUtil::format_map_t selection_args;
         selection_args["OBJ_COUNT"] = llformat("%.1d", link_count);
-        selection_args["LAND_IMPACT"] = llformat("%.1d", (S32)link_cost);
+#if OPENSIM
+        // <FS:CR> FIRE-9287 - LI/Prim count not reflected on OpenSim
+        if (LLGridManager::getInstance()->isInOpenSim())
+            selection_args["LAND_IMPACT"] = llformat("%.1d", (link_cost ? (S32)link_cost : prim_count));
+        else
+#endif // OPENSIM
+            selection_args["LAND_IMPACT"] = llformat("%.1d", (S32)link_cost);
 
         mTextSelectionCount->setText(getString("status_selectcount", selection_args));
     }

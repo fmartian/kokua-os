@@ -56,6 +56,28 @@ if (NOT CMAKE_BUILD_TYPE)
       "Build type.  One of: Debug Release RelWithDebInfo" FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
 
+#<FS:AW optional opensim support>
+option(OPENSIM "OpenSim support" OFF)
+if (OPENSIM)
+  add_compile_definitions(OPENSIM=1)
+  if (SINGLEGRID)
+    if (NOT ${SINGLEGRID_URI} STREQUAL "")
+      add_compile_definitions(SINGLEGRID SINGLEGRID_URI=\"${SINGLEGRID_URI}\")
+      message(STATUS "Compiling with OpenSim support - Single Grid version (${SINGLEGRID_URI})")
+    else ()
+      message(WARNING "Compiling with OpenSim support - SINGLEGRID is ignored because there is no SINGLEGRID_URI" )
+    endif ()
+  else (SINGLEGRID)
+    message(STATUS "Compiling with OpenSim support")
+  endif (SINGLEGRID)
+else (OPENSIM)
+  if (SINGLEGRID)
+    message(WARNING "Value for SINGLEGRID is unused during Havok/SecondLife builds" )
+  endif()
+  message(STATUS "Compiling without OpenSim support")
+endif (OPENSIM)
+#</FS:AW optional opensim support>
+
 #<FS:Ansariel> Support for test builds
 option(TESTBUILD "Generating test build" OFF)
 if(TESTBUILD AND TESTBUILDPERIOD)

@@ -36,7 +36,7 @@
 #include "llfontgl.h"
 #include "lltimer.h"
 #include "lltextbox.h"
-#include "llglheaders.h"
+//#include "llglheaders.h"
 
 #include "llagent.h"
 #include "llbutton.h"
@@ -51,8 +51,11 @@
 #include "llappviewer.h"
 #include "llversioninfo.h"
 #include "llweb.h"
-#include "lluictrlfactory.h"
+//#include "lluictrlfactory.h"
 #include "llpanellogin.h"
+#if OPENSIM
+#include "llviewernetwork.h"
+#endif
 
 LLProgressView* LLProgressView::sInstance = NULL;
 
@@ -480,6 +483,23 @@ void LLProgressView::initLogos()
         LLRect(texture_start_x, texture_start_y + pad_y + icon_height, texture_start_x + icon_width, texture_start_y + pad_y),
         default_clip,
         default_clip);
+    texture_start_x += icon_width + default_pad;
+
+#if OPENSIM
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        // 570x126
+        icon_width  = 126;
+        icon_height = default_height;
+        pad_y       = -1;
+        loadLogo(temp_str + "opensim_logo.png",
+                 image_codec,
+                 LLRect(texture_start_x, texture_start_y + pad_y + icon_height, texture_start_x + icon_width, texture_start_y + pad_y),
+                 default_clip,
+                 default_clip);
+        texture_start_x += icon_width + default_pad;
+    }
+#endif
 }
 
 void LLProgressView::initStartTexture(S32 location_id, bool is_in_production)

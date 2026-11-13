@@ -192,10 +192,18 @@ public:
     void addVisualParam(LLVisualParam *param);
     void addSharedVisualParam(LLVisualParam *param);
 
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    virtual bool setVisualParamWeight(const LLVisualParam* which_param, F32 weight, bool upload_bake = false);
+    virtual bool setVisualParamWeight(const char* param_name, F32 weight, bool upload_bake = false);
+    virtual bool setVisualParamWeight(S32 index, F32 weight, bool upload_bake = false);
+    virtual bool setVisualParamWeight(S32 index, S32 type, F32 weight, bool upload_bake = false);
+#else
     virtual bool setVisualParamWeight(const LLVisualParam *which_param, F32 weight);
     virtual bool setVisualParamWeight(const char* param_name, F32 weight);
     virtual bool setVisualParamWeight(S32 index, F32 weight);
     virtual bool setVisualParamWeight(S32 index, S32 type, F32 weight);
+#endif
 
     // get visual param weight by param or name
     F32 getVisualParamWeight(LLVisualParam *distortion);
@@ -248,6 +256,19 @@ public:
     S32             getVisualParamCount() const { return (S32)mVisualParamIndexMap.size(); }
     LLVisualParam*  getVisualParam(const char *name);
 
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    void animateTweakableVisualParams(F32 delta, bool upload_bake = false)
+    {
+        for (auto& it : mVisualParamIndexMap)
+        {
+            if (it.second->isTweakable())
+            {
+                it.second->animate(delta, upload_bake);
+            }
+        }
+    }
+#else
     void animateTweakableVisualParams(F32 delta)
     {
         for (auto& it : mVisualParamIndexMap)
@@ -258,6 +279,7 @@ public:
             }
         }
     }
+#endif
 
     void applyAllVisualParams(ESex avatar_sex)
     {

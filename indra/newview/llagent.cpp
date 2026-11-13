@@ -49,14 +49,14 @@
 #include "llfirstuse.h"
 #include "llfloatercamera.h"
 #include "llfloaterimcontainer.h"
-#include "llfloaterperms.h"
+//#include "llfloaterperms.h"
 #include "llfloaterpreference.h"
 #include "llfloaterreg.h"
 #include "llfloatersnapshot.h"
 #include "llfloatertools.h"
 #include "llgroupactions.h"
 #include "llgroupmgr.h"
-#include "llhudmanager.h"
+//#include "llhudmanager.h"
 #include "lljoystickbutton.h"
 #include "lllandmarkactions.h"
 #include "llmorphview.h"
@@ -72,8 +72,8 @@
 #include "llsdutil.h"
 #include "llsky.h"
 #include "llslurl.h"
-#include "llsmoothstep.h"
-#include "llstartup.h"
+//#include "llsmoothstep.h"
+//#include "llstartup.h"
 #include "llstatusbar.h"
 #include "llteleportflags.h"
 #include "llteleporthistory.h"
@@ -81,12 +81,12 @@
 #include "lltoolbarview.h"
 #include "lltoolpie.h"
 #include "lltoolmgr.h"
-#include "lltrans.h"
+//#include "lltrans.h"
 #include "lluictrl.h"
 #include "llurlentry.h"
 #include "llviewercontrol.h"
 #include "llviewerdisplay.h"
-#include "llviewerjoystick.h"
+//#include "llviewerjoystick.h"
 #include "llviewermediafocus.h"
 #include "llviewermenu.h"
 #include "llviewerobjectlist.h"
@@ -95,12 +95,15 @@
 #include "llviewerstats.h"
 #include "llviewerwindow.h"
 #include "llvoavatarself.h"
-#include "llwindow.h"
+//#include "llwindow.h"
 #include "llworld.h"
 #include "llworldmap.h"
-#include "stringize.h"
+//#include "stringize.h"
 #include "llcorehttputil.h"
 #include "lluiusage.h"
+#if OPENSIM
+#include "llviewernetwork.h"
+#endif
 
 using namespace LLAvatarAppearanceDefines;
 
@@ -382,6 +385,10 @@ LLAgent::LLAgent() :
     mInitialized(false),
     // from HB
     mRebakeNeeded(false),
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    mAppearanceSerialNum(0),
+#endif
     mListener(),
 
     mDoubleTapRunTimer(),
@@ -1060,11 +1067,27 @@ void LLAgent::handleServerFeaturesTransition()
     if (mRebakeNeeded)
     {
         mRebakeNeeded = false;
+#if OPENSIM
+        // <FS:Ansariel> [Legacy Bake]
+        // Old-style appearance entering a server-bake region.
+        if (!gAgentAvatarp->isUsingServerBakes() &&
+            (mRegionp->getCentralBakeVersion() > 0))
+        {
+            LL_INFOS() << "update requested due to region transition" << LL_ENDL;
+            LLAppearanceMgr::instance().requestServerAppearanceUpdate();
+        }
+        else
+        {
+            // new-style appearance entering a non-bake region,
+            // need to check for existence of the baking service.
+            gAgentAvatarp->checkForUnsupportedServerBakeAppearance();
+        }
+#else
         // and again use KB's version rather than adding HB's
-    LLAppearanceMgr::instance().requestServerAppearanceUpdate();
-  }
+        LLAppearanceMgr::instance().requestServerAppearanceUpdate();
+#endif
+    }
 }
-
 
 // static
 void LLAgent::capabilityReceivedCallback(const LLUUID &region_id, LLViewerRegion *regionp)
@@ -1201,6 +1224,10 @@ void LLAgent::setRegion(LLViewerRegion *regionp)
         regionp->setCapabilitiesReceivedCallback(boost::bind(&LLAgent::handleServerFeaturesTransition,
                                                        this));
     }
+#if OPENSIM
+    LL_DEBUGS("AgentLocation") << "Calling RegionChanged callbacks" << LL_ENDL;
+    mRegionChangedSignal();
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2672,7 +2699,12 @@ void LLAgent::setStartPosition( U32 location_id )
     // this simulator.  Clamp it to the region the agent is
     // in, a little bit in on each side.
     const F32 INSET = 0.5f; //meters
+#if OPENSIM
+    // <FS:CR> VarRegion
+    const F32 REGION_WIDTH = getRegion()->getWidth();
+#else
     const F32 REGION_WIDTH = LLWorld::getInstance()->getRegionWidthInMeters();
+#endif
 
     LLVector3 agent_pos = getPositionAgent();
 
@@ -2700,9 +2732,26 @@ void LLAgent::setStartPosition( U32 location_id )
 
     body["HomeLocation"] = homeLocation;
 
-    if (!requestPostCapability("HomeLocation", body,
-            boost::bind(&LLAgent::setStartPositionSuccess, this, _1)))
+    if (!requestPostCapability("HomeLocation", body, boost::bind(&LLAgent::setStartPositionSuccess, this, _1)))
+#if OPENSIM
+    // <FS:Ansariel> FIRE-19894: Setting Home location fails in OpenSim after Coroutines update
+    {
+        LLMessageSystem* msg = gMessageSystem;
+        msg->newMessageFast(_PREHASH_SetStartLocationRequest);
+        msg->nextBlockFast(_PREHASH_AgentData);
+        msg->addUUIDFast(_PREHASH_AgentID, gAgentID);
+        msg->addUUIDFast(_PREHASH_SessionID, gAgentSessionID);
+        msg->nextBlockFast(_PREHASH_StartLocationData);
+        // corrected by sim
+        msg->addStringFast(_PREHASH_SimName, "");
+        msg->addU32Fast(_PREHASH_LocationID, homeLocation["LocationId"].asInteger());
+        msg->addVector3Fast(_PREHASH_LocationPos, ll_vector3_from_sdmap(homeLocation["LocationPos"]));
+        msg->addVector3Fast(_PREHASH_LocationLookAt, ll_vector3_from_sdmap(homeLocation["LocationLookAt"]));
+        gAgent.sendReliableMessage();
+    }
+#else
         LL_WARNS() << "Unable to post to HomeLocation capability." << LL_ENDL;
+#endif
 }
 
 void LLAgent::setStartPositionSuccess(const LLSD &result)
@@ -5011,16 +5060,35 @@ void LLAgent::requestAgentUserInfoCoro(std::string capurl)
     std::string email;
     std::string dir_visibility;
 
+#if OPENSIM
+    // <FS:Ansariel> Keep this for OpenSim
+    bool im_via_email = false;
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        im_via_email = result["im_via_email"].asBoolean();
+    }
+    // </FS:Ansariel>
+#endif
     email = result["email"].asString();
     dir_visibility = result["directory_visibility"].asString();
 
     // TODO: This should probably be changed.  I'm not entirely comfortable
     // having LLAgent interact directly with the UI in this way.
+#if OPENSIM
+    // <FS:Ansariel> Show email address in preferences (FIRE-1071) and keep IM to email setting for OpenSim
+    LLFloaterPreference::updateUserInfo(dir_visibility, im_via_email, email);
+#else
     LLFloaterPreference::updateUserInfo(dir_visibility);
+#endif
     LLFloaterSnapshot::setAgentEmail(email);
 }
 
+#if OPENSIM
+// <FS:Ansariel> Keep this for OpenSim
+void LLAgent::sendAgentUpdateUserInfo(bool im_via_email, const std::string& directory_visibility)
+#else
 void LLAgent::sendAgentUpdateUserInfo(const std::string& directory_visibility)
+#endif
 {
     std::string cap;
 
@@ -5033,15 +5101,28 @@ void LLAgent::sendAgentUpdateUserInfo(const std::string& directory_visibility)
     if (!cap.empty())
     {
         LLCoros::instance().launch("updateAgentUserInfoCoro",
+#if OPENSIM
+            boost::bind(&LLAgent::updateAgentUserInfoCoro, this, cap, im_via_email, directory_visibility));
+    }
+    else
+    {
+        sendAgentUpdateUserInfoMessage(im_via_email, directory_visibility);
+#else
             boost::bind(&LLAgent::updateAgentUserInfoCoro, this, cap, directory_visibility));
     }
     else
     {
         sendAgentUpdateUserInfoMessage(directory_visibility);
+#endif
     }
 }
 
+#if OPENSIM
+// <FS:Ansariel> Keep this for OpenSim
+void LLAgent::updateAgentUserInfoCoro(std::string capurl, bool im_via_email, std::string directory_visibility)
+#else
 void LLAgent::updateAgentUserInfoCoro(std::string capurl, std::string directory_visibility)
+#endif
 {
     LLCore::HttpRequest::policy_t httpPolicy(LLCore::HttpRequest::DEFAULT_POLICY_ID);
     LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t
@@ -5051,8 +5132,14 @@ void LLAgent::updateAgentUserInfoCoro(std::string capurl, std::string directory_
     LLCore::HttpHeaders::ptr_t httpHeaders;
 
     httpOpts->setFollowRedirects(true);
-    LLSD body(LLSDMap
-        ("dir_visibility",  LLSD::String(directory_visibility)));
+    LLSD body(LLSDMap("dir_visibility", LLSD::String(directory_visibility)));
+
+#if OPENSIM
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        body.insert("im_via_email", LLSD::Boolean(im_via_email));
+    }
+#endif
 
 
     LLSD result = httpAdapter->postAndSuspend(httpRequest, capurl, body, httpOpts, httpHeaders);
@@ -5081,16 +5168,25 @@ void LLAgent::sendAgentUserInfoRequestMessage()
     sendReliableMessage();
 }
 
+#if OPENSIM
+// <FS:Ansariel> Keep this for OpenSim
+void LLAgent::sendAgentUpdateUserInfoMessage(bool im_via_email, const std::string& directory_visibility)
+#else
 void LLAgent::sendAgentUpdateUserInfoMessage(const std::string& directory_visibility)
+#endif
 {
     gMessageSystem->newMessageFast(_PREHASH_UpdateUserInfo);
     gMessageSystem->nextBlockFast(_PREHASH_AgentData);
     gMessageSystem->addUUIDFast(_PREHASH_AgentID, getID());
     gMessageSystem->addUUIDFast(_PREHASH_SessionID, getSessionID());
     gMessageSystem->nextBlockFast(_PREHASH_UserData);
+#if OPENSIM
+    // <FS:Ansariel> Keep this for OpenSim
+    if (LLGridManager::getInstance()->isInOpenSim())
+        gMessageSystem->addBOOLFast(_PREHASH_IMViaEMail, im_via_email);
+#endif
     gMessageSystem->addString("DirectoryVisibility", directory_visibility);
     gAgent.sendReliableMessage();
-
 }
 // end deprecated
 //------
@@ -5467,5 +5563,345 @@ void LLTeleportRequestViaLocationLookAt::restartTeleport()
     LL_INFOS("Teleport") << "LLTeleportRequestViaLocationLookAt::restartTeleport" << LL_ENDL;
     gAgent.doTeleportViaLocationLookAt(getPosGlobal());
 }
+
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+//-----------------------------------------------------------------------------
+// Legacy baking
+//-----------------------------------------------------------------------------
+
+LLAgentQueryManager gAgentQueryManager;
+
+LLAgentQueryManager::LLAgentQueryManager() : mWearablesCacheQueryID(0), mNumPendingQueries(0), mUpdateSerialNum(0)
+{
+    for (U32 i = 0; i < BAKED_NUM_INDICES; i++)
+    {
+        mActiveCacheQueries[i] = 0;
+    }
+}
+
+LLAgentQueryManager::~LLAgentQueryManager()
+{
+}
+
+// static
+void LLAgent::processAgentCachedTextureResponse(LLMessageSystem* mesgsys, void** user_data)
+{
+    gAgentQueryManager.mNumPendingQueries--;
+    if (gAgentQueryManager.mNumPendingQueries == 0)
+    {
+        selfStopPhase("fetch_texture_cache_entries");
+    }
+
+    if (!isAgentAvatarValid() || gAgentAvatarp->isDead())
+    {
+        LL_WARNS() << "No avatar for user in cached texture update!" << LL_ENDL;
+        return;
+    }
+
+    if (isAgentAvatarValid() && gAgentAvatarp->isEditingAppearance())
+    {
+        // ignore baked textures when in customize mode
+        return;
+    }
+
+    S32 query_id;
+    mesgsys->getS32Fast(_PREHASH_AgentData, _PREHASH_SerialNum, query_id);
+
+    S32 num_texture_blocks = mesgsys->getNumberOfBlocksFast(_PREHASH_WearableData);
+
+    S32 num_results = 0;
+    for (S32 texture_block = 0; texture_block < num_texture_blocks; texture_block++)
+    {
+        LLUUID texture_id;
+        U8     texture_index;
+
+        mesgsys->getUUIDFast(_PREHASH_WearableData, _PREHASH_TextureID, texture_id, texture_block);
+        mesgsys->getU8Fast(_PREHASH_WearableData, _PREHASH_TextureIndex, texture_index, texture_block);
+
+        if ((S32)texture_index < TEX_NUM_INDICES)
+        {
+            const LLAvatarAppearanceDictionary::TextureEntry* texture_entry =
+                LLAvatarAppearance::getDictionary()->getTexture((ETextureIndex)texture_index);
+            if (texture_entry)
+            {
+                EBakedTextureIndex baked_index = texture_entry->mBakedTextureIndex;
+
+                if (gAgentQueryManager.mActiveCacheQueries[baked_index] == query_id)
+                {
+                    if (texture_id.notNull())
+                    {
+                        // LL_INFOS() << "Received cached texture " << (U32)texture_index << ": " << texture_id << LL_ENDL;
+                        gAgentAvatarp->setCachedBakedTexture((ETextureIndex)texture_index, texture_id);
+                        // gAgentAvatarp->setTETexture( LLVOAvatar::sBakedTextureIndices[texture_index], texture_id );
+                        gAgentQueryManager.mActiveCacheQueries[baked_index] = 0;
+                        num_results++;
+                    }
+                    else
+                    {
+                        // no cache of this bake. request upload.
+                        gAgentAvatarp->invalidateComposite(gAgentAvatarp->getLayerSet(baked_index), true);
+                    }
+                }
+            }
+        }
+    }
+    LL_INFOS() << "Received cached texture response for " << num_results << " textures." << LL_ENDL;
+    gAgentAvatarp->outputRezTiming("Fetched agent wearables textures from cache. Will now load them");
+
+    gAgentAvatarp->updateMeshTextures();
+
+    if (gAgentQueryManager.mNumPendingQueries == 0)
+    {
+        // RN: not sure why composites are disabled at this point
+        gAgentAvatarp->setCompositeUpdatesEnabled(true);
+        gAgent.sendAgentSetAppearance();
+    }
+}
+
+// For debugging, trace agent state at times appearance message are sent out.
+void LLAgent::dumpSentAppearance(const std::string& dump_prefix)
+{
+    std::string outfilename = get_sequential_numbered_file_name(dump_prefix, ".xml");
+
+    LLAPRFile   outfile;
+    std::string fullpath = gDirUtilp->getExpandedFilename(LL_PATH_LOGS, outfilename);
+    outfile.open(fullpath, LL_APR_WB);
+
+    // <FS:ND> Remove LLVolatileAPRPool/apr_file_t and use FILE* instead
+    // apr_file_t* file = outfile.getFileHandle();
+    LLAPRFile::tFiletype* file = outfile.getFileHandle();
+    // </FS:ND>
+
+    if (!file)
+    {
+        return;
+    }
+    else
+    {
+        LL_DEBUGS("Avatar") << "dumping sent appearance message to " << fullpath << LL_ENDL;
+    }
+
+    LLVisualParam* appearance_version_param = gAgentAvatarp->getVisualParam(11000);
+    if (appearance_version_param)
+    {
+        F32 value = appearance_version_param->getWeight();
+        dump_visual_param(file, appearance_version_param, value);
+    }
+    for (LLAvatarAppearanceDictionary::Textures::const_iterator iter = LLAvatarAppearance::getDictionary()->getTextures().begin();
+         iter != LLAvatarAppearance::getDictionary()->getTextures().end();
+         ++iter)
+    {
+        const ETextureIndex                               index        = iter->first;
+        const LLAvatarAppearanceDictionary::TextureEntry* texture_dict = iter->second;
+        if (texture_dict->mIsBakedTexture)
+        {
+            LLTextureEntry* entry = gAgentAvatarp->getTE((U8)index);
+            const LLUUID&   uuid  = entry->getID();
+            apr_file_printf(file, "\t\t<texture te=\"%i\" uuid=\"%s\"/>\n", index, uuid.asString().c_str());
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+// sendAgentSetAppearance()
+//-----------------------------------------------------------------------------
+void LLAgent::sendAgentSetAppearance()
+{
+    if (gAgentQueryManager.mNumPendingQueries > 0)
+    {
+        return;
+    }
+
+    if (!isAgentAvatarValid() || (getRegion() && getRegion()->getCentralBakeVersion()))
+        return;
+
+    // At this point we have a complete appearance to send and are in a non-baking region.
+    // DRANO FIXME
+    // gAgentAvatarp->setIsUsingServerBakes(false);
+    S32 sb_count, host_count, both_count, neither_count;
+    gAgentAvatarp->bakedTextureOriginCounts(sb_count, host_count, both_count, neither_count);
+    if (both_count != 0 || neither_count != 0)
+    {
+        LL_WARNS() << "bad bake texture state " << sb_count << "," << host_count << "," << both_count << "," << neither_count << LL_ENDL;
+    }
+    if (sb_count != 0 && host_count == 0)
+    {
+        gAgentAvatarp->setIsUsingServerBakes(true);
+    }
+    else if (sb_count == 0 && host_count != 0)
+    {
+        gAgentAvatarp->setIsUsingServerBakes(false);
+    }
+    else if (sb_count + host_count > 0)
+    {
+        LL_WARNS() << "unclear baked texture state, not sending appearance" << LL_ENDL;
+        return;
+    }
+
+    LL_DEBUGS("Avatar") << gAgentAvatarp->avString() << "TAT: Sent AgentSetAppearance: " << gAgentAvatarp->getBakedStatusForPrintout()
+                        << LL_ENDL;
+    // dumpAvatarTEs( "sendAgentSetAppearance()" );
+
+    LLMessageSystem* msg = gMessageSystem;
+    msg->newMessageFast(_PREHASH_AgentSetAppearance);
+    msg->nextBlockFast(_PREHASH_AgentData);
+    msg->addUUIDFast(_PREHASH_AgentID, getID());
+    msg->addUUIDFast(_PREHASH_SessionID, getSessionID());
+
+    // correct for the collision tolerance (to make it look like the
+    // agent is actually walking on the ground/object)
+    // NOTE -- when we start correcting all of the other Havok geometry
+    // to compensate for the COLLISION_TOLERANCE ugliness we will have
+    // to tweak this number again
+
+    // <FS:BEQ> Havok hover adjustment is not present on OS
+    // const LLVector3 body_size = gAgentAvatarp->mBodySize + gAgentAvatarp->mAvatarOffset;
+    // msg->addVector3Fast(_PREHASH_Size, body_size);
+    if (!LLGridManager::getInstance()->isInSecondLife())
+    {
+        msg->addVector3Fast(_PREHASH_Size, gAgentAvatarp->mBodySize);
+    }
+    else
+    {
+        const LLVector3 body_size = gAgentAvatarp->mBodySize + gAgentAvatarp->mAvatarOffset;
+        msg->addVector3Fast(_PREHASH_Size, body_size);
+    } //</FS:BEQ>
+
+    // To guard against out of order packets
+    // Note: always start by sending 1.  This resets the server's count. 0 on the server means "uninitialized"
+    mAppearanceSerialNum++;
+    msg->addU32Fast(_PREHASH_SerialNum, mAppearanceSerialNum);
+
+    // is texture data current relative to wearables?
+    // KLW - TAT this will probably need to check the local queue.
+    bool textures_current = gAgentAvatarp->areTexturesCurrent();
+    //<FS:Beq> BOM fallback legacy opensim (extended for FIRE-29903 contrib from Ubit Umarov)
+    // for(U8 baked_index = 0; baked_index < BAKED_NUM_INDICES; baked_index++ )
+    // {
+    //  const ETextureIndex texture_index = LLAvatarAppearanceDictionary::bakedToLocalTextureIndex((EBakedTextureIndex)baked_index);
+
+    //  // if we're not wearing a skirt, we don't need the texture to be baked
+    //  if (texture_index == TEX_SKIRT_BAKED && !gAgentAvatarp->isWearingWearableType(LLWearableType::WT_SKIRT))
+    //  {
+    //      continue;
+    //  }
+
+    //  // IMG_DEFAULT_AVATAR means not baked. 0 index should be ignored for baked textures
+    //  if (!gAgentAvatarp->isTextureDefined(texture_index, 0))
+    //  {
+    //      LL_DEBUGS("Avatar") << "texture not current for baked " << (S32)baked_index << " local " << (S32)texture_index << LL_ENDL;
+    //      textures_current = false;
+    //      break;
+    //  }
+    // }
+    if (textures_current)
+    {
+        for (U8 baked_index = 0; baked_index < gAgentAvatarp->getNumBakes(); baked_index++)
+        {
+            const ETextureIndex texture_index =
+                LLAvatarAppearance::getDictionary()->bakedToLocalTextureIndex((EBakedTextureIndex)baked_index);
+
+            // if we're not wearing a skirt, we don't need the texture to be baked
+            if (texture_index == TEX_SKIRT_BAKED && !gAgentAvatarp->isWearingWearableType(LLWearableType::WT_SKIRT))
+            {
+                continue;
+            }
+            // if we're not wearing a universal
+            if ((texture_index >= TEX_LEFT_ARM_BAKED && texture_index <= TEX_AUX3_BAKED) &&
+                !gAgentAvatarp->isWearingWearableType(LLWearableType::WT_UNIVERSAL))
+            {
+                continue; // ignore universal that is also optional
+            }
+            // IMG_DEFAULT_AVATAR means not baked. 0 index should be ignored for baked textures
+            if (!gAgentAvatarp->isTextureDefined(texture_index, 0))
+            {
+                LL_DEBUGS("Avatar") << "texture not current for baked " << (S32)baked_index << " local " << (S32)texture_index << LL_ENDL;
+                textures_current = false;
+                break;
+            }
+        }
+    }
+    //</FS:Beq>
+
+    // only update cache entries if we have all our baked textures
+
+    // FIXME DRANO need additional check for not in appearance editing
+    // mode, if still using local composites need to set using local
+    // composites to false, and update mesh textures.
+    if (textures_current)
+    {
+        bool        enable_verbose_dumps = gSavedSettings.getBOOL("DebugAvatarAppearanceMessage");
+        std::string dump_prefix          = gAgentAvatarp->getFullname() + "_sent_appearance";
+        if (enable_verbose_dumps)
+        {
+            dumpSentAppearance(dump_prefix);
+        }
+        LL_DEBUGS("Avatar") << gAgentAvatarp->avString() << "TAT: Sending cached texture data" << LL_ENDL;
+        //<FS:Beq> BOM fallback for legacy opensim
+        // for (U8 baked_index = 0; baked_index < BAKED_NUM_INDICES; baked_index++)
+        for (U8 baked_index = 0; baked_index < gAgentAvatarp->getNumBakes(); baked_index++)
+        //</FS:Beq>
+        {
+            bool generate_valid_hash{ true };
+            if (isAgentAvatarValid() && !gAgentAvatarp->isBakedTextureFinal((LLAvatarAppearanceDefines::EBakedTextureIndex)baked_index))
+            {
+                generate_valid_hash = false;
+                LL_DEBUGS("Avatar") << gAgentAvatarp->avString() << "Not caching baked texture upload for " << (U32)baked_index
+                                    << " due to being uploaded at low resolution." << LL_ENDL;
+            }
+            // <FS:Beq> Exclude BAKED_SKIRT from being sent if no skirt is worn (should only reach here if it were already baked)
+            if (baked_index == BAKED_SKIRT && !gAgentAvatarp->isWearingWearableType(LLWearableType::WT_SKIRT))
+            {
+                LL_DEBUGS("Avatar") << "Not caching baked texture for unworn skirt." << LL_ENDL;
+                generate_valid_hash = false;
+            }
+            // </FS:Beq>
+
+            const LLUUID hash = gAgentWearables.computeBakedTextureHash((EBakedTextureIndex)baked_index, generate_valid_hash);
+            if (hash.notNull())
+            {
+                ETextureIndex texture_index =
+                    LLAvatarAppearance::getDictionary()->bakedToLocalTextureIndex((EBakedTextureIndex)baked_index);
+                msg->nextBlockFast(_PREHASH_WearableData);
+                msg->addUUIDFast(_PREHASH_CacheID, hash);
+                msg->addU8Fast(_PREHASH_TextureIndex, (U8)texture_index);
+            }
+        }
+        msg->nextBlockFast(_PREHASH_ObjectData);
+        // gAgentAvatarp->dumpAvatarTEs("sendAppearance"); // <FS:Beq> useful when debugging appeanrce updates
+        gAgentAvatarp->sendAppearanceMessage(gMessageSystem);
+    }
+    else
+    {
+        // If the textures aren't baked, send NULL for texture IDs
+        // This means the baked texture IDs on the server will be untouched.
+        // Once all textures are baked, another AvatarAppearance message will be sent to update the TEs
+        msg->nextBlockFast(_PREHASH_ObjectData);
+        gMessageSystem->addBinaryDataFast(_PREHASH_TextureEntry, NULL, 0);
+    }
+
+    S32 transmitted_params = 0;
+    for (LLViewerVisualParam* param = (LLViewerVisualParam*)gAgentAvatarp->getFirstVisualParam(); param;
+         param                      = (LLViewerVisualParam*)gAgentAvatarp->getNextVisualParam())
+    {
+        if (param->getGroup() == VISUAL_PARAM_GROUP_TWEAKABLE ||
+            param->getGroup() ==
+                VISUAL_PARAM_GROUP_TRANSMIT_NOT_TWEAKABLE) // do not transmit params of group VISUAL_PARAM_GROUP_TWEAKABLE_NO_TRANSMIT
+        {
+            msg->nextBlockFast(_PREHASH_VisualParam);
+
+            // We don't send the param ids.  Instead, we assume that the receiver has the same params in the same sequence.
+            const F32 param_value = param->getWeight();
+            const U8  new_weight  = F32_to_U8(param_value, param->getMinWeight(), param->getMaxWeight());
+            msg->addU8Fast(_PREHASH_ParamValue, new_weight);
+            transmitted_params++;
+        }
+    }
+
+    // LL_INFOS() << "Avatar XML num VisualParams transmitted = " << transmitted_params << LL_ENDL;
+    sendReliableMessage();
+}
+#endif
 
 // EOF

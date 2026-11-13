@@ -30,6 +30,10 @@
 #include "llavatarappearancedefines.h"
 #include "llwearable.h"
 #include "llerror.h"
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+#include "llmd5.h"
+#endif
 
 class LLAvatarAppearance;
 
@@ -85,6 +89,19 @@ protected:
 private:
     void            pullCrossWearableValues(const LLWearableType::EType type);
 
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    //--------------------------------------------------------------------
+    // Server Communication
+    //--------------------------------------------------------------------
+public:
+    LLUUID          computeBakedTextureHash(LLAvatarAppearanceDefines::EBakedTextureIndex baked_index, bool generate_valid_hash = true);
+
+protected:
+    virtual void    invalidateBakedTextureHash(LLMD5& hash) const {}
+#endif
+
+    //--------------------------------------------------------------------
     //--------------------------------------------------------------------
     // Member variables
     //--------------------------------------------------------------------

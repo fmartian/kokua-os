@@ -56,7 +56,10 @@ enum EStartLocation
 
 typedef enum {
     STATE_FIRST,                    // Initial startup
-    STATE_AUDIO_INIT,           //init audio
+#if OPENSIM
+    STATE_FETCH_GRID_INFO,          // download grid info
+#endif
+    STATE_AUDIO_INIT,               // init audio
     STATE_BROWSER_INIT,             // Initialize web browser for login screen
     STATE_LOGIN_SHOW,               // Show login screen
     STATE_LOGIN_WAIT,               // Wait for user input at login screen
@@ -89,6 +92,10 @@ typedef enum {
 // exported symbols
 extern bool gAgentMovementCompleted;
 extern LLPointer<LLViewerTexture> gStartTexture;
+#if OPENSIM
+// <FS:Ansariel> OpenSim legacy economy support
+extern S32 gMaxAgentGroups;
+#endif
 
 class LLStartUp
 {

@@ -207,7 +207,12 @@ bool LLDriverParam::setInfo(LLDriverParamInfo *info)
     return new LLDriverParam(*this);
 }
 
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+void LLDriverParam::setWeight(F32 weight, bool upload_bake)
+#else
 void LLDriverParam::setWeight(F32 weight)
+#endif
 {
     F32 min_weight = getMinWeight();
     F32 max_weight = getMaxWeight();
@@ -266,7 +271,12 @@ void LLDriverParam::setWeight(F32 weight)
                     driven_weight = driven_min;
                 }
 
-                setDrivenWeight(drivenp,driven_weight);
+#if OPENSIM
+                // <FS:Ansariel> [Legacy Bake]
+                setDrivenWeight(drivenp, driven_weight, upload_bake);
+#else
+                setDrivenWeight(drivenp, driven_weight);
+#endif
                 continue;
             }
             else
@@ -290,13 +300,24 @@ void LLDriverParam::setWeight(F32 weight)
                     driven_weight = driven_min;
                 }
 
-                setDrivenWeight(drivenp,driven_weight);
+#if OPENSIM
+                // <FS:Ansariel> [Legacy Bake]
+                setDrivenWeight(drivenp, driven_weight, upload_bake);
+#else
+                setDrivenWeight(drivenp, driven_weight);
+#endif
                 continue;
             }
         }
 
         driven_weight = getDrivenWeight(drivenp, mCurWeight);
-        setDrivenWeight(drivenp,driven_weight);
+
+#if OPENSIM
+        // <FS:Ansariel> [Legacy Bake]
+        setDrivenWeight(drivenp, driven_weight, upload_bake);
+#else
+        setDrivenWeight(drivenp, driven_weight);
+#endif
     }
 }
 
@@ -437,7 +458,12 @@ const LLViewerVisualParam* LLDriverParam::getDrivenParam(S32 index) const
 //-----------------------------------------------------------------------------
 // setAnimationTarget()
 //-----------------------------------------------------------------------------
-void LLDriverParam::setAnimationTarget( F32 target_value)
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+void LLDriverParam::setAnimationTarget(F32 target_value, bool upload_bake)
+#else
+void LLDriverParam::setAnimationTarget(F32 target_value)
+#endif
 {
     LLVisualParam::setAnimationTarget(target_value);
 
@@ -448,17 +474,28 @@ void LLDriverParam::setAnimationTarget( F32 target_value)
 
         // this isn't normally necessary, as driver params handle interpolation of their driven params
         // but texture params need to know to assume their final value at beginning of interpolation
+#if OPENSIM
+        // <FS:Ansariel> [Legacy Bake]
+        drivenp->mParam->setAnimationTarget(driven_weight, upload_bake);
+#else
         drivenp->mParam->setAnimationTarget(driven_weight);
+#endif
     }
 }
 
 //-----------------------------------------------------------------------------
 // stopAnimating()
 //-----------------------------------------------------------------------------
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+void LLDriverParam::stopAnimating(bool upload_bake)
+{
+    LLVisualParam::stopAnimating(upload_bake);
+#else
 void LLDriverParam::stopAnimating()
 {
     LLVisualParam::stopAnimating();
-
+#endif
     for(LLDrivenEntry& driven : mDriven)
     {
         driven.mParam->setAnimating(false);
@@ -596,7 +633,12 @@ F32 LLDriverParam::getDrivenWeight(const LLDrivenEntry* driven, F32 input_weight
     return driven_weight;
 }
 
-void LLDriverParam::setDrivenWeight(LLDrivenEntry *driven, F32 driven_weight)
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+void LLDriverParam::setDrivenWeight(LLDrivenEntry* driven, F32 driven_weight, bool upload_bake)
+#else
+void LLDriverParam::setDrivenWeight(LLDrivenEntry* driven, F32 driven_weight)
+#endif
 {
     bool use_self = false;
     if(mWearablep &&
@@ -612,11 +654,21 @@ void LLDriverParam::setDrivenWeight(LLDrivenEntry *driven, F32 driven_weight)
 
     if (use_self)
     {
+#if OPENSIM
+        // <FS:Ansariel> [Legacy Bake]
         // call setWeight through LLVOAvatarSelf so other wearables can be updated with the correct values
-        mAvatarAppearance->setVisualParamWeight( (LLVisualParam*)driven->mParam, driven_weight);
+        mAvatarAppearance->setVisualParamWeight((LLVisualParam*)driven->mParam, driven_weight, upload_bake);
     }
     else
     {
-        driven->mParam->setWeight( driven_weight);
+        driven->mParam->setWeight(driven_weight, upload_bake);
+#else
+        // call setWeight through LLVOAvatarSelf so other wearables can be updated with the correct values
+        mAvatarAppearance->setVisualParamWeight((LLVisualParam*)driven->mParam, driven_weight);
+    }
+    else
+    {
+        driven->mParam->setWeight(driven_weight);
+#endif
     }
 }

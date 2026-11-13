@@ -37,37 +37,37 @@
 #include "llnotificationsutil.h"
 #include "llparcel.h"
 #include "message.h"
-#include "llfloaterreg.h"
+//#include "llfloaterreg.h"
 
 // Viewer includes
 #include "llagent.h"
 #include "llagentaccess.h"
 #include "llcallbacklist.h"
 #include "llviewerparcelaskplay.h"
-#include "llviewerwindow.h"
+//#include "llviewerwindow.h"
 #include "llviewercontrol.h"
 //#include "llfirstuse.h"
 #include "llfloaterbuyland.h"
-#include "llfloatergroups.h"
-#include "llpanelnearbymedia.h"
+//#include "llfloatergroups.h"
+//#include "llpanelnearbymedia.h"
 #include "llfloatersellland.h"
-#include "llfloatertools.h"
+//#include "llfloatertools.h"
 #include "llparcelselection.h"
-#include "llresmgr.h"
+//#include "llresmgr.h"
 #include "llsdutil.h"
 #include "llsdutil_math.h"
 #include "llslurl.h"
 #include "llstatusbar.h"
 #include "llui.h"
 #include "llviewertexture.h"
-#include "llviewertexturelist.h"
-#include "llviewermenu.h"
+//#include "llviewertexturelist.h"
+//#include "llviewermenu.h"
 #include "llviewerparcelmedia.h"
 #include "llviewerparceloverlay.h"
 #include "llviewerregion.h"
 #include "llworld.h"
 #include "roles_constants.h"
-#include "llweb.h"
+//#include "llweb.h"
 #include "llvieweraudio.h"
 #include "llcorehttputil.h"
 
@@ -144,11 +144,17 @@ LLViewerParcelMgr::LLViewerParcelMgr()
     mHoverParcel = new LLParcel();
     mCollisionParcel = new LLParcel();
 
-    mParcelsPerEdge = S32(  REGION_WIDTH_METERS / PARCEL_GRID_STEP_METERS );
-    mHighlightSegments = new U8[(mParcelsPerEdge+1)*(mParcelsPerEdge+1)];
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    // Max region size 8192, just creating larger buffers, it will still work on Second Life and other OpenSim regions
+    initParcelsPerEdge(8192.f);
+#else
+    mParcelsPerEdge = S32(REGION_WIDTH_METERS / PARCEL_GRID_STEP_METERS);
+#endif
+    mHighlightSegments = new U8[(mParcelsPerEdge + 1) * (mParcelsPerEdge + 1)];
     resetSegments(mHighlightSegments);
 
-    mCollisionSegments = new U8[(mParcelsPerEdge+1)*(mParcelsPerEdge+1)];
+    mCollisionSegments = new U8[(mParcelsPerEdge + 1) * (mParcelsPerEdge + 1)];
     resetSegments(mCollisionSegments);
 
     // JC: Resolved a merge conflict here, eliminated
@@ -167,9 +173,21 @@ LLViewerParcelMgr::LLViewerParcelMgr()
         mAgentParcelOverlay[i] = 0;
     }
 
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    // reset to default size for Secondlife and 512m OpenSim regions
+    mParcelsPerEdge = S32(REGION_WIDTH_METERS / PARCEL_GRID_STEP_METERS);
+#endif
     mTeleportInProgress = true; // the initial parcel update is treated like teleport
 }
 
+#if OPENSIM
+// <FS:CR> OpenSim VarRegion
+void LLViewerParcelMgr::initParcelsPerEdge(F32 region_size)
+{
+    mParcelsPerEdge = S32(region_size / PARCEL_GRID_STEP_METERS);
+}
+#endif
 
 LLViewerParcelMgr::~LLViewerParcelMgr()
 {
@@ -228,12 +246,10 @@ void LLViewerParcelMgr::dump()
     mAgentParcel->dump();
 }
 
-
 LLViewerRegion* LLViewerParcelMgr::getSelectionRegion()
 {
     return LLWorld::getInstance()->getRegionFromPosGlobal( mWestSouth );
 }
-
 
 void LLViewerParcelMgr::getDisplayInfo(S32* area_out, S32* claim_out,
                                        S32* rent_out,
@@ -307,7 +323,6 @@ void LLViewerParcelMgr::resetSegments(U8* segments)
     }
 }
 
-
 void LLViewerParcelMgr::writeHighlightSegments(F32 west, F32 south, F32 east,
                                                F32 north)
 {
@@ -359,7 +374,6 @@ void LLViewerParcelMgr::writeHighlightSegments(F32 west, F32 south, F32 east,
     }
 }
 
-
 void LLViewerParcelMgr::writeSegmentsFromBitmap(U8* bitmap, U8* segments)
 {
     S32 x;
@@ -395,7 +409,6 @@ void LLViewerParcelMgr::writeSegmentsFromBitmap(U8* bitmap, U8* segments)
     }
 }
 
-
 void LLViewerParcelMgr::writeAgentParcelFromBitmap(U8* bitmap)
 {
     S32 x;
@@ -426,7 +439,6 @@ void LLViewerParcelMgr::writeAgentParcelFromBitmap(U8* bitmap)
     }
 }
 
-
 // Given a point, find the PARCEL_GRID_STEP x PARCEL_GRID_STEP block
 // containing it and select that.
 LLParcelSelectionHandle LLViewerParcelMgr::selectParcelAt(const LLVector3d& pos_global)
@@ -446,21 +458,26 @@ LLParcelSelectionHandle LLViewerParcelMgr::selectParcelAt(const LLVector3d& pos_
     return selectLand( southwest, northeast, true );
 }
 
-
 // Tries to select the parcel inside the rectangle
 LLParcelSelectionHandle LLViewerParcelMgr::selectParcelInRectangle()
 {
     return selectLand(mWestSouth, mEastNorth, true);
 }
 
-
 void LLViewerParcelMgr::selectCollisionParcel()
 {
     // BUG: Claim to be in the agent's region
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    mWestSouth = getSelectionRegion()->getOriginGlobal();
+    mEastNorth = mWestSouth;
+    mEastNorth += LLVector3d((getSelectionRegion()->getWidth() / REGION_WIDTH_METERS) * PARCEL_GRID_STEP_METERS,
+                             (getSelectionRegion()->getWidth() / REGION_WIDTH_METERS) * PARCEL_GRID_STEP_METERS, 0.0);
+#else
     mWestSouth = gAgent.getRegion()->getOriginGlobal();
     mEastNorth = mWestSouth;
     mEastNorth += LLVector3d(PARCEL_GRID_STEP_METERS, PARCEL_GRID_STEP_METERS, 0.0);
-
+#endif
     // BUG: must be in the sim you are in
     LLMessageSystem *msg = gMessageSystem;
     msg->newMessageFast(_PREHASH_ParcelPropertiesRequestByID);
@@ -492,7 +509,6 @@ void LLViewerParcelMgr::selectCollisionParcel()
     notifyObservers();
     return;
 }
-
 
 // snap_selection = auto-select the hit parcel, if there is exactly one
 LLParcelSelectionHandle LLViewerParcelMgr::selectLand(const LLVector3d &corner1, const LLVector3d &corner2,
@@ -607,18 +623,15 @@ void LLViewerParcelMgr::deselectLand()
     }
 }
 
-
 void LLViewerParcelMgr::addObserver(LLParcelObserver* observer)
 {
     mObservers.push_back(observer);
 }
 
-
 void LLViewerParcelMgr::removeObserver(LLParcelObserver* observer)
 {
     vector_replace_with_last(mObservers, observer);
 }
-
 
 // Call this method when it's time to update everyone on a new state.
 // Copy the list because an observer could respond by removing itself
@@ -636,7 +649,6 @@ void LLViewerParcelMgr::notifyObservers()
     }
 }
 
-
 //
 // ACCESSORS
 //
@@ -644,7 +656,6 @@ bool LLViewerParcelMgr::selectionEmpty() const
 {
     return !mSelected;
 }
-
 
 LLParcelSelectionHandle LLViewerParcelMgr::getParcelSelection() const
 {
@@ -660,7 +671,6 @@ LLParcel *LLViewerParcelMgr::getAgentParcel() const
 {
     return mAgentParcel;
 }
-
 
 LLParcel * LLViewerParcelMgr::getAgentOrSelectedParcel() const
 {
@@ -900,7 +910,6 @@ LLParcel* LLViewerParcelMgr::getCollisionParcel() const
 //
 // UTILITIES
 //
-
 void LLViewerParcelMgr::render()
 {
     static LLCachedControl<bool> render_parcel_selection(gSavedSettings, "RenderParcelSelection");
@@ -914,7 +923,6 @@ void LLViewerParcelMgr::render()
         renderHighlightSegments(mHighlightSegments, regionp);
     }
 }
-
 
 void LLViewerParcelMgr::renderParcelCollision()
 {
@@ -939,7 +947,6 @@ void LLViewerParcelMgr::renderParcelCollision()
         }
     }
 }
-
 
 void LLViewerParcelMgr::sendParcelAccessListRequest(U32 flags)
 {
@@ -983,7 +990,6 @@ void LLViewerParcelMgr::sendParcelAccessListRequest(U32 flags)
     msg->sendReliable( region->getHost() );
 }
 
-
 void LLViewerParcelMgr::sendParcelDwellRequest()
 {
     if (!mSelected)
@@ -1006,7 +1012,6 @@ void LLViewerParcelMgr::sendParcelDwellRequest()
     msg->addUUID("ParcelID", LLUUID::null); // filled in on simulator
     msg->sendReliable( region->getHost() );
 }
-
 
 void LLViewerParcelMgr::sendParcelGodForceOwner(const LLUUID& owner_id)
 {
@@ -1196,7 +1201,6 @@ LLViewerParcelMgr::ParcelBuyInfo* LLViewerParcelMgr::setupParcelBuy(
         }
     }
 
-
     ParcelBuyInfo* info = new ParcelBuyInfo;
 
     info->mAgent = agent_id;
@@ -1300,7 +1304,6 @@ void LLViewerParcelMgr::sendParcelDeed(const LLUUID& group_id)
     msg->sendReliable( region->getHost() );
 }
 
-
 /*
 // *NOTE: We cannot easily make landmarks at global positions because
 // global positions probably refer to a sim/local combination which
@@ -1342,7 +1345,6 @@ const std::string& LLViewerParcelMgr::getAgentParcelName() const
 {
     return mAgentParcel->getName();
 }
-
 
 const S32 LLViewerParcelMgr::getAgentParcelId() const
 {
@@ -1392,7 +1394,6 @@ void LLViewerParcelMgr::sendParcelPropertiesUpdate(LLParcel* parcel)
         msg->sendReliable( region->getHost() );
     }
 }
-
 
 void LLViewerParcelMgr::setHoverParcel(const LLVector3d& pos)
 {
@@ -1507,7 +1508,6 @@ void LLViewerParcelMgr::setHoverParcel(const LLVector3d& pos)
     }
 }
 
-
 // static
 void LLViewerParcelMgr::processParcelOverlay(LLMessageSystem *msg, void **user)
 {
@@ -1520,8 +1520,13 @@ void LLViewerParcelMgr::processParcelOverlay(LLMessageSystem *msg, void **user)
         return;
     }
 
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    S32 expected_size = 1024;
+#else
     S32 parcels_per_edge = LLViewerParcelMgr::getInstance()->mParcelsPerEdge;
     S32 expected_size = parcels_per_edge * parcels_per_edge / PARCEL_OVERLAY_CHUNKS;
+#endif
     if (packed_overlay_size != expected_size)
     {
         LL_WARNS() << "Got parcel overlay size " << packed_overlay_size
@@ -1595,6 +1600,23 @@ void LLViewerParcelMgr::processParcelProperties(LLMessageSystem *msg, void **use
     S32     other_clean_time = 0;
 
     LLViewerParcelMgr& parcel_mgr = LLViewerParcelMgr::instance();
+
+#if OPENSIM
+    // <FS:CR> Aurora Sim
+    LLViewerRegion* msg_region = LLWorld::getInstance()->getRegion(msg->getSender());
+    if (msg_region)
+    {
+        parcel_mgr.mParcelsPerEdge = S32(msg_region->getWidth() / PARCEL_GRID_STEP_METERS);
+    }
+    else
+    {
+        if (!gAgent.getRegion())
+        {
+            return;
+        }
+        parcel_mgr.mParcelsPerEdge = S32(gAgent.getRegion()->getWidth() / PARCEL_GRID_STEP_METERS);
+    }
+#endif
 
     msg->getS32Fast(_PREHASH_ParcelData, _PREHASH_RequestResult, request_result);
     msg->getS32Fast(_PREHASH_ParcelData, _PREHASH_SequenceID, sequence_id);

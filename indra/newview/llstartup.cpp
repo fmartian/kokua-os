@@ -101,13 +101,13 @@
 #endif
 
 #if LL_WINDOWS
-#   include <process.h>     // _spawnl()
+//#   include <process.h>     // _spawnl()
 #else
 #   include <sys/stat.h>        // mkdir()
 #endif
 #include <memory>                   // std::unique_ptr
 
-#include <time.h>
+//#include <time.h>
 
 #include "llviewermedia_streamingaudio.h"
 #include "llaudioengine.h"
@@ -132,24 +132,24 @@
 #include "llfloaterreg.h"
 #include "llfocusmgr.h"
 #include "llfloatergridstatus.h"
-#include "llfloaterimsession.h"
+//#include "llfloaterimsession.h"
 #include "lllocationhistory.h"
-#include "llgltfmateriallist.h"
+//#include "llgltfmateriallist.h"
 #include "llimageworker.h"
 #include "llregex.h"
 
-#include "llloginflags.h"
-#include "llmd5.h"
+//#include "llloginflags.h"
+//#include "llmd5.h"
 #include "llmemorystream.h"
 #include "llmessageconfig.h"
-#include "llmoveview.h"
+//#include "llmoveview.h"
 #include "llfloaterimcontainer.h"
 #include "llfloaterimnearbychat.h"
 #include "llnotifications.h"
 #include "llnotificationsutil.h"
 #include "llpersistentnotificationstorage.h"
 #include "llpresetsmanager.h"
-#include "llteleporthistory.h"
+//#include "llteleporthistory.h"
 #include "llregionhandle.h"
 #include "llsd.h"
 #include "llsdserialize.h"
@@ -159,7 +159,7 @@
 #include "llversioninfo.h"
 #include "llviewercontrol.h"
 #include "llviewerhelp.h"
-#include "llxorcipher.h"    // saved password, MAC address
+//#include "llxorcipher.h"    // saved password, MAC address
 #include "llwindow.h"
 #include "message.h"
 #include "v3math.h"
@@ -175,15 +175,15 @@
 #include "llcallingcard.h"
 #include "llclassifiedinfo.h"
 #include "llconsole.h"
-#include "llcontainerview.h"
+//#include "llcontainerview.h"
 #include "llconversationlog.h"
 #include "lldebugview.h"
 #include "lldrawable.h"
 #include "lleventnotifier.h"
-#include "llface.h"
+//#include "llface.h"
 #include "llfeaturemanager.h"
 //#include "llfirstuse.h"
-#include "llfloaterhud.h"
+//#include "llfloaterhud.h"
 #include "llfloaterland.h"
 #include "llfloatertopobjects.h"
 #include "llfloaterworldmap.h"
@@ -191,8 +191,8 @@
 #include "llgroupmgr.h"
 #include "llhudeffecttrail.h"
 #include "llhudmanager.h"
-#include "llimage.h"
-#include "llinventorybridge.h"
+//#include "llimage.h"
+//#include "llinventorybridge.h"
 #include "llinventorymodel.h"
 #include "llinventorymodelbackgroundfetch.h"
 #include "llkeyboard.h"
@@ -205,7 +205,7 @@
 #include "llpanelgrouplandmoney.h"
 #include "llpanelgroupnotices.h"
 #include "llparcel.h"
-#include "llpreview.h"
+//#include "llpreview.h"
 #include "llpreviewscript.h"
 #include "llproxy.h"
 #include "llproductinforequest.h"
@@ -213,7 +213,7 @@
 #include "llsecapi.h"
 #include "llselectmgr.h"
 #include "llsky.h"
-#include "llstatview.h"
+//#include "llstatview.h"
 #include "llstatusbar.h"        // sendMoneyBalanceRequest(), owns L$ balance
 #include "llbuycurrencyhtml.h"
 #include "llsurface.h"
@@ -227,25 +227,25 @@
 #include "llurlentry.h"
 #include "llslurl.h"
 #include "llurlhistory.h"
-#include "llurlwhitelist.h"
+//#include "llurlwhitelist.h"
 #include "llvieweraudio.h"
 #include "llviewerassetstorage.h"
 #include "llviewercamera.h"
 #include "llviewerdisplay.h"
 #include "llviewergenericmessage.h"
-#include "llviewergesture.h"
+//#include "llviewergesture.h"
 #include "llviewertexturelist.h"
 #include "llviewermedia.h"
 #include "llviewermenu.h"
 #include "llviewermessage.h"
 #include "llviewernetwork.h"
-#include "llviewerobjectlist.h"
+//#include "llviewerobjectlist.h"
 #include "llviewerparcelaskplay.h"
-#include "llviewerparcelmedia.h"
+//#include "llviewerparcelmedia.h"
 #include "llviewerparcelmgr.h"
 #include "llviewerregion.h"
 #include "llviewerstats.h"
-#include "llviewerstatsrecorder.h"
+//#include "llviewerstatsrecorder.h"
 #include "llviewerthrottle.h"
 #include "llviewerwindow.h"
 #include "llvoavatar.h"
@@ -254,52 +254,62 @@
 #include "llworld.h"
 #include "llworldmapmessage.h"
 #include "llxfermanager.h"
-#include "pipeline.h"
-#include "llappviewer.h"
-#include "llfasttimerview.h"
-#include "llfloatermap.h"
-#include "llweb.h"
+//#include "pipeline.h"
+//#include "llappviewer.h"
+//#include "llfasttimerview.h"
+//#include "llfloatermap.h"
+//#include "llweb.h"
 #include "llvoiceclient.h"
-#include "llnamelistctrl.h"
+//#include "llnamelistctrl.h"
 #include "llnamebox.h"
 #include "llnameeditor.h"
 #include "llagentlanguage.h"
-#include "llwearable.h"
-#include "llinventorybridge.h"
+//#include "llwearable.h"
+//#include "llinventorybridge.h"
 #include "llappearancemgr.h"
 #include "llavatariconctrl.h"
 #include "llvoicechannel.h"
 #include "llpathfindingmanager.h"
 #include "llremoteparcelrequest.h"
 #include "llprogressview.h"
-#include "lllogin.h"
+//#include "lllogin.h"
 #include "llevents.h"
 #include "llstartuplistener.h"
 #include "lltoolbarview.h"
 #include "llexperiencelog.h"
-#include "llcleanup.h"
+//#include "llcleanup.h"
 
 #include "llenvironment.h"
 
-#include "llstacktrace.h"
+//#include "llstacktrace.h"
 
 #include "threadpool.h"
 #include "llperfstats.h"
 
 
 #if LL_WINDOWS
-#include "lldxhardware.h"
+//#include "lldxhardware.h"
 #endif
 
 #include "streamtitledisplay.h"
 #include "fscorehttputil.h"
 #include <boost/algorithm/string/replace.hpp>
 #include "lggcontactsets.h"
-#include <boost/algorithm/string/regex.hpp>
+
+
+#if OPENSIM
+#include "kokuaeconomy.h"
+#include "lfsimfeaturehandler.h"
+#endif
+
 //
 // exported globals
 //
 bool gAgentMovementCompleted = false;
+#if OPENSIM
+// <FS:Ansariel> OpenSim legacy economy support
+S32 gMaxAgentGroups;
+#endif
 
 const std::string SCREEN_HOME_FILENAME = "screen_home%s.png";
 const std::string SCREEN_LAST_FILENAME = "screen_last%s.png";
@@ -365,7 +375,11 @@ LLSD transform_cert_args(LLPointer<LLCertificate> cert);
 void general_cert_done(const LLSD& notification, const LLSD& response);
 void trust_cert_done(const LLSD& notification, const LLSD& response);
 void apply_udp_blacklist(const std::string& csv);
+#if OPENSIM
+bool process_login_success_response(U32& first_sim_size_x, U32& first_sim_size_y);
+#else
 bool process_login_success_response();
+#endif
 void on_benefits_failed_callback(const LLSD& notification, const LLSD& response);
 void transition_back_to_login_panel(const std::string& emsg);
 // <FS:KC> FIRE-18250: Option to disable default eye movement
@@ -445,6 +459,51 @@ void pump_idle_startup_network(void)
 //
 // local classes
 //
+#if OPENSIM
+// <AW: opensim>
+static bool sGridListRequestReady = false;
+
+void downloadGridlistComplete(LLSD const& aData)
+{
+    LL_DEBUGS() << aData << LL_ENDL;
+
+    LLSD header = aData[LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS][LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS_HEADERS];
+
+    LLDate lastModified;
+    if (header.has("last-modified"))
+    {
+        lastModified.secondsSinceEpoch(
+            FSCommon::secondsSinceEpochFromString("%a, %d %b %Y %H:%M:%S %ZP", header["last-modified"].asString()));
+    }
+
+    LLSD data = aData;
+    data.erase(LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS);
+
+    std::string filename = gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "grids.remote.xml");
+
+    llofstream out_file;
+    out_file.open(filename.c_str());
+    LLSDSerialize::toPrettyXML(data, out_file);
+    out_file.close();
+    LL_INFOS() << "GridListRequest: got new list." << LL_ENDL;
+    sGridListRequestReady = true;
+}
+
+void downloadGridlistError(LLSD const& aData, std::string const& aURL)
+{
+    LLCore::HttpStatus status = LLCoreHttpUtil::HttpCoroutineAdapter::getStatusFromLLSD(aData);
+
+    if (status.getType() == HTTP_NOT_MODIFIED)
+    {
+        LL_INFOS("fsdata") << "Didn't download grid list from " << aURL << " - no newer version available" << LL_ENDL;
+    }
+    else
+    {
+        LL_WARNS() << "Failed to download grid list from " << aURL << LL_ENDL;
+    }
+    sGridListRequestReady = true;
+}
+#endif
 
  void downloadGridstatusComplete( LLSD const &aData )
 {
@@ -668,7 +727,13 @@ bool idle_startup()
     static std::string auth_desc;
     static std::string auth_message;
 
-    static LLVector3 agent_start_position_region(10.f, 10.f, 10.f);     // default for when no space server
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    static U32 first_sim_size_x = 256;
+    static U32 first_sim_size_y = 256;
+#endif
+
+    static LLVector3 agent_start_position_region(10.f, 10.f, 10.f); // default for when no space server
 
     // last location by default
     static S32  agent_location_id = START_LOCATION_ID_LAST;
@@ -975,6 +1040,70 @@ bool idle_startup()
 
         LL_INFOS("AppInit") << "Message System Initialized." << LL_ENDL;
 
+#if OPENSIM
+#ifndef SINGLEGRID
+        if (gSavedSettings.getBOOL("GridListDownload"))
+        {
+            std::string filename = gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "grids.remote.xml");
+
+            llstat file_stat; // platform independent wrapper for stat
+            time_t last_modified = 0;
+
+            if (!LLFile::stat(filename, &file_stat)) // exists
+            {
+                last_modified = file_stat.st_mtime;
+            }
+
+            std::string url = gSavedSettings.getString("GridListDownloadURL");
+            if (!url.empty())
+            {
+                LLCore::HttpOptions::ptr_t httpOpts(new LLCore::HttpOptions);
+                httpOpts->setLastModified(last_modified);
+
+                FSCoreHttpUtil::callbackHttpGetRaw(url, boost::bind(downloadGridlistComplete, _1),
+                                                   boost::bind(downloadGridlistError, _1, url),
+                                                   LLCore::HttpHeaders::ptr_t(), httpOpts);
+            }
+        }
+        else
+        {
+            sGridListRequestReady = true;
+        }
+#else
+        sGridListRequestReady = true;
+#endif
+        // Fetch grid infos as needed
+        LLGridManager::getInstance()->initialize(std::string());
+        LLStartUp::setStartupState(STATE_FETCH_GRID_INFO);
+        return false;
+    }
+
+    if (STATE_FETCH_GRID_INFO == LLStartUp::getStartupState())
+    {
+        // <FS:AW optional opensim support>
+        static LLFrameTimer grid_timer;
+
+        const F32 grid_time     = grid_timer.getElapsedTimeF32();
+        const F32 MAX_WAIT_TIME = 15.f; // don't wait forever
+
+        if (grid_time > MAX_WAIT_TIME || (sGridListRequestReady && LLGridManager::getInstance()->isReadyToLogin()))
+        {
+            LLStartUp::setStartupState(STATE_AUDIO_INIT);
+        }
+        else
+        {
+            ms_sleep(1);
+            return false;
+        }
+#else
+        LLGridManager::getInstance()->initialize(std::string());
+#endif // OPENSIM
+        LLStartUp::setStartupState(STATE_AUDIO_INIT);
+        return false;
+    }
+
+    if (STATE_AUDIO_INIT == LLStartUp::getStartupState())
+    {
         //-------------------------------------------------
         // Init audio, which may be needed for prefs dialog
         // or audio cues in connection UI.
@@ -1466,7 +1595,12 @@ bool idle_startup()
         // authentication process.
         login->connect(gUserCredential);
 
-        LLStartUp::setStartupState( STATE_LOGIN_CURL_UNSTUCK );
+#if OPENSIM && !defined(SINGLEGRID)
+        // <FS:AW optional opensim support>
+        LLGridManager::getInstance()->saveGridList();
+#endif
+
+        LLStartUp::setStartupState(STATE_LOGIN_CURL_UNSTUCK);
         return false;
     }
 
@@ -1597,7 +1731,7 @@ bool idle_startup()
 
                             reset_login();
                             gSavedSettings.setBOOL("AutoLogin", false);
-                            show_connect_box = true;
+//                            show_connect_box = true;
                         }
                         if(certificate)
                         {
@@ -1610,7 +1744,7 @@ bool idle_startup()
                                 LLNotificationsUtil::add("TrustCertificateError", args, response,
                                                         trust_cert_done);
 
-                                show_connect_box = true;
+//                                show_connect_box = true;
                             }
                             else
                             {
@@ -1624,10 +1758,8 @@ bool idle_startup()
 
                                 reset_login();
                                 gSavedSettings.setBOOL("AutoLogin", false);
-                                show_connect_box = true;
-
+//                                show_connect_box = true;
                             }
-
                         }
                     }
                     else if (reason_response == "BadType")
@@ -1650,7 +1782,12 @@ bool idle_startup()
         }
         else if(LLLoginInstance::getInstance()->authSuccess())
         {
-            if(process_login_success_response())
+#if OPENSIM
+            // <FS:CR> OpenSim VarRegion
+            if (process_login_success_response(first_sim_size_x, first_sim_size_y))
+#else
+            if (process_login_success_response())
+#endif
             {
                 // Pass the user information to the voice chat server interface.
                 LLVoiceClient::getInstance()->userAuthorized(gUserCredential->userID(), gAgentID);
@@ -1667,7 +1804,7 @@ bool idle_startup()
                 LLNotificationsUtil::add("ErrorMessage", args, LLSD(), login_alert_done);
                 transition_back_to_login_panel(emsg.str());
                 show_connect_box = true;
-                return false;
+//                return false;
             }
         }
         return false;
@@ -1686,6 +1823,11 @@ bool idle_startup()
 
         // We should have an agent id by this point.
         llassert(!(gAgentID == LLUUID::null));
+
+#if OPENSIM
+        // <FS:Ansariel> Restore original LLMessageSystem HTTP options for OpenSim
+        gMessageSystem->setIsInOpenSim(LLGridManager::getInstance()->isInOpenSim());
+#endif
 
         // Finish agent initialization.  (Requires gSavedSettings, builds camera)
         gAgent.init();
@@ -1742,7 +1884,12 @@ bool idle_startup()
         gAgent.initOriginGlobal(from_region_handle(gFirstSimHandle));
         do_startup_frame();
 
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        LLWorld::getInstance()->addRegion(gFirstSimHandle, gFirstSim, first_sim_size_x, first_sim_size_y);
+#else
         LLWorld::getInstance()->addRegion(gFirstSimHandle, gFirstSim);
+#endif
         do_startup_frame();
 
         LLViewerRegion *regionp = LLWorld::getInstance()->getRegionFromHandle(gFirstSimHandle);
@@ -1938,6 +2085,10 @@ bool idle_startup()
         }
         do_startup_frame();
 
+#if OPENSIM
+        // <FS:Ansariel> OpenSim support: Init with defaults - we get the OpenSimExtras later during login
+        LFSimFeatureHandler::instance();
+#endif
         // create a container's instance for start a controlling conversation windows
         // by the voice's events
         LLFloaterIMContainer *im_inst = LLFloaterIMContainer::getInstance();
@@ -2152,6 +2303,14 @@ bool idle_startup()
             send_complete_agent_movement(regionp->getHost());
             gAssetStorage->setUpstream(regionp->getHost());
             gCacheName->setUpstream(regionp->getHost());
+#if OPENSIM
+            // <FS:Ansariel> OpenSim legacy economy support
+            if (LLGridManager::getInstance()->isInOpenSim())
+            {
+                msg->newMessageFast(_PREHASH_EconomyDataRequest);
+                gAgent.sendReliableMessage();
+            }
+#endif
         }
 
         // It is entirely possible that we may get the friends list _before_ we have the callbacks registered to process that.
@@ -2241,6 +2400,12 @@ bool idle_startup()
         LLStatusBar::sendMoneyBalanceRequest();
         LLBuyCurrencyHTML::checkFeatureFlag();
 
+#if OPENSIM
+        // <FS:Ansariel> Moved before inventory creation.
+        // request all group information
+        LL_INFOS("Agent_GroupData") << "GROUPDEBUG: Requesting Agent Data during startup" << LL_ENDL;
+        gAgent.sendAgentDataUpdateRequest();
+#endif
         do_startup_frame();
 
         // Inform simulator of our language preference
@@ -2328,15 +2493,21 @@ bool idle_startup()
         {
             LLAvatarTracker::buddy_map_t list;
             LLUUID agent_id;
-            S32 has_rights = 0, given_rights = 0;
-            for(LLSD::array_const_iterator it = buddy_list.beginArray(),
+            // <FS:Ansariel> Reset on each iteration
+            // S32 has_rights = 0, given_rights = 0;
+            for (LLSD::array_const_iterator it = buddy_list.beginArray(),
                 end = buddy_list.endArray(); it != end; ++it)
             {
                 LLSD buddy_id = (*it)["buddy_id"];
-                if(buddy_id.isDefined())
+                // <FS:Ansariel> Reset on each iteration
+                S32 has_rights = 0, given_rights = 0;
+                if (buddy_id.isDefined())
                 {
                     agent_id = buddy_id.asUUID();
                 }
+                // <FS:Ansariel> Can't add "friends" that have no ID
+                else
+                    continue;
 
                 LLSD buddy_rights_has = (*it)["buddy_rights_has"];
                 if(buddy_rights_has.isDefined())
@@ -2477,10 +2648,13 @@ bool idle_startup()
         LLLandmark::registerCallbacks(msg);
         do_startup_frame();
 
+#if !OPENSIME
+        // <FS:Ansariel> Moved before inventory creation.
         // request all group information
         LL_INFOS() << "Requesting Agent Data" << LL_ENDL;
         gAgent.sendAgentDataUpdateRequest();
         do_startup_frame();
+#endif
         // Create the inventory views
         LL_INFOS() << "Creating Inventory Views" << LL_ENDL;
         LLFloaterReg::getInstance("inventory");
@@ -3282,7 +3456,17 @@ void register_viewer_callbacks(LLMessageSystem* msg)
     msg->setHandlerFuncFast(_PREHASH_AvatarAnimation,           process_avatar_animation);
     msg->setHandlerFuncFast(_PREHASH_ObjectAnimation,           process_object_animation);
     msg->setHandlerFuncFast(_PREHASH_AvatarAppearance,          process_avatar_appearance);
-    msg->setHandlerFuncFast(_PREHASH_CameraConstraint,          process_camera_constraint);
+#if OPENSIM
+    // <FS:Ansariel> OpenSim compatibility
+    msg->setHandlerFuncFast(_PREHASH_ImageData,                 LLViewerTextureList::receiveImageHeader);
+    msg->setHandlerFuncFast(_PREHASH_ImagePacket,               LLViewerTextureList::receiveImagePacket);
+    // <FS:Ansariel> [Legacy Bake]
+    msg->setHandlerFunc("AgentCachedTextureResponse",           LLAgent::processAgentCachedTextureResponse);
+    msg->setHandlerFunc("RebakeAvatarTextures",                 LLVOAvatarSelf::processRebakeAvatarTextures);
+
+    msg->setHandlerFuncFast(_PREHASH_AgentWearablesUpdate,      LLAgentWearables::processAgentInitialWearablesUpdate);
+#endif
+    msg->setHandlerFuncFast(_PREHASH_CameraConstraint, process_camera_constraint);
     msg->setHandlerFuncFast(_PREHASH_AvatarSitResponse,         process_avatar_sit_response);
     msg->setHandlerFuncFast(_PREHASH_SetFollowCamProperties,    process_set_follow_cam_properties);
     msg->setHandlerFuncFast(_PREHASH_ClearFollowCamProperties,  process_clear_follow_cam_properties);
@@ -3709,6 +3893,11 @@ void LLStartUp::initNameCache()
 
 void LLStartUp::initExperiences()
 {
+#if OPENSIM
+    // FM: Experience capability is usually not available on OpenSim, indicate if we are
+    // on an OpenSim grid in order to let it reduce spamming the log with warrnings
+    LLExperienceCache::instance().setOpenSimFlag(LLGridManager::getInstance()->isInOpenSim());
+#endif
     // Should trigger loading the cache.
     LLExperienceCache::instance().setCapabilityQuery(
         boost::bind(&LLAgent::getRegionCapability, &gAgent, _1));
@@ -4123,11 +4312,27 @@ bool init_benefits(LLSD& response)
 //   - sim_ip, sim_port (simulator address for UDP circuit)
 //   - seed_capability (URL for fetching HTTP capability endpoints)
 //
+#if OPENSIM
+// <FS:CR> OpenSim VarRegion
+bool process_login_success_response(U32& first_sim_size_x, U32& first_sim_size_y)
+#else
 bool process_login_success_response()
+#endif
 {
     LLSD response = LLLoginInstance::getInstance()->getResponse();
+    LLGridManager* gridMgr = LLGridManager::getInstance();
 
-    mBenefitsSuccessfullyInit = init_benefits(response);
+#if OPENSIM
+    // <FS:Ansariel> OpenSim legacy economy support
+    if (gridMgr->isInOpenSim())
+    {
+        mBenefitsSuccessfullyInit = true;
+    }
+    else
+#endif
+    {
+        mBenefitsSuccessfullyInit = init_benefits(response);
+    }
 
     std::string text(response["udp_blacklist"]);
     if(!text.empty())
@@ -4239,6 +4444,13 @@ bool process_login_success_response()
     {
         // agent_access can be 'A', 'M', and 'PG'.
         gAgent.setMaturity(text[0]);
+#if OPENSIM
+        //<FS:TS> FIRE-8854: Set the preferred maturity here to the maximum
+        //        in case the sim doesn't send it at login, like OpenSim
+        //        doesn't. If it does, it'll get overridden below.
+        U32 preferredMaturity = (U32)LLAgent::convertTextToMaturity(text[0]);
+        gSavedSettings.setU32("PreferredMaturity", preferredMaturity);
+#endif
     }
 
     // this is the value of their preference setting for that content
@@ -4283,6 +4495,21 @@ bool process_login_success_response()
         U32 region_y = strtoul(region_y_str.c_str(), NULL, 10);
         gFirstSimHandle = to_region_handle(region_x, region_y);
     }
+
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    text = response["region_size_x"].asString();
+    if (!text.empty())
+    {
+        first_sim_size_x = strtoul(text.c_str(), NULL, 10);
+        LLViewerParcelMgr::getInstance()->initParcelsPerEdge((F32)first_sim_size_x);
+    }
+
+    // region Y size is currently unused, major refactoring required. - Patrick Sapinski (2/10/2011)
+    text = response["region_size_y"].asString();
+    if (!text.empty())
+        first_sim_size_y = strtoul(text.c_str(), NULL, 10);
+#endif
 
     const std::string look_at_str = response["look_at"];
     if (!look_at_str.empty())
@@ -4409,6 +4636,37 @@ bool process_login_success_response()
         LL_INFOS("LLStartUp") << "map-server-url : no map-server-url answer, we use the default setting for the map : " << map_server_url << LL_ENDL;
     }
 
+#if OPENSIM
+    // <FS:CR> FIRE-8063: Read Aurora web profile url from login data
+    std::string web_profile_url = response["web_profile_url"];
+    if (!web_profile_url.empty())
+    {
+        // We got an answer from the grid -> use that for map for the current session
+        gridMgr->setWebProfileUrl(web_profile_url);
+        LL_INFOS("LLStartup") << "web-profile-url : we got an answer from the grid : " << web_profile_url << LL_ENDL;
+    }
+    // <FS:CR> FIRE-10567 - Set classified fee, if it's available.
+    if (response.has("classified_fee"))
+    {
+        S32 classified_fee = response["classified_fee"];
+        gridMgr->setClassifiedFee(classified_fee);
+    }
+    else
+    {
+        gridMgr->setClassifiedFee(0); // Free is a sensible default
+    }
+    // <FS:CR> Set a parcel listing fee, if it's available
+    if (response.has("directory_fee"))
+    {
+        S32 directory_fee = response["directory_fee"];
+        gridMgr->setDirectoryFee(directory_fee);
+    }
+    else
+    {
+        gridMgr->setDirectoryFee(0);
+    }
+#endif // OPENSIM
+
     // Default male and female avatars allowing the user to choose their avatar on first login.
     // These may be passed up by SLE to allow choice of enterprise avatars instead of the standard
     // "new ruth."  Not to be confused with 'initial-outfit' below
@@ -4478,6 +4736,66 @@ bool process_login_success_response()
     }
 
     LLLoginInstance::getInstance()->saveMFAHash(response);
+
+#if OPENSIM
+    // <FS:Ansariel> OpenSim legacy economy support
+    if (gridMgr->isInOpenSim())
+    {
+        if (response.has("max-agent-groups") || response.has("max_groups"))
+        {
+            std::string max_agent_groups;
+            response.has("max_groups") ? max_agent_groups = response["max_groups"].asString()
+                                       : max_agent_groups = response["max-agent-groups"].asString();
+
+            gMaxAgentGroups = atoi(max_agent_groups.c_str());
+            LL_INFOS("LLStartup") << "gMaxAgentGroups read from login.cgi: " << gMaxAgentGroups << LL_ENDL;
+        }
+        else
+        {
+            gMaxAgentGroups = 0;
+            LL_INFOS("LLStartup") << "did not receive max-agent-groups. unlimited groups activated" << LL_ENDL;
+        }
+    }
+
+    // <FS:AW opensim currency support>
+    std::string currency = "L$";
+    if (response.has("currency"))
+    {
+        currency = response["currency"].asString();
+        LL_DEBUGS("OS_SETTINGS") << "currency " << currency << LL_ENDL;
+    }
+    else if (gridMgr->isInOpenSim())
+    {
+        currency = "OS$";
+        LL_DEBUGS("OS_SETTINGS") << "no currency in login response" << LL_ENDL;
+    }
+    // <COLOSI  opensim multi-currency support>
+    bool changed = LLGlobalEconomy::getInstance()->setGridCurrency(currency);
+    // If currency symbol has changed, update currency symbols where manually necessary.
+    if (changed)
+    {
+        LFSimFeatureHandler::updateCurrencySymbols();
+    }
+
+    // <FS:AW  opensim destinations and avatar picker>
+    if (response.has("avatar_picker_url"))
+    {
+        LL_DEBUGS("OS_SETTINGS") << "avatar_picker_url " << response["avatar_picker_url"] << LL_ENDL;
+    }
+    else if (gridMgr->isInOpenSim())
+    {
+        LL_DEBUGS("OS_SETTINGS") << "no avatar_picker_url in login response" << LL_ENDL;
+    }
+
+    if (response.has("destination_guide_url"))
+    {
+        LL_DEBUGS("OS_SETTINGS") << "destination_guide_url " << response["destination_guide_url"] << LL_ENDL;
+    }
+    else if (gridMgr->isInOpenSim())
+    {
+        LL_DEBUGS("OS_SETTINGS") << "no destination_guide_url in login response" << LL_ENDL;
+    }
+#endif
 
     bool success = false;
     // JC: gesture loading done below, when we have an asset system

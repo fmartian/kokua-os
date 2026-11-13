@@ -52,6 +52,16 @@ set(llinventory_HEADER_FILES
     lluserrelations.h
     )
 
+if (OPENSIM)
+list(APPEND llinventory_SOURCE_FILES
+    kokuaeconomy.cpp
+    )
+
+list(APPEND llinventory_HEADER_FILES
+    kokuaeconomy.h
+    )
+endif (OPENSIM)
+
 list(APPEND llinventory_SOURCE_FILES ${llinventory_HEADER_FILES})
 
 add_library (llinventory ${llinventory_SOURCE_FILES})

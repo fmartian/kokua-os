@@ -29,15 +29,15 @@
 
 #include "llcharacter.h"
 #include "lleditmenuhandler.h"
-#include "llundo.h"
+//#include "llundo.h"
 #include "lluuid.h"
 #include "llpointer.h"
-#include "llsafehandle.h"
+//#include "llsafehandle.h"
 #include "llsaleinfo.h"
 #include "llcategory.h"
 #include "v3dmath.h"
 #include "llquaternion.h"
-#include "llcoord.h"
+//#include "llcoord.h"
 #include "llframetimer.h"
 #include "llbbox.h"
 #include "llpermissions.h"
@@ -46,9 +46,9 @@
 #include "llmaterial.h"
 #include "lluicolor.h"
 
-#include <deque>
+//#include <deque>
 #include <boost/iterator/filter_iterator.hpp>
-#include <boost/signals2.hpp>
+//#include <boost/signals2.hpp>
 
 class LLMessageSystem;
 class LLViewerTexture;
@@ -62,6 +62,11 @@ const U8 UPD_ROTATION       = 0x02;
 const U8 UPD_SCALE          = 0x04;
 const U8 UPD_LINKED_SETS    = 0x08;
 const U8 UPD_UNIFORM        = 0x10; // used with UPD_SCALE
+
+// <FS:Ansariel> Moved here to make them publically accessible
+// For linked sets
+constexpr S32 MAX_CHILDREN_PER_TASK          = 255;
+constexpr S32 MAX_CHILDREN_PER_PHYSICAL_TASK = 32;
 
 // This is used by the DeRezObject message to determine where to put
 // derezed tasks.

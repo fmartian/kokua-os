@@ -35,10 +35,11 @@
 #include "llhost.h"
 #include "llpanel.h"
 #include "llextendedstatus.h"
-#include "llpanelenvironment.h"
+//#include "llpanelenvironment.h"
+#include "lltextbase.h"
 #include "llvlcomposition.h"
 
-#include "lleventcoro.h"
+//#include "lleventcoro.h"
 
 class LLAvatarName;
 class LLDispatcher;
@@ -59,6 +60,10 @@ class LLTextBox;
 class LLTextureCtrl;
 
 class LLPanelRegionGeneralInfo;
+#if OPENSIM
+// <FS:CR> OpenSim VarRegion - Region Settings Panel
+class LLPanelRegionOpenSettingsInfo;
+#endif
 class LLPanelRegionDebugInfo;
 class LLPanelRegionTerrainInfo;
 class LLPanelEstateInfo;
@@ -99,6 +104,10 @@ public:
     static LLPanelRegionExperiences* getPanelExperiences();
     static LLPanelRegionGeneralInfo* getPanelGeneral();
     static LLPanelRegionEnvironment* getPanelEnvironment();
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion - Region Settings Panel
+    static LLPanelRegionOpenSettingsInfo* getPanelOpenSettings();
+#endif
 
     // from LLPanel
     void refresh() override;
@@ -181,6 +190,27 @@ protected:
 
 /////////////////////////////////////////////////////////////////////////////
 // Actual panels start here
+/////////////////////////////////////////////////////////////////////////////
+
+#if OPENSIM
+// <FS:CR> OpenSim VarRegion - Region Settings Panel
+class LLPanelRegionOpenSettingsInfo : public LLPanelRegionInfo
+{
+public:
+    LLPanelRegionOpenSettingsInfo() : LLPanelRegionInfo() {}
+    ~LLPanelRegionOpenSettingsInfo() {}
+
+    virtual bool refreshFromRegion(LLViewerRegion* region);
+
+    // LLPanel
+    virtual bool postBuild();
+
+protected:
+    static void onClickOrs(void* userdata);
+    static void onClickHelp(void* data);
+};
+#endif
+
 /////////////////////////////////////////////////////////////////////////////
 
 class LLPanelRegionGeneralInfo : public LLPanelRegionInfo

@@ -33,16 +33,28 @@
 exoGroupMuteList::exoGroupMuteList()
 : mMuted()
 {
+#if OPENSIM
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        loadMuteList();
+    }
+#endif
 }
 
 bool exoGroupMuteList::isMuted(const LLUUID& group) const
 {
+#if OPENSIM
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        return mMuted.count(group) > 0;
+    }
+#endif
     return (bool)LLMuteList::instance().isMuted(LLUUID::null, getMutelistString(group));
 }
 
 bool exoGroupMuteList::isLoaded() const
 {
-#ifdef OPENSIM
+#if OPENSIM
     if (LLGridManager::instance().isInOpenSim())
     {
         return true;
@@ -55,14 +67,35 @@ void exoGroupMuteList::add(const LLUUID& group)
 {
     LLGroupActions::endIM(group); // Actually kill ongoing conversation
 
+#if OPENSIM
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        if (mMuted.insert(group).second)
+        {
+            saveMuteList();
+        }
+        return;
+    }
+#endif
     LLMuteList::instance().add(LLMute(LLUUID::null, getMutelistString(group), LLMute::BY_NAME));
 }
 
 void exoGroupMuteList::remove(const LLUUID& group)
 {
+#if OPENSIM
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        if (mMuted.erase(group))
+        {
+            saveMuteList();
+        }
+        return;
+    }
+#endif
     LLMuteList::instance().remove(LLMute(LLUUID::null, getMutelistString(group), LLMute::BY_NAME));
 }
 
+#if OPENSIM
 bool exoGroupMuteList::loadMuteList()
 {
     std::string path = getFilePath();
@@ -111,6 +144,7 @@ std::string exoGroupMuteList::getFilePath() const
 {
     return gDirUtilp->getExpandedFilename(LL_PATH_PER_SL_ACCOUNT, "muted_groups.xml");
 }
+#endif
 
 void exoGroupMuteList::addDeferredGroupChat(const LLUUID& group)
 {

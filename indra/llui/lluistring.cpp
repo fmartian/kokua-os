@@ -30,6 +30,9 @@
 #include "llfasttimer.h"
 #include "llsd.h"
 #include "lltrans.h"
+#if OPENSIM
+#include "kokuaeconomy.h"
+#endif
 
 LLTrace::BlockTimerStatHandle FTM_UI_STRING("UI String");
 
@@ -143,6 +146,12 @@ void LLUIString::updateResult() const
         combined_args.insert(mArgs->begin(), mArgs->end());
     }
     LLStringUtil::format(mResult, combined_args);
+#if OPENSIM
+    // <FS:AW opensim currency support>
+    // Impact on lag: at average frame time 15.9 ms
+    // FTM_UI_STRING 0.01ms both with/without wrapCurrency
+    LLGlobalEconomy::getInstance()->wrapCurrency(mResult);
+#endif
 }
 
 void LLUIString::updateWResult() const

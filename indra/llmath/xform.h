@@ -37,6 +37,13 @@ constexpr F32 DEFAULT_MAX_PRIM_SCALE_NO_MESH = 10.f;
 constexpr F32 MIN_PRIM_SCALE = 0.01f;
 constexpr F32 MAX_PRIM_SCALE = 65536.f; // something very high but not near FLT_MAX
 
+// <AW: opensim-limits>
+constexpr F32 OS_MAX_OBJECT_Z           = 10000.f;
+constexpr F32 OS_MIN_OBJECT_Z           = -10000.f;
+constexpr F32 OS_DEFAULT_MAX_PRIM_SCALE = 256.f;
+constexpr F32 OS_MIN_PRIM_SCALE         = 0.001f;
+constexpr F32 OS_MAX_PRIM_SCALE         = 65536.f; // something very high but not near FLT_MAX
+// <AW: opensim-limits>
 class LLXform
 {
 protected:

@@ -59,7 +59,7 @@
     layout="topleft"
     left="10"
     name="QualitySpeed"
-    top_delta="20" 
+    top_delta="20"
     width="400">
       Quality &amp; speed:
   </text>
@@ -338,7 +338,7 @@
   width="200">
     <button.commit_callback
       function="Pref.AutoAdjustments"/>
-  </button>  
+  </button>
   <check_box
     control_name="RenderGeometryOverloadProtection"
     initial_value="true"
@@ -477,7 +477,7 @@
     left_delta="436"
     width="20">
      m
-  </text> 
+  </text>
   <slider
     control_name="RenderMaxPartCount"
     decimal_digits="0"
@@ -1188,9 +1188,9 @@
       layout="topleft"
       left="385"
       name="vert_border"
-      top="16"      
+      top="16"
       width="0"/>
--->  
+-->
   <text
     type="string"
     length="1"
@@ -1316,7 +1316,7 @@
    height="18"
    layout="topleft"
    left_delta="130"
-   top_delta="0" 
+   top_delta="0"
    name="ShadowDetail"
    width="150">
      <combo_box.item
@@ -1345,7 +1345,6 @@
     <check_box.commit_callback
       function="Pref.RenderOptionUpdate" />
   </check_box>
-  
   </panel>
 
 <!--PBR (and other viewer 7 new options)-->

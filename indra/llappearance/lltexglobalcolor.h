@@ -77,7 +77,12 @@ public:
     /*virtual*/ LLViewerVisualParam* cloneParam(LLWearable* wearable) const;
 protected:
     LLTexParamGlobalColor(const LLTexParamGlobalColor& pOther);
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    /*virtual*/ void onGlobalColorChanged(bool upload_bake);
+#else
     /*virtual*/ void onGlobalColorChanged();
+#endif
 private:
     LLTexGlobalColor*       mTexGlobalColor;
 };

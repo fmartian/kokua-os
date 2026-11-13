@@ -37,10 +37,10 @@
 #include "llviewerregion.h"
 #include "llvopartgroup.h"
 #include "llworld.h"
-#include "llmutelist.h"
+//#include "llmutelist.h"
 #include "pipeline.h"
 #include "llspatialpartition.h"
-#include "llvoavatarself.h"
+//#include "llvoavatarself.h"
 #include "llvovolume.h"
 
 const F32 PART_SIM_BOX_SIDE = 16.f;
@@ -764,7 +764,12 @@ void LLViewerPartSim::updateSimulation()
 
         if ((LLDrawable::getCurrentFrame()+mViewerPartGroups[i]->mID)%visirate == 0)
         {
+#if OPENSIM
+            // <FS:CR> FIRE-11593: Opensim "4096 Bug" Fix by Latif Khalifa
+            if (vobj && !vobj->isDead() && vobj->mDrawable)
+#else
             if (vobj && !vobj->isDead())
+#endif
             {
                 gPipeline.markRebuild(vobj->mDrawable, LLDrawable::REBUILD_ALL);
             }

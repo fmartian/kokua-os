@@ -36,36 +36,39 @@
 #include "llglheaders.h"
 #include "llhost.h"
 #include "llimage.h"
-#include "llimagebmp.h"
-#include "llimagej2c.h"
-#include "llimagetga.h"
+//#include "llimagebmp.h"
+//#include "llimagej2c.h"
+//#include "llimagetga.h"
 #include "llstl.h"
-#include "message.h"
+//#include "message.h"
 #include "lltimer.h"
-#include "v4coloru.h"
-#include "llnotificationsutil.h"
+//#include "v4coloru.h"
+//#include "llnotificationsutil.h"
 
 // viewer includes
 #include "llimagegl.h"
-#include "lldrawpool.h"
+//#include "lldrawpool.h"
 #include "lltexturefetch.h"
 #include "llviewertexturelist.h"
 #include "llviewercontrol.h"
 #include "pipeline.h"
 #include "llappviewer.h"
 #include "llface.h"
-#include "llviewercamera.h"
+//#include "llviewercamera.h"
 #include "lltextureentry.h"
 #include "lltexturemanagerbridge.h"
-#include "llmediaentry.h"
+//#include "llmediaentry.h"
 #include "llvovolume.h"
 #include "llviewermedia.h"
 #include "lltexturecache.h"
 #include "llviewerwindow.h"
 #include "llwindow.h"
+#if OPENSIM
+#include "llviewernetwork.h"
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "llmimetypes.h"
+//#include "llmimetypes.h"
 // statics
 LLPointer<LLViewerTexture>        LLViewerTexture::sNullImagep = nullptr;
 LLPointer<LLViewerTexture>        LLViewerTexture::sBlackImagep = nullptr;
@@ -1111,7 +1114,13 @@ LLViewerFetchedTexture::LLViewerFetchedTexture(const LLUUID& id, FTType f_type, 
     mFTType = f_type;
     if (mFTType == FTT_HOST_BAKE)
     {
+#if OPENSIM
+        // FM: Silence this warning on OpenSim
+        if (LLGridManager::getInstance()->isInSecondLife())
+            LL_WARNS() << "Unsupported fetch type " << mFTType << LL_ENDL;
+#else
         LL_WARNS() << "Unsupported fetch type " << mFTType << LL_ENDL;
+#endif
         // <FS:Ansariel> According to Monty Linden in BUG-871, baked textures can be fetched via HTTP, too!
         //               According to Cinder it works also on OpenSim.
         //mCanUseHTTP = false;

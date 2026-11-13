@@ -30,7 +30,7 @@
 // A ViewerRegion is a class that contains a bunch of objects and surfaces
 // that are in to a particular region.
 #include <string>
-#include <boost/signals2.hpp>
+//#include <boost/signals2.hpp>
 
 #include "llcorehttputil.h"
 #include "llwind.h"
@@ -38,7 +38,7 @@
 #include "llstring.h"
 #include "llregionflags.h"
 #include "lluuid.h"
-#include "llweb.h"
+//#include "llweb.h"
 #include "llcapabilityprovider.h"
 #include "m4math.h"                 // LLMatrix4
 #include "llframetimer.h"
@@ -113,6 +113,10 @@ public:
                    const F32 region_width_meters);
     ~LLViewerRegion();
 
+#if OPENSIM
+    // <FS:CR> FIRE-11593: Opensim "4096 Bug" Fix by Latif Khalifa
+    void initPartition(bool reinit);
+#endif
     // Call this after you have the region name and handle.
     void loadObjectCache();
     void saveObjectCache();
@@ -154,6 +158,10 @@ public:
 
     void setWaterHeight(F32 water_level);
     F32 getWaterHeight() const;
+#if OPENSIM
+    // <FS:CR> OPenSim VarRegion
+    void rebuildWater();
+#endif
 
     bool isVoiceEnabled() const;
 
@@ -254,6 +262,15 @@ public:
     // regions are expensive to release, this function gradually releases cache from memory
     static void idleCleanup(F32 max_update_time);
 
+#if OPENSIM
+    // <FS:Ansariel> FIRE-19563: Scaling for OpenSim VarRegions
+    F32 getWidthScaleFactor() const { return mWidthScaleFactor; }
+    // <FS:humbletim/> FIRE-33613: [OpenSim] [PBR] Camera cannot be located at negative Z
+    F32 getMinSimHeight() const { return mMinSimHeight; }
+
+    S32 getRegionMaxBakes() const { return mMaxBakes; } // <FS:Beq/> FS BOM for OS max bakes restriction
+    S32 getRegionMaxTEs() const { return mMaxTEs; }     // <FS:Beq/> FS BOM for OS max TEs restriction
+#endif
     void idleUpdate(F32 max_update_time);
     void lightIdleUpdate();
     bool addVisibleGroup(LLViewerOctreeGroup* group);
@@ -338,6 +355,10 @@ public:
 
     void getInfo(LLSD& info);
 
+#if OPENSIM
+    // <FS:Beq> FIRE-35602 etc - Mesh not appearing after TP/login (opensim only)
+    bool meshRezEnabled() const;
+#endif // OPENSIM
     bool meshUploadEnabled() const;
 
     bool bakesOnMeshEnabled() const;
@@ -355,6 +376,11 @@ public:
     bool dynamicPathfindingEnabled() const;
 
     bool avatarHoverHeightEnabled() const;
+
+#if OPENSIM
+    // </FS:CR>
+    const std::set<std::string, std::less<>>& getGods() const { return mGodNames; };
+#endif
 
     typedef enum
     {
@@ -399,6 +425,10 @@ public:
     friend std::ostream& operator<<(std::ostream &s, const LLViewerRegion &region);
     /// implements LLCapabilityProvider
     virtual std::string getDescription() const;
+#if OPENSIM
+    // <FS:Ansariel> [UDP Assets]
+    std::string getHttpUrl() const { return mHttpUrl; }
+#endif
     std::string getViewerAssetUrl() const { return mViewerAssetUrl; }
 
     U32 getNumOfVisibleGroups() const;
@@ -589,6 +619,18 @@ public:
 
     typedef std::map<U32, std::vector<U32> > orphan_list_t;
     orphan_list_t mOrphanMap;
+
+#if OPENSIM
+    F32 mWidthScaleFactor; // <FS:Ansariel> FIRE-19563: Scaling for OpenSim VarRegions
+    S32 mMaxBakes;         // <FS:Beq/> store max bakes on the region
+    S32 mMaxTEs;           // <FS:Beq/> store max texture entries on the region
+    F32 mMinSimHeight;     // <FS:humbletim/> FIRE-33613: [OpenSim] [PBR] Camera cannot be located at negative Z
+
+    std::string mHttpUrl; // <FS:Ansariel> [UDP Assets]
+
+    // <FS:CR> Opensim region capabilities
+    std::set<std::string, std::less<>> mGodNames;
+#endif
 
     mutable tex_matrix_t mWorldMapTiles;
 

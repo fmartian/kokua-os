@@ -107,13 +107,17 @@ public:
     void toggleStream(bool enable);
     // </FS:Zi>
 
+#if OPENSIM
+    // <COLOSI opensim multi-currency support>
+    // force update of the "BUY L$" button when currency symbol is changed.
+    void updateCurrencySymbols();
+#endif
 private:
 
     void onClickBuyCurrency();
     void onClickShop();
     void onVolumeChanged(const LLSD& newvalue);
     void onVoiceChanged(const LLSD& newvalue);
-    void onObscureBalanceChanged(const LLSD& newvalue);
 
     void onMouseEnterPresetsCamera();
     void onMouseEnterPresets();
@@ -158,8 +162,7 @@ private:
     LLTextBox   *mBoxBalance;
     LLButton    *mStreamToggle;     // ## Zi: Media/Stream separation
     LLButton    *mMediaToggle;
-//unused    LLButton    *mBandwidthButton;
-    LLView      *mScriptOut;
+
     LLFrameTimer    mStatusBarUpdateTimer;
     LLFrameTimer    mClockUpdateTimer;
 

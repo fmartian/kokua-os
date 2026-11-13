@@ -33,8 +33,8 @@
 #include "llexception.h"
 #include "stringize.h"
 
-#include <openssl/x509_vfy.h>
-#include <openssl/ssl.h>
+//#include <openssl/x509_vfy.h>
+//#include <openssl/ssl.h>
 #include "llsecapi.h"
 #include <curl/curl.h>
 
@@ -118,13 +118,11 @@ static const struct
 static void setting_changed();
 static void ssl_verification_changed();
 
-
 LLAppCoreHttp::HttpClass::HttpClass()
     : mPolicy(LLCore::HttpRequest::DEFAULT_POLICY_ID),
       mConnLimit(0U),
       mPipelined(false)
 {}
-
 
 LLAppCoreHttp::LLAppCoreHttp()
     : mRequest(NULL),
@@ -134,13 +132,11 @@ LLAppCoreHttp::LLAppCoreHttp()
       mPipelined(true)
 {}
 
-
 LLAppCoreHttp::~LLAppCoreHttp()
 {
     delete mRequest;
     mRequest = NULL;
 }
-
 
 void LLAppCoreHttp::init()
 {
@@ -304,7 +300,6 @@ void LLAppCoreHttp::init()
     }
 }
 
-
 void setting_changed()
 {
     LLAppViewer::instance()->getAppCoreHttp().refreshSettings(false);
@@ -339,7 +334,6 @@ void LLAppCoreHttp::requestStop()
         mStopRequested = LLTimer::getTotalSeconds();
     }
 }
-
 
 void LLAppCoreHttp::cleanup()
 {
@@ -388,7 +382,6 @@ void LLAppCoreHttp::cleanup()
                             << LL_ENDL;
     }
 }
-
 
 void LLAppCoreHttp::refreshSettings(bool initial)
 {
@@ -578,12 +571,8 @@ LLCore::HttpStatus LLAppCoreHttp::sslVerify(const std::string &url,
         // any other odd error, we just handle as a connect error.
         result = LLCore::HttpStatus(LLCore::HttpStatus::EXT_CURL_EASY, CURLE_SSL_CONNECT_ERROR);
     }
-
     return result;
 }
-
-
-
 
 void LLAppCoreHttp::onCompleted(LLCore::HttpHandle, LLCore::HttpResponse *)
 {

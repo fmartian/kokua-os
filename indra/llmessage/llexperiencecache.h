@@ -50,6 +50,15 @@ public:
     typedef std::function<void(const LLSD &)> ExperienceGetFn_t;
 
     void setCapabilityQuery(CapabilityQuery_t queryfn);
+#if OPENSIM
+    // FM: Experience capability is usually not available on OpenSim grids. Indicating
+    // we are on such a grid allows to reduce spamming the log with warnings about
+    // being unable to do Experience queries.
+    // We could directly query the LLGridManager if we are in OpenSim but this module
+    // is not part of the newview module and should never have to access anything from
+    // there.
+    void setOpenSimFlag(bool isInOpenSim) { mIsInOpenSim = isInOpenSim; }
+#endif
     void cleanup();
 
     //-------------------------------------------
@@ -139,7 +148,11 @@ private:
     RequestQueue_t  mRequestQueue;
     PendingQueue_t  mPendingQueue;
 
-    LLFrameTimer    mEraseExpiredTimer;    // Periodically clean out expired entries from the cache
+#if OPENSIM
+    bool            mIsInOpenSim;           // Flag used to throttle warning loggings that happen frequently in OpenSim
+#endif
+
+    LLFrameTimer    mEraseExpiredTimer;     // Periodically clean out expired entries from the cache
     CapabilityQuery_t mCapability;
     std::string     mCacheFileName;
     static bool     sShutdown; // control for coroutines, they exist out of LLExperienceCache's scope, so they need a static control

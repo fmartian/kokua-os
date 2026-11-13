@@ -42,7 +42,7 @@
 
 #include "llerror.h"
 #include "net.h"
-#include "llstringtable.h"
+//#include "llstringtable.h"
 #include "llcircuit.h"
 #include "lltimer.h"
 #include "llpacketring.h"
@@ -50,8 +50,8 @@
 #include "llhttpnode.h"
 //#include "llpacketack.h"
 #include "llsingleton.h"
-#include "message_prehash.h"
-#include "llstl.h"
+#include "message_prehash.h" // transitively needed for all message handlers
+//#include "llstl.h"
 #include "llmsgvariabletype.h"
 #include "llmessagesenderinterface.h"
 
@@ -889,6 +889,10 @@ public:
     // is read: use with caution!
     void receivedMessageFromTrustedSender();
 
+#if OPENSIM
+    // <FS:Ansariel> Restore original LLMessageSystem HTTP options for OpenSim
+    void setIsInOpenSim(bool in_opensim) { mIsInOpenSim = in_opensim; }
+#endif
 private:
     typedef std::function<void(S32)>  UntrustedCallback_t;
     void sendUntrustedSimulatorMessageCoro(std::string url, std::string message, LLSD body, UntrustedCallback_t callback);
@@ -1006,6 +1010,10 @@ private:
 
     /** Find, create or revive circuit for host as needed */
     LLCircuitData* findCircuit(const LLHost& host, bool resetPacketId);
+#if OPENSIM
+    // <FS:Ansariel> Restore original LLMessageSystem HTTP options for OpenSim
+    bool mIsInOpenSim;
+#endif
 };
 
 

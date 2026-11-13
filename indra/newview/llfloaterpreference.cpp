@@ -49,16 +49,16 @@
 #include "llfocusmgr.h"
 //#include "llfirstuse.h"
 #include "llfloaterreg.h"
-#include "llfloaterabout.h"
+//#include "llfloaterabout.h"
 // [SL:KB] - Patch: World-RenderExceptions | Checked: Catznip-5.2
 #include "llfloaterblocked.h"
 // [/SL:KB]
 #include "llfavoritesbar.h"
 //#include "llfloaterpreferencesgraphicsadvanced.h"
 #include "llfloaterperformance.h"
-#include "llfloatersidepanelcontainer.h"
+//#include "llfloatersidepanelcontainer.h"
 #include "llfloaterimsession.h"
-#include "llkeyboard.h"
+//#include "llkeyboard.h"
 #include "llmodaldialog.h"
 #include "llnavigationbar.h"
 #include "llfloaterimnearbychat.h"
@@ -66,10 +66,10 @@
 #include "llnotificationsutil.h"
 #include "llnotificationtemplate.h"
 #include "llpanellogin.h"
-#include "llpanelvoicedevicesettings.h"
+//#include "llpanelvoicedevicesettings.h"
 #include "llradiogroup.h"
 #include "llsearchcombobox.h"
-#include "llsky.h"
+//#include "llsky.h"
 #include "llscrolllistctrl.h"
 #include "llscrolllistitem.h"
 #include "llsliderctrl.h"
@@ -77,60 +77,61 @@
 #include "lltrans.h"
 #include "llviewercontrol.h"
 #include "llviewercamera.h"
-#include "llviewereventrecorder.h"
-#include "llviewermessage.h"
+//#include "llviewereventrecorder.h"
+//#include "llviewermessage.h"
 #include "llviewerwindow.h"
 #include "llviewershadermgr.h"
 #include "llviewerthrottle.h"
-#include "llvoavatarself.h"
-#include "llvotree.h"
+//#include "llvoavatarself.h"
+//#include "llvotree.h"
 #include "llfloaterpathfindingconsole.h"
 // linden library includes
 #include "llavatarnamecache.h"
 #include "llerror.h"
 #include "llfontgl.h"
-#include "llrect.h"
+//#include "llrect.h"
 #include "llstring.h"
 
 // project includes
 
 #include "llbutton.h"
-#include "llflexibleobject.h"
+//#include "llflexibleobject.h"
 #include "lllineeditor.h"
-#include "llresmgr.h"
+//#include "llresmgr.h"
 #include "llspinctrl.h"
 #include "llstartup.h"
 #include "lltextbox.h"
 #include "llui.h"
-#include "llviewerobjectlist.h"
+//#include "llviewerobjectlist.h"
 #include "llvoavatar.h"
-#include "llvovolume.h"
+//#include "llvovolume.h"
 #include "llwindow.h"
-#include "llworld.h"
-#include "pipeline.h"
+//#include "llworld.h"
+//#include "pipeline.h"
 #include "lluictrlfactory.h"
 #include "llviewermedia.h"
-#include "llpluginclassmedia.h"
+//#include "llpluginclassmedia.h"
 #include "llteleporthistorystorage.h"
-#include "llproxy.h"
-#include "llweb.h"
+//#include "llproxy.h"
+//#include "llweb.h"
 #include "llviewernetwork.h"
 #include "lllogininstance.h"        // to check if logged in yet
-#include "llsdserialize.h"
+//#include "llsdserialize.h"
 #include "llaudioengine.h"
 #include "llvieweraudio.h"
-#include "llviewermedia.h"
-#include "llviewermedia_streamingaudio.h"
-#include "llviewertexturelist.h"
+//#include "llviewermedia.h"
+//#include "llviewermedia_streamingaudio.h"
+//#include "llviewertexturelist.h"
 #include "llpresetsmanager.h"
 #include "llinventoryfunctions.h"
 
 #include "llsearchableui.h"
 #include "llperfstats.h"
+#include "exogroupmutelist.h"
 
 // Firestorm Includes
 #include "lldiriterator.h"  // <Kadah> for populating the fonts combo
-#include "llpanelblockedlist.h"
+//#include "llpanelblockedlist.h"
 
 #include "lltoolbarview.h"
 #include "../llcrashlogger/llcrashlogger.h"
@@ -338,6 +339,10 @@ std::string LLFloaterPreference::sSkin = "";
 LLFloaterPreference::LLFloaterPreference(const LLSD& key)
     : LLFloater(key),
     mGotPersonalInfo(false),
+#if OPENSIM
+    // <FS:Ansariel> Keep this for OpenSim
+    mOriginalIMViaEmail(false),
+#endif
     mLanguageChanged(false),
     mAvatarDataInitialized(false),
     mSearchDataDirty(true)
@@ -404,7 +409,7 @@ LLFloaterPreference::LLFloaterPreference(const LLSD& key)
     LLAvatarPropertiesProcessor::getInstance()->addObserver( gAgent.getID(), this );
 
     mComplexityChangedSignal = gSavedSettings.getControl("RenderAvatarMaxComplexity")->getCommitSignal()->connect(boost::bind(&LLFloaterPreference::updateComplexityText, this));
-    mImpostorsChangedSignal = gSavedSettings.getControl("RenderAvatarMaxNonImpostors")->getSignal()->connect(boost::bind(&LLFloaterPreference::updateIndirectMaxNonImpostors, this, _2));
+    mImpostersChangedSignal = gSavedSettings.getControl("RenderAvatarMaxNonImpostors")->getSignal()->connect(boost::bind(&LLFloaterPreference::updateIndirectMaxNonImpostors, this, _2));
 
     mCommitCallbackRegistrar.add("Pref.ClearLog",               boost::bind(&LLConversationLog::onClearLog, &LLConversationLog::instance()));
     mCommitCallbackRegistrar.add("Pref.DeleteTranscripts",      boost::bind(&LLFloaterPreference::onDeleteTranscripts, this));
@@ -514,9 +519,9 @@ bool LLFloaterPreference::postBuild()
     gSavedPerAccountSettings.getControl("SoundUploadFolder")->getSignal()->connect(boost::bind(&LLFloaterPreference::onChangeSoundFolder, this));
     gSavedPerAccountSettings.getControl("AnimationUploadFolder")->getSignal()->connect(boost::bind(&LLFloaterPreference::onChangeAnimationFolder, this));
 
-    LLTabContainer* tabcontainer = getChild<LLTabContainer>("pref core");
-    if (!tabcontainer->selectTab(gSavedSettings.getS32("LastPrefTab")))
-        tabcontainer->selectFirstTab();
+    LLTabContainer* pTabContainer = getChild<LLTabContainer>("pref core");
+    if (pTabContainer && !pTabContainer->selectTab(gSavedSettings.getS32("LastPrefTab")))
+        pTabContainer->selectFirstTab();
 
     getChild<LLUICtrl>("cache_location")->setEnabled(false); // make it read-only but selectable (STORM-227)
     std::string cache_location = gDirUtilp->getExpandedFilename(LL_PATH_CACHE, "");
@@ -625,7 +630,6 @@ bool LLFloaterPreference::postBuild()
 
 #ifndef LL_SEND_CRASH_REPORTS
     // Hide the crash report tab if crash reporting isn't enabled
-    LLTabContainer* pTabContainer = getChild<LLTabContainer>("pref core");
     if (pTabContainer)
     {
         LLPanel* pCrashReportPanel = pTabContainer->getPanelByName("crashreports");
@@ -634,6 +638,20 @@ bool LLFloaterPreference::postBuild()
     }
 #endif // LL_SEND_CRASH_REPORTS
 // [/SL:KB]
+
+// <FS:AW  opensim preferences>
+#if OPENSIM
+    childSetEnabled("show_grid_selection_check", !gSavedSettings.getBOOL("ForceShowGrid"));
+#else
+    // Hide the opensim tab if opensim isn't enabled
+    if (pTabContainer)
+    {
+        LLPanel* opensim_panel = pTabContainer->getPanelByName("opensim");
+        if (opensim_panel)
+            pTabContainer->removeTabPanel(opensim_panel);
+    }
+#endif
+
     // <FS:Kadah> Load the list of font settings
     populateFontSelectionCombo();
     // </FS:Kadah>
@@ -723,9 +741,9 @@ LLFloaterPreference::~LLFloaterPreference()
     {
         LLAvatarPropertiesProcessor::getInstance()->removeObserver(gAgent.getID(), this);
     }
+    mImpostersChangedSignal.disconnect();
     mComplexityChangedSignal.disconnect();
     mLODFactorChangedSignalAdvanced.disconnect();
-    mImpostorsChangedSignal.disconnect();
 }
 
 void LLFloaterPreference::draw()
@@ -793,9 +811,17 @@ void LLFloaterPreference::apply()
 
     if (mGotPersonalInfo)
     {
+#if OPENSIM
+        // <FS:Ansariel> Keep this for OpenSim
+        bool new_im_via_email = getChild<LLUICtrl>("send_im_to_email")->getValue().asBoolean();
+#endif
         bool new_hide_online = getChild<LLUICtrl>("online_visibility")->getValue().asBoolean();
 
-        if (new_hide_online != mOriginalHideOnlineStatus)
+        if (
+#if OPENSIM
+            new_im_via_email != mOriginalIMViaEmail ||
+#endif
+            new_hide_online != mOriginalHideOnlineStatus)
         {
             // This hack is because we are representing several different
             // possible strings with a single checkbox. Since most users
@@ -809,7 +835,11 @@ void LLFloaterPreference::apply()
              //Update showonline value, otherwise multiple applys won't work
                 mOriginalHideOnlineStatus = new_hide_online;
             }
+#if OPENSIM
+            gAgent.sendAgentUpdateUserInfo(new_im_via_email, mDirectoryVisibility);
+#else
             gAgent.sendAgentUpdateUserInfo(mDirectoryVisibility);
+#endif
         }
     }
 
@@ -1274,6 +1304,48 @@ void LLFloaterPreference::updateUserInfo(const std::string& visibility)
         instance->setPersonalInfo(visibility);
     }
 }
+
+#if OPENSIM
+// static
+void LLFloaterPreference::updateUserInfo(const std::string& visibility, bool im_via_email, const std::string& email)
+{
+    LLFloaterPreference* instance = LLFloaterReg::findTypedInstance<LLFloaterPreference>("preferences");
+    if (instance)
+    {
+        instance->setPersonalInfo(visibility, im_via_email, email);
+    }
+}
+
+void LLFloaterPreference::setPersonalInfo(const std::string& visibility, bool im_via_email, const std::string& email)
+{
+    // <FS:Ansariel> Keep this for OpenSim
+    mOriginalIMViaEmail = im_via_email;
+    setPersonalInfo(visibility);
+
+    // <FS:Ansariel> Keep this for OpenSim
+    if (LLGridManager::instance().isInSecondLife())
+    {
+        childSetEnabled("email_settings", true);
+        childSetVisible("email_settings", true);
+    }
+    else
+    {
+        std::string display_email(email);
+        if (display_email.size() > 30)
+        {
+            display_email.resize(30);
+            display_email += "...";
+        }
+
+        LLCheckBoxCtrl* send_im_to_email = getChild<LLCheckBoxCtrl>("send_im_to_email");
+        send_im_to_email->setVisible(true);
+        send_im_to_email->setEnabled(true);
+        send_im_to_email->setValue(im_via_email);
+        send_im_to_email->setLabelArg("[EMAIL]", display_email);
+    }
+    childSetVisible("email_settings_login_to_change", false);
+}
+#endif
 
 // static
 void LLFloaterPreference::refreshEnabledGraphics()
@@ -4784,11 +4856,11 @@ void FSPanelPreferenceBackup:: doRestoreSettings(const LLSD& notification, const
         gToolBarView->clearToolbars();
         LL_INFOS("SettingsBackup") << "reloading toolbars" << LL_ENDL;
         gToolBarView->loadToolbars(false);
-#ifdef OPENSIM
-        if (LLGridManager::instance().isInOpenSim())
+#if OPENSIM
+        if (LLGridManager::getInstance()->isInOpenSim())
         {
             LL_INFOS("SettingsBackup") << "reloading group mute list" << LL_ENDL;
-            exoGroupMuteList::instance().loadMuteList();
+            exoGroupMuteList::getInstance()->loadMuteList();
         }
 #endif
 // not in Kokua

@@ -24,7 +24,8 @@
  * $/LicenseInfo$
  */
 
-// Use me only if you need to stub out some helper functions, not if you e.g. need sane numbers from countFilesInDir
+// Use me only if you need to stub out some helper functions, not if you e.g. need
+// sane data from any of these methods
 
 LLDir::LLDir() {}
 LLDir::~LLDir() {}
@@ -49,6 +50,7 @@ public:
     void initAppDirs(const std::string &app_name, const std::string &) override {}
 
     std::string getCurPath() override { return "CUR_PATH_FROM_LLDIR"; }
+    bool getNextFileInDir(const std::string &dirname, const std::string &mask, std::string &fname) override {return false; }
     bool fileExists(const std::string &filename) const override { return false; }
 
     std::string getLLPluginLauncher()  override { return ""; }

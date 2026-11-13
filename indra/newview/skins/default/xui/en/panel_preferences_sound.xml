@@ -701,21 +701,21 @@
       width="144" />
       <icon
       height="18"
-      image_name="Parcel_Voice_Light"
+      image_name="Parcel_Voice_Dark"
       left="275"
       name="speaker_icon"
       mouse_opaque="false"
       top_pad="-20"
       visible="true"
-      width="22" />
+      width="18" />
       <text
           font.style="BOLD"
           type="string"
           length="1"
           follows="left|top"
-          height="15"
+          height="16"
           layout="topleft"
-          left_pad="0"
+          left_pad="3"
           name="Output"
           width="66">
           Output
@@ -727,7 +727,7 @@
       left_pad="0"
       max_chars="128"
       name="voice_output_device"
-      top_delta="-3"
+      top_delta="-5"
       width="144" />
       <text
           type="string"
@@ -735,9 +735,9 @@
           follows="left|top"
           height="10"
           layout="topleft"
-          left_delta="-360"
+          left="14"
           name="Volume label"
-          top_pad="4"
+          top_pad="12"
           width="80">
           Input Volume:
       </text>
@@ -748,61 +748,83 @@
       increment="0.025"
       initial_value="1.0"
       layout="topleft"
-      left_pad="5"
+      left_pad="10"
       max_val="2"
       name="mic_volume_slider"
       tool_tip="Change the volume using this slider"
-      top_pad="-8"
+      top_pad="-10"
       width="220" />
       <text
           type="string"
           text_color="EmphasisColor"
           length="1"
           follows="left|top"
-          height="18"
+          height="10"
           layout="topleft"
-          left_pad="5"
+          left_pad="0"
           name="wait_text"
           top_delta="-1"
           width="130">
           Please wait/Is voice on?
       </text>
       <locate
-      height="20"
+      height="18"
       layout="topleft"
-      left_delta="0"
+      left_delta="20"
       name="bar0"
-      top_delta="-2"
-      width="20" />
+      top_delta="0"
+      width="18" />
       <locate
-      height="20"
+      height="18"
       layout="topleft"
       left_pad="5"
       name="bar1"
       top_delta="0"
-      width="20" />
+      width="18" />
       <locate
-      height="20"
+      height="18"
       layout="topleft"
       left_pad="5"
       name="bar2"
       top_delta="0"
-      width="20" />
+      width="18" />
       <locate
-      height="20"
+      height="18"
       layout="topleft"
       left_pad="5"
       name="bar3"
       top_delta="0"
-      width="20" />
+      width="18" />
       <locate
-      height="20"
+      height="18"
       layout="topleft"
       left_pad="5"
       name="bar4"
       top_delta="0"
-      width="20" />
-  </panel>
+      width="18" />
+    <text
+     type="string"
+     name="disabled_text"
+     text_color="EmphasisColor"
+     length="1"
+     follows="right|top"
+     height="18"
+     layout="topleft"
+     left_delta="-100"
+     top_delta="5"
+     width="110">
+        Disabled
+    </text>
+    <button
+       follows="right|top"
+       height="20"
+       layout="topleft"
+       left_delta="0"
+       name="unmute_btn"
+       label="Unmute"
+       top_delta="-6"
+       width="110" />
+      </panel>
     </panel>
   </tab_container>
 </panel>

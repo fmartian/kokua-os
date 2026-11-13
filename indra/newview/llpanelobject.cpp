@@ -31,26 +31,26 @@
 
 // linden library includes
 #include "llerror.h"
-#include "llfontgl.h"
+//#include "llfontgl.h"
 #include "llpermissionsflags.h"
 #include "llstring.h"
 #include "llvolume.h"
-#include "m3math.h"
+//#include "m3math.h"
 
 // project includes
 #include "llagent.h"
-#include "llbutton.h"
+//#include "llbutton.h"
 #include "llcalc.h"
 #include "llcheckboxctrl.h"
-#include "llcolorswatch.h"
+//#include "llcolorswatch.h"
 #include "llcombobox.h"
 #include "llfocusmgr.h"
 #include "llinventoryfunctions.h"
 #include "llinventorymodel.h"
 #include "llmanipscale.h"
 #include "llmenubutton.h"
-#include "llpreviewscript.h"
-#include "llresmgr.h"
+//#include "llpreviewscript.h"
+//#include "llresmgr.h"
 #include "llselectmgr.h"
 #include "llspinctrl.h"
 #include "lltexturectrl.h"
@@ -65,13 +65,13 @@
 #include "llviewerinventory.h"
 #include "llvovolume.h"
 #include "llworld.h"
-#include "pipeline.h"
+//#include "pipeline.h"
 #include "llviewercontrol.h"
-#include "lluictrlfactory.h"
+//#include "lluictrlfactory.h"
 #include "llwindow.h"
 //#include "llfirstuse.h"
 
-#include "lldrawpool.h"
+//#include "lldrawpool.h"
 
 //
 // Constants
@@ -284,6 +284,11 @@ bool    LLPanelObject::postBuild()
     // Start with everyone disabled
     clearCtrls();
 
+#if OPENSIM
+    // <FS:CR> OpenSim Limits
+    updateLimits(false); // default to non-attachment
+#endif
+
     return true;
 }
 
@@ -310,7 +315,56 @@ LLPanelObject::~LLPanelObject()
     // Children all cleaned up by default view destructor.
 }
 
-void LLPanelObject::getState( )
+#if OPENSIM
+// <AW: opensim-limits>
+void LLPanelObject::updateLimits(bool attachment)
+{
+    // <FS:CR> OpenSim VarRegion
+    // mRegionMaxHeight = LLWorld::getInstance()->getRegionMaxHeight();
+    // mCtrlPosZ->setMaxValue(mRegionMaxHeight);
+    //<FS:TS> FIRE-8205: Unable to edit attachments to negative coordinates
+    //  Only apply region size limits to position spinners if editing something
+    //    that's not an attachment. Attachments have their own limits.
+    if (attachment)
+    {
+        mCtrlPosX->setMinValue(-MAX_ATTACHMENT_DIST);
+        mCtrlPosX->setMaxValue(MAX_ATTACHMENT_DIST);
+        mCtrlPosY->setMinValue(-MAX_ATTACHMENT_DIST);
+        mCtrlPosY->setMaxValue(MAX_ATTACHMENT_DIST);
+        mCtrlPosZ->setMinValue(-MAX_ATTACHMENT_DIST);
+        mCtrlPosZ->setMaxValue(MAX_ATTACHMENT_DIST);
+    }
+    else
+    {
+        mCtrlPosX->setMinValue(LLWorld::getInstance()->getMinPrimXPos());
+        mCtrlPosX->setMaxValue(LLWorld::getInstance()->getMaxPrimXPos());
+        mCtrlPosY->setMinValue(LLWorld::getInstance()->getMinPrimYPos());
+        mCtrlPosY->setMaxValue(LLWorld::getInstance()->getMaxPrimYPos());
+        mCtrlPosZ->setMinValue(LLWorld::getInstance()->getMinPrimZPos());
+        mCtrlPosZ->setMaxValue(LLWorld::getInstance()->getMaxPrimZPos());
+    }
+    //</FS:TS> FIRE-8205: Unable to edit attachments to negative coordinates
+    mMinScale = LLWorld::getInstance()->getRegionMinPrimScale();
+    mMaxScale = LLWorld::getInstance()->getRegionMaxPrimScale();
+    mCtrlScaleX->setMinValue(mMinScale);
+    mCtrlScaleX->setMaxValue(mMaxScale);
+    mCtrlScaleY->setMinValue(mMinScale);
+    mCtrlScaleY->setMaxValue(mMaxScale);
+    mCtrlScaleZ->setMinValue(mMinScale);
+    mCtrlScaleZ->setMaxValue(mMaxScale);
+
+    mMaxHollowSize = LLWorld::getInstance()->getRegionMaxHollowSize();
+    mSpinHollow->setMaxValue(mMaxHollowSize);
+
+    mMinHoleSize = LLWorld::getInstance()->getRegionMinHoleSize();
+    mSpinScaleX->setMinValue(mMinHoleSize);
+    mSpinScaleY->setMinValue(mMinHoleSize);
+
+    mCheckPhysics->setEnabled(LLWorld::getInstance()->getAllowPhysicalPrims());
+}
+#endif
+
+void LLPanelObject::getState()
 {
     LLViewerObject* objectp = LLSelectMgr::getInstance()->getSelection()->getFirstRootObject();
     LLViewerObject* root_objectp = objectp;
@@ -358,6 +412,11 @@ void LLPanelObject::getState( )
     S32 selected_count = LLSelectMgr::getInstance()->getSelection()->getObjectCount();
     bool single_volume = (LLSelectMgr::getInstance()->selectionAllPCode( LL_PCODE_VOLUME ))
                          && (selected_count == 1);
+#if OPENSIM
+    // <FS:TS> FIRE-8205: Unable to edit attachment to negative coordinates
+    // Update the position limits depending on whether this is an attachment.
+    updateLimits(objectp->isAttachment());
+#endif
 
     bool enable_move;
     bool enable_modify;
@@ -907,9 +966,15 @@ void LLPanelObject::getState( )
         mSpinScaleY->set( scale_y );
         calcp->setVar(LLCalc::X_HOLE, scale_x);
         calcp->setVar(LLCalc::Y_HOLE, scale_y);
+#if OPENSIM
+        // <AW: opensim-limits>
+        mSpinScaleX->setMinValue(mMinHoleSize);
+        mSpinScaleY->setMinValue(mMinHoleSize);
+#else
         mSpinScaleX->setMinValue(OBJECT_MIN_HOLE_SIZE);
-        mSpinScaleX->setMaxValue(OBJECT_MAX_HOLE_SIZE_X);
         mSpinScaleY->setMinValue(OBJECT_MIN_HOLE_SIZE);
+#endif
+        mSpinScaleX->setMaxValue(OBJECT_MAX_HOLE_SIZE_X);
         mSpinScaleY->setMaxValue(OBJECT_MAX_HOLE_SIZE_Y);
         break;
     default:
@@ -945,7 +1010,12 @@ void LLPanelObject::getState( )
     else
     {
         mSpinHollow->setMinValue(0.f);
+#if OPENSIM
+        // <AW: opensim-limits>
+        mSpinHollow->setMaxValue(mMaxHollowSize);
+#else
         mSpinHollow->setMaxValue(95.f);
+#endif
     }
 
     // Update field enablement
@@ -1478,11 +1548,21 @@ void LLPanelObject::getVolumeParams(LLVolumeParams& volume_params)
     {
         scale_x = llclamp(
             scale_x,
+#if OPENSIM
+            // <AW: opensim-limits>
+            mMinHoleSize,
+#else
             OBJECT_MIN_HOLE_SIZE,
+#endif
             OBJECT_MAX_HOLE_SIZE_X);
         scale_y = llclamp(
             scale_y,
+#if OPENSIM
+            // <AW: opensim-limits>
+            mMinHoleSize,
+#else
             OBJECT_MIN_HOLE_SIZE,
+#endif
             OBJECT_MAX_HOLE_SIZE_Y);
 
         // Limit radius offset, based on taper and hole size y.
@@ -1620,14 +1700,33 @@ void LLPanelObject::sendRotation(bool btn_down)
     }
 }
 
+#if OPENSIM
+// patch up for mesh, to be removed during real mesh merge -Zi
+F32 llpanelobject_max_prim_scale()
+{
+    // <AW: opensim-limits>
+    //  if(gAgent.getRegion()->getCapability("GetMesh").empty())
+    //      return DEFAULT_MAX_PRIM_SCALE;
+    //  return 64.f;
+    return LLWorld::getInstance()->getRegionMaxPrimScale();
+    // </AW: opensim-limits>
+}
+#endif
 
 // BUG: Make work with multiple objects
 void LLPanelObject::sendScale(bool btn_down)
 {
     if (mObject.isNull()) return;
 
+#if OPENSIM
+    // make sure not to send larger/smaller values than permitted -Zi
+    // <AW: opensim-limits>
+    LLVector3 newscale(llclamp(mCtrlScaleX->get(), mMinScale, llpanelobject_max_prim_scale()),
+                       llclamp(mCtrlScaleY->get(), mMinScale, llpanelobject_max_prim_scale()),
+                       llclamp(mCtrlScaleZ->get(), mMinScale, llpanelobject_max_prim_scale()));
+#else
     LLVector3 newscale(mCtrlScaleX->get(), mCtrlScaleY->get(), mCtrlScaleZ->get());
-
+#endif
     LLVector3 delta = newscale - mObject->getScale();
     if (delta.magVec() >= 0.0005f || (mSizeChanged && !btn_down))
     {
@@ -1656,7 +1755,6 @@ void LLPanelObject::sendScale(bool btn_down)
 
     }
 }
-
 
 void LLPanelObject::sendPosition(bool btn_down)
 {
@@ -1828,7 +1926,6 @@ void LLPanelObject::refresh()
     getChild<LLSpinCtrl>("Scale Y")->setMaxValue(max_scale);
     getChild<LLSpinCtrl>("Scale Z")->setMaxValue(max_scale);
 }
-
 
 void LLPanelObject::draw()
 {
@@ -2009,7 +2106,6 @@ void LLPanelObject::onSelectSculpt(const LLSD& data)
     sendSculpt();
 }
 
-
 void LLPanelObject::onCommitSculpt( const LLSD& data )
 {
     sendSculpt();
@@ -2029,7 +2125,6 @@ bool LLPanelObject::onDropSculpt(LLInventoryItem* item)
 
     return true;
 }
-
 
 void LLPanelObject::onCancelSculpt(const LLSD& data)
 {
@@ -2232,10 +2327,16 @@ void LLPanelObject::onPasteSize()
 {
     if (!mHasClipboardSize) return;
 
+#if OPENSIM
+    // <AW: opensim-limits>
+    mClipboardSize.mV[VX] = llclamp(mClipboardSize.mV[VX], mMinScale, llpanelobject_max_prim_scale());
+    mClipboardSize.mV[VY] = llclamp(mClipboardSize.mV[VY], mMinScale, llpanelobject_max_prim_scale());
+    mClipboardSize.mV[VZ] = llclamp(mClipboardSize.mV[VZ], mMinScale, llpanelobject_max_prim_scale());
+#else
     mClipboardSize.mV[VX] = llclamp(mClipboardSize.mV[VX], MIN_PRIM_SCALE, DEFAULT_MAX_PRIM_SCALE);
     mClipboardSize.mV[VY] = llclamp(mClipboardSize.mV[VY], MIN_PRIM_SCALE, DEFAULT_MAX_PRIM_SCALE);
     mClipboardSize.mV[VZ] = llclamp(mClipboardSize.mV[VZ], MIN_PRIM_SCALE, DEFAULT_MAX_PRIM_SCALE);
-
+#endif
     mCtrlScaleX->set(mClipboardSize.mV[VX]);
     mCtrlScaleY->set(mClipboardSize.mV[VY]);
     mCtrlScaleZ->set(mClipboardSize.mV[VZ]);

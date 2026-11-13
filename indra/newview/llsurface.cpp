@@ -242,16 +242,48 @@ void LLSurface::initTextures()
     //
     // Water object
     //
-    if (gSavedSettings.getBOOL("RenderWater") )
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    if (gSavedSettings.getBOOL("RenderWater") && LLWorld::getInstance()->getAllowRenderWater())
+#else
+    if (gSavedSettings.getBOOL("RenderWater"))
+#endif
     {
         mWaterObjp = (LLVOWater *)gObjectList.createObjectViewer(LLViewerObject::LL_VO_WATER, mRegionp);
         gPipeline.createObject(mWaterObjp);
         LLVector3d water_pos_global = from_region_handle(mRegionp->getHandle());
-        water_pos_global += LLVector3d(128.0, 128.0, DEFAULT_WATER_HEIGHT);     // region doesn't have a valid water height yet
+#if OPENSIM
+        // <FS:CR>OpenSim VarRegion
+        water_pos_global += LLVector3d(mRegionp->getWidth() / 2, mRegionp->getWidth() / 2, DEFAULT_WATER_HEIGHT);
+#else
+        water_pos_global += LLVector3d(128.0, 128.0, DEFAULT_WATER_HEIGHT); // region doesn't have a valid water height yet
+#endif
         mWaterObjp->setPositionGlobal(water_pos_global);
     }
 }
 
+#if OPENSIM
+void LLSurface::rebuildWater()
+{
+    bool renderwater      = gSavedSettings.getBOOL("RenderWater") && LLWorld::getInstance()->getAllowRenderWater();
+    bool prev_renderwater = !mWaterObjp.isNull();
+
+    if (prev_renderwater && !renderwater)
+    {
+        gObjectList.killObject(mWaterObjp);
+    }
+
+    if (!prev_renderwater && renderwater)
+    {
+        mWaterObjp = (LLVOWater*)gObjectList.createObjectViewer(LLViewerObject::LL_VO_WATER, mRegionp);
+        gPipeline.createObject(mWaterObjp);
+        LLVector3d water_pos_global = from_region_handle(mRegionp->getHandle());
+        water_pos_global += LLVector3d(mRegionp->getWidth() / 2, mRegionp->getWidth() / 2, DEFAULT_WATER_HEIGHT);
+        // </FS:CR> OpenSim VarRegion
+        mWaterObjp->setPositionGlobal(water_pos_global);
+    }
+}
+#endif
 
 void LLSurface::setOriginGlobal(const LLVector3d &origin_global)
 {
@@ -277,8 +309,14 @@ void LLSurface::setOriginGlobal(const LLVector3d &origin_global)
     // Hack!
     if (mWaterObjp.notNull() && mWaterObjp->mDrawable.notNull())
     {
+#if OPENSIM
+        // <FS:CR> Aurora Sim
+        const F64 x = origin_global.mdV[VX] + (F64)mRegionp->getWidth() / 2;
+        const F64 y = origin_global.mdV[VY] + (F64)mRegionp->getWidth() / 2;
+#else
         const F64 x = origin_global.mdV[VX] + 128.0;
         const F64 y = origin_global.mdV[VY] + 128.0;
+#endif
         const F64 z = mWaterObjp->getPositionGlobal().mdV[VZ];
 
         LLVector3d water_origin_global(x, y, z);
@@ -298,7 +336,6 @@ void LLSurface::getNeighboringRegions( std::vector<LLViewerRegion*>& uniqueRegio
         }
     }
 }
-
 
 void LLSurface::getNeighboringRegionsStatus( std::vector<S32>& regions )
 {
@@ -320,12 +357,53 @@ void LLSurface::connectNeighbor(LLSurface *neighborp, U32 direction)
     mNeighbors[direction] = neighborp;
     neighborp->mNeighbors[gDirOpposite[direction]] = this;
 
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    S32 neighborPatchesPerEdge = neighborp->mPatchesPerEdge;
+    S32 ppe[2];
+    S32 own_offset[2]      = { 0, 0 };
+    S32 neighbor_offset[2] = { 0, 0 };
+    U32 own_xpos, own_ypos, neighbor_xpos, neighbor_ypos;
+
+    ppe[0] = (mPatchesPerEdge < neighborPatchesPerEdge) ? mPatchesPerEdge : neighborPatchesPerEdge; // used for x
+    ppe[1] = ppe[0];                                                                                // used for y
+
+    from_region_handle(mRegionp->getHandle(), &own_xpos, &own_ypos);
+    from_region_handle(neighborp->getRegion()->getHandle(), &neighbor_xpos, &neighbor_ypos);
+
+    if (own_ypos >= neighbor_ypos)
+    {
+        neighbor_offset[1] = (own_ypos - neighbor_ypos) / mGridsPerPatchEdge;
+        ppe[1]             = llmin(mPatchesPerEdge, neighborPatchesPerEdge - neighbor_offset[1]);
+    }
+    else
+    {
+        own_offset[1] = (neighbor_ypos - own_ypos) / mGridsPerPatchEdge;
+        ppe[1]        = llmin(mPatchesPerEdge - own_offset[1], neighborPatchesPerEdge);
+    }
+
+    if (own_xpos >= neighbor_xpos)
+    {
+        neighbor_offset[0] = (own_xpos - neighbor_xpos) / mGridsPerPatchEdge;
+        ppe[0]             = llmin(mPatchesPerEdge, neighborPatchesPerEdge - neighbor_offset[0]);
+    }
+    else
+    {
+        own_offset[0] = (neighbor_xpos - own_xpos) / mGridsPerPatchEdge;
+        ppe[0]        = llmin(mPatchesPerEdge - own_offset[0], neighborPatchesPerEdge);
+    }
+#endif
+
     // Connect patches
     if (NORTHEAST == direction)
     {
         patchp = getPatch(mPatchesPerEdge - 1, mPatchesPerEdge - 1);
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        neighbor_patchp = neighborp->getPatch(neighbor_offset[0], neighbor_offset[1]);
+#else
         neighbor_patchp = neighborp->getPatch(0, 0);
-
+#endif
         patchp->connectNeighbor(neighbor_patchp, direction);
         neighbor_patchp->connectNeighbor(patchp, gDirOpposite[direction]);
 
@@ -335,38 +413,66 @@ void LLSurface::connectNeighbor(LLSurface *neighborp, U32 direction)
     else if (NORTHWEST == direction)
     {
         patchp = getPatch(0, mPatchesPerEdge - 1);
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        neighbor_patchp = neighborp->getPatch(neighbor_offset[0] - 1, neighbor_offset[1] - 1);
+#else
         neighbor_patchp = neighborp->getPatch(mPatchesPerEdge - 1, 0);
-
+#endif
         patchp->connectNeighbor(neighbor_patchp, direction);
         neighbor_patchp->connectNeighbor(patchp, gDirOpposite[direction]);
     }
     else if (SOUTHWEST == direction)
     {
         patchp = getPatch(0, 0);
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        neighbor_patchp = neighborp->getPatch(neighbor_offset[0] - 1, neighbor_offset[1] - 1);
+#else
         neighbor_patchp = neighborp->getPatch(mPatchesPerEdge - 1, mPatchesPerEdge - 1);
-
+#endif
         patchp->connectNeighbor(neighbor_patchp, direction);
         neighbor_patchp->connectNeighbor(patchp, gDirOpposite[direction]);
 
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        neighbor_patchp->updateEastEdge(); // Only update one of north or east.
+#else
         neighbor_patchp->updateNorthEdge(); // Only update one of north or east.
+#endif
         neighbor_patchp->dirtyZ();
     }
     else if (SOUTHEAST == direction)
     {
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        S32 off = mPatchesPerEdge + neighbor_offset[0] - own_offset[0];
+#endif
         patchp = getPatch(mPatchesPerEdge - 1, 0);
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        neighbor_patchp = neighborp->getPatch(off, neighbor_offset[1] - 1); // 0
+#else
         neighbor_patchp = neighborp->getPatch(0, mPatchesPerEdge - 1);
-
+#endif
         patchp->connectNeighbor(neighbor_patchp, direction);
         neighbor_patchp->connectNeighbor(patchp, gDirOpposite[direction]);
     }
     else if (EAST == direction)
     {
         // Do east/west connections, first
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        for (i = 0; i < ppe[1]; i++)
+        {
+            patchp = getPatch(mPatchesPerEdge - 1, i + own_offset[1]);
+            neighbor_patchp = neighborp->getPatch(0, i + neighbor_offset[1]);
+#else
         for (i = 0; i < (S32)mPatchesPerEdge; i++)
         {
             patchp = getPatch(mPatchesPerEdge - 1, i);
             neighbor_patchp = neighborp->getPatch(0, i);
-
+#endif
             patchp->connectNeighbor(neighbor_patchp, direction);
             neighbor_patchp->connectNeighbor(patchp, gDirOpposite[direction]);
 
@@ -375,20 +481,34 @@ void LLSurface::connectNeighbor(LLSurface *neighborp, U32 direction)
         }
 
         // Now do northeast/southwest connections
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        for (i = 0; i < ppe[1] - 1; i++)
+        {
+            patchp = getPatch(mPatchesPerEdge - 1, i + own_offset[1]);
+            neighbor_patchp = neighborp->getPatch(0, i + 1 + neighbor_offset[1]);
+#else
         for (i = 0; i < (S32)mPatchesPerEdge - 1; i++)
         {
             patchp = getPatch(mPatchesPerEdge - 1, i);
             neighbor_patchp = neighborp->getPatch(0, i+1);
-
+#endif
             patchp->connectNeighbor(neighbor_patchp, NORTHEAST);
             neighbor_patchp->connectNeighbor(patchp, SOUTHWEST);
         }
         // Now do southeast/northwest connections
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        for (i = 1; i < ppe[1]; i++)
+        {
+            patchp = getPatch(mPatchesPerEdge - 1, i + own_offset[1]);
+            neighbor_patchp = neighborp->getPatch(0, i - 1 + neighbor_offset[1]);
+#else
         for (i = 1; i < (S32)mPatchesPerEdge; i++)
         {
             patchp = getPatch(mPatchesPerEdge - 1, i);
             neighbor_patchp = neighborp->getPatch(0, i-1);
-
+#endif
             patchp->connectNeighbor(neighbor_patchp, SOUTHEAST);
             neighbor_patchp->connectNeighbor(patchp, NORTHWEST);
         }
@@ -396,11 +516,18 @@ void LLSurface::connectNeighbor(LLSurface *neighborp, U32 direction)
     else if (NORTH == direction)
     {
         // Do north/south connections, first
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        for (i = 0; i < ppe[0]; i++)
+        {
+            patchp = getPatch(i + own_offset[0], mPatchesPerEdge - 1);
+            neighbor_patchp = neighborp->getPatch(i + neighbor_offset[0], 0);
+#else
         for (i = 0; i < (S32)mPatchesPerEdge; i++)
         {
             patchp = getPatch(i, mPatchesPerEdge - 1);
             neighbor_patchp = neighborp->getPatch(i, 0);
-
+#endif
             patchp->connectNeighbor(neighbor_patchp, direction);
             neighbor_patchp->connectNeighbor(patchp, gDirOpposite[direction]);
 
@@ -409,20 +536,34 @@ void LLSurface::connectNeighbor(LLSurface *neighborp, U32 direction)
         }
 
         // Do northeast/southwest connections
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        for (i = 0; i < ppe[0] - 1; i++)
+        {
+            patchp = getPatch(i + own_offset[0], mPatchesPerEdge - 1);
+            neighbor_patchp = neighborp->getPatch(i + 1 + neighbor_offset[0], 0);
+#else
         for (i = 0; i < (S32)mPatchesPerEdge - 1; i++)
         {
             patchp = getPatch(i, mPatchesPerEdge - 1);
-            neighbor_patchp = neighborp->getPatch(i+1, 0);
-
+            neighbor_patchp = neighborp->getPatch(i + 1, 0);
+#endif
             patchp->connectNeighbor(neighbor_patchp, NORTHEAST);
             neighbor_patchp->connectNeighbor(patchp, SOUTHWEST);
         }
         // Do southeast/northwest connections
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        for (i = 1; i < ppe[0]; i++)
+        {
+            patchp = getPatch(i + own_offset[0], mPatchesPerEdge - 1);
+            neighbor_patchp = neighborp->getPatch(i - 1 + neighbor_offset[0], 0);
+#else
         for (i = 1; i < (S32)mPatchesPerEdge; i++)
         {
             patchp = getPatch(i, mPatchesPerEdge - 1);
-            neighbor_patchp = neighborp->getPatch(i-1, 0);
-
+            neighbor_patchp = neighborp->getPatch(i - 1, 0);
+#endif
             patchp->connectNeighbor(neighbor_patchp, NORTHWEST);
             neighbor_patchp->connectNeighbor(patchp, SOUTHEAST);
         }
@@ -430,11 +571,18 @@ void LLSurface::connectNeighbor(LLSurface *neighborp, U32 direction)
     else if (WEST == direction)
     {
         // Do east/west connections, first
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        for (i = 0; i < ppe[1]; i++)
+        {
+            patchp = getPatch(0, i + own_offset[1]);
+            neighbor_patchp = neighborp->getPatch(neighborPatchesPerEdge - 1, i + neighbor_offset[1]);
+#else
         for (i = 0; i < mPatchesPerEdge; i++)
         {
             patchp = getPatch(0, i);
             neighbor_patchp = neighborp->getPatch(mPatchesPerEdge - 1, i);
-
+#endif
             patchp->connectNeighbor(neighbor_patchp, direction);
             neighbor_patchp->connectNeighbor(patchp, gDirOpposite[direction]);
 
@@ -443,21 +591,35 @@ void LLSurface::connectNeighbor(LLSurface *neighborp, U32 direction)
         }
 
         // Now do northeast/southwest connections
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        for (i = 1; i < ppe[1]; i++)
+        {
+            patchp = getPatch(0, i + own_offset[1]);
+            neighbor_patchp = neighborp->getPatch(neighborPatchesPerEdge - 1, i - 1 + neighbor_offset[1]);
+#else
         for (i = 1; i < mPatchesPerEdge; i++)
         {
             patchp = getPatch(0, i);
             neighbor_patchp = neighborp->getPatch(mPatchesPerEdge - 1, i - 1);
-
+#endif
             patchp->connectNeighbor(neighbor_patchp, SOUTHWEST);
             neighbor_patchp->connectNeighbor(patchp, NORTHEAST);
         }
 
         // Now do northwest/southeast connections
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        for (i = 0; i < ppe[1] - 1; i++)
+        {
+            patchp = getPatch(0, i + own_offset[1]);
+            neighbor_patchp = neighborp->getPatch(neighborPatchesPerEdge - 1, i + 1 + neighbor_offset[1]);
+#else
         for (i = 0; i < mPatchesPerEdge - 1; i++)
         {
             patchp = getPatch(0, i);
             neighbor_patchp = neighborp->getPatch(mPatchesPerEdge - 1, i + 1);
-
+#endif
             patchp->connectNeighbor(neighbor_patchp, NORTHWEST);
             neighbor_patchp->connectNeighbor(patchp, SOUTHEAST);
         }
@@ -465,11 +627,18 @@ void LLSurface::connectNeighbor(LLSurface *neighborp, U32 direction)
     else if (SOUTH == direction)
     {
         // Do north/south connections, first
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        for (i = 0; i < ppe[0]; i++)
+        {
+            patchp = getPatch(i + own_offset[0], 0);
+            neighbor_patchp = neighborp->getPatch(i + neighbor_offset[0], neighborPatchesPerEdge - 1);
+#else
         for (i = 0; i < mPatchesPerEdge; i++)
         {
             patchp = getPatch(i, 0);
             neighbor_patchp = neighborp->getPatch(i, mPatchesPerEdge - 1);
-
+#endif
             patchp->connectNeighbor(neighbor_patchp, direction);
             neighbor_patchp->connectNeighbor(patchp, gDirOpposite[direction]);
 
@@ -478,20 +647,34 @@ void LLSurface::connectNeighbor(LLSurface *neighborp, U32 direction)
         }
 
         // Now do northeast/southwest connections
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        for (i = 1; i < ppe[0]; i++)
+        {
+            patchp = getPatch(i + own_offset[0], 0);
+            neighbor_patchp = neighborp->getPatch(i - 1 + neighbor_offset[0], neighborPatchesPerEdge - 1);
+#else
         for (i = 1; i < mPatchesPerEdge; i++)
         {
             patchp = getPatch(i, 0);
             neighbor_patchp = neighborp->getPatch(i - 1, mPatchesPerEdge - 1);
-
+#endif
             patchp->connectNeighbor(neighbor_patchp, SOUTHWEST);
             neighbor_patchp->connectNeighbor(patchp, NORTHEAST);
         }
         // Now do northeast/southwest connections
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        for (i = 0; i < ppe[0] - 1; i++)
+        {
+            patchp = getPatch(i + own_offset[0], 0);
+            neighbor_patchp = neighborp->getPatch(i + 1 + neighbor_offset[0], neighborPatchesPerEdge - 1);
+#else
         for (i = 0; i < mPatchesPerEdge - 1; i++)
         {
             patchp = getPatch(i, 0);
             neighbor_patchp = neighborp->getPatch(i + 1, mPatchesPerEdge - 1);
-
+#endif
             patchp->connectNeighbor(neighbor_patchp, SOUTHEAST);
             neighbor_patchp->connectNeighbor(patchp, NORTHWEST);
         }
@@ -660,14 +843,30 @@ void LLSurface::decompressDCTPatch(LLBitPack &bitpack, LLGroupHeader *gopp, bool
 
     while (1)
     {
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        decode_patch_header(bitpack, &ph, b_large_patch);
+#else
         decode_patch_header(bitpack, &ph);
+#endif
         if (ph.quant_wbits == END_OF_PATCHES)
         {
             break;
         }
 
-        i = ph.patchids >> 5;
-        j = ph.patchids & 0x1F;
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        if (b_large_patch)
+        {
+            i = ph.patchids >> 16;    // x
+            j = ph.patchids & 0xFFFF; // y
+        }
+        else
+#endif
+        {
+            i = ph.patchids >> 5;   // x
+            j = ph.patchids & 0x1F; // y
+        }
 
         if ((i >= mPatchesPerEdge) || (j >= mPatchesPerEdge))
         {
@@ -684,7 +883,6 @@ void LLSurface::decompressDCTPatch(LLBitPack &bitpack, LLGroupHeader *gopp, bool
         }
 
         patchp = &mPatchList[j*mPatchesPerEdge + i];
-
 
         decode_patch(bitpack, patch);
         decompress_patch(patchp->getDataZ(), patch, &ph);
@@ -713,7 +911,7 @@ void LLSurface::decompressDCTPatch(LLBitPack &bitpack, LLGroupHeader *gopp, bool
 }
 
 
-// Retrurns true if "position" is within the bounds of surface.
+// Returns true if "position" is within the bounds of surface.
 // "position" is region-local
 bool LLSurface::containsPosition(const LLVector3 &position)
 {

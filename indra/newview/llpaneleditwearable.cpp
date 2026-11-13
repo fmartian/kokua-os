@@ -34,13 +34,13 @@
 #include "llscrollingpanellist.h"
 #include "llvisualparam.h"
 #include "lltoolmorph.h"
-#include "llviewerjointmesh.h"
-#include "lltrans.h"
+//#include "llviewerjointmesh.h"
+//#include "lltrans.h"
 #include "llbutton.h"
 #include "llsliderctrl.h"
 #include "llagent.h"
 #include "llvoavatarself.h"
-#include "lltexteditor.h"
+//#include "lltexteditor.h"
 #include "lltextbox.h"
 #include "llaccordionctrl.h"
 #include "llaccordionctrltab.h"
@@ -52,15 +52,15 @@
 
 #include "llcolorswatch.h"
 #include "lltexturectrl.h"
-#include "lltextureentry.h"
+//#include "lltextureentry.h"
 #include "llviewercontrol.h"    // gSavedSettings
-#include "llviewerregion.h"
-#include "llviewertexturelist.h"
+//#include "llviewerregion.h"
+//#include "llviewertexturelist.h"
 #include "llagentcamera.h"
 #include "llmorphview.h"
 
 #include "llcommandhandler.h"
-#include "lltextutil.h"
+//#include "lltextutil.h"
 #include "llappearancemgr.h"
 
 // [FS:CR] FIRE-10986
@@ -1629,13 +1629,14 @@ void LLPanelEditWearable::onInvisibilityCommit(LLCheckBoxCtrl* checkbox_ctrl, LL
                 return;
         }
 
+        LLViewerFetchedTexture* image;
         bool new_invis_state = checkbox_ctrl->get();
         if (new_invis_state)
         {
                 LLLocalTextureObject *lto = getWearable()->getLocalTextureObject(te);
                 mPreviousAlphaTexture[te] = lto->getID();
 
-                LLViewerFetchedTexture* image = LLViewerTextureManager::getFetchedTexture( IMG_INVISIBLE );
+                image = LLViewerTextureManager::getFetchedTexture( IMG_INVISIBLE );
                 gAgentAvatarp->setLocalTexture(te, image, false, index);
                 gAgentAvatarp->wearableUpdated(getWearable()->getType());
         }
@@ -1652,15 +1653,14 @@ void LLPanelEditWearable::onInvisibilityCommit(LLCheckBoxCtrl* checkbox_ctrl, LL
                         return;
                 }
 
-                LLViewerFetchedTexture* image = LLViewerTextureManager::getFetchedTexture(prev_id);
+                image = LLViewerTextureManager::getFetchedTexture(prev_id);
                 if (!image)
                 {
                         return;
                 }
-
-                gAgentAvatarp->setLocalTexture(te, image, false, index);
-                gAgentAvatarp->wearableUpdated(getWearable()->getType());
         }
+        gAgentAvatarp->setLocalTexture(te, image, false, index);
+        gAgentAvatarp->wearableUpdated(getWearable()->getType());
 
         updatePanelPickerControls(getWearable()->getType());
 }

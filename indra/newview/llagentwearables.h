@@ -44,6 +44,10 @@ class LLInventoryItem;
 class LLVOAvatarSelf;
 class LLViewerWearable;
 class LLViewerObject;
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+class LLInitialWearablesFetch;
+#endif
 
 class LLAgentWearables : public LLInitClass<LLAgentWearables>, public LLWearableData
 {
@@ -51,6 +55,10 @@ class LLAgentWearables : public LLInitClass<LLAgentWearables>, public LLWearable
     // Constructors / destructors / Initializers
     //--------------------------------------------------------------------
 public:
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    friend class LLInitialWearablesFetch;
+#endif
 
     LLAgentWearables();
     virtual ~LLAgentWearables();
@@ -79,7 +87,13 @@ public:
     // Note: False for shape, skin, eyes, and hair, unless you have MORE than 1.
     bool            canWearableBeRemoved(const LLViewerWearable* wearable) const;
 
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    void            updateWearablesLoaded();
+    void            animateAllWearableParams(F32 delta, bool upload_bake = false);
+#else
     void            animateAllWearableParams(F32 delta);
+#endif
 
     //--------------------------------------------------------------------
     // Accessors
@@ -147,6 +161,31 @@ private:
 protected:
     static bool     onRemoveWearableDialog(const LLSD& notification, const LLSD& response);
 
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    //--------------------------------------------------------------------
+    // Server Communication
+    //--------------------------------------------------------------------
+public:
+    // Processes the initial wearables update message (if necessary, since the outfit folder makes it redundant)
+    static void     processAgentInitialWearablesUpdate(LLMessageSystem* mesgsys, void** user_data);
+
+    bool            itemUpdatePending(const LLUUID& item_id) const;
+    U32             itemUpdatePendingCount() const;
+
+protected:
+    void            createStandardWearablesDone(S32 type, U32 index /* = 0*/);
+    void            createStandardWearablesAllDone();
+    void            recoverMissingWearable(const LLWearableType::EType type, U32 index /*= 0*/);
+    void            recoverMissingWearableDone();
+
+    /*virtual*/ void invalidateBakedTextureHash(LLMD5& hash) const;
+    void            sendAgentWearablesUpdate();
+    void            sendAgentWearablesRequest();
+    void            queryWearableCache();
+    void            updateServer();
+#endif
+
     //--------------------------------------------------------------------
     // Outfits
     //--------------------------------------------------------------------
@@ -157,9 +196,16 @@ private:
     // Save Wearables
     //--------------------------------------------------------------------
 public:
-    void            saveWearableAs(const LLWearableType::EType type, const U32 index, const std::string& new_name, const std::string& description, bool save_in_lost_and_found);
+    void            saveWearableAs(const LLWearableType::EType type, const U32 index, const std::string& new_name,
+                                   const std::string& description, bool save_in_lost_and_found);
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    void            saveWearable(const LLWearableType::EType type, const U32 index,
+                                 const std::string new_name = "", bool send_update = true);
+#else
     void            saveWearable(const LLWearableType::EType type, const U32 index,
                                  const std::string new_name = "");
+#endif
     void            saveAllWearables();
     void            revertWearable(const LLWearableType::EType type, const U32 index);
 
@@ -213,6 +259,11 @@ private:
     static bool     mInitialWearablesUpdateReceived;
     bool            mWearablesLoaded;
 
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    std::set<LLUUID> mItemsAwaitingWearableUpdate;
+#endif
+
     /**
      * True if agent's outfit is being changed now.
      */
@@ -223,6 +274,19 @@ private:
     // Support classes
     //--------------------------------------------------------------------------------
 private:
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    class createStandardWearablesAllDoneCallback : public LLRefCount
+    {
+    protected:
+        ~createStandardWearablesAllDoneCallback();
+    };
+    class sendAgentWearablesUpdateCallback : public LLRefCount
+    {
+    protected:
+        ~sendAgentWearablesUpdateCallback();
+    };
+#endif
     class AddWearableToAgentInventoryCallback : public LLInventoryCallback
     {
     public:

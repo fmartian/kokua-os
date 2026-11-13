@@ -37,9 +37,16 @@
 #include "lltoolbarview.h"
 #include "llviewercontrol.h"
 #include "llxmltree.h"
+#if OPENSIM
+#include "lfsimfeaturehandler.h"
+#include "llviewernetwork.h"
+#endif
 
 std::map<std::string, std::string> LLFloaterGridStatus::sItemsMap;
+#if !OPENSIM
+// <FS:Ansariel> FIRE-21236 - Help Menu - Check Grid Status doesn't open using External Browser
 const std::string DEFAULT_GRID_STATUS_URL = "http://status.secondlifegrid.net/";
+#endif
 
 LLFloaterGridStatus::LLFloaterGridStatus(const Params& key) :
     LLFloaterWebContent(key),
@@ -62,10 +69,19 @@ void LLFloaterGridStatus::onOpen(const LLSD& key)
     p.allow_address_entry = false;
 
     LLFloaterWebContent::onOpen(p);
+#if OPENSIM
+    // <FS:Beq> [FIRE-21236] Changes to improve usability of grid status
+    getChildView("popexternal")->setEnabled(true);
+#endif
     applyPreferredRect();
     if (mWebBrowser)
     {
+#if OPENSIM
+        // <FS:Beq> [FIRE-30562] Support Grid Status on OpenSim
+        mWebBrowser->navigateTo(LFSimFeatureHandler::instance().gridStatusURL(), HTTP_CONTENT_TEXT_HTML);
+#else
         mWebBrowser->navigateTo(DEFAULT_GRID_STATUS_URL, HTTP_CONTENT_TEXT_HTML);
+#endif
     }
 }
 
@@ -97,7 +113,17 @@ void LLFloaterGridStatus::getGridStatusRSSCoro()
 
     httpOpts->setSSLVerifyPeer(false); // We want this data even if SSL fails
     httpHeaders->append(HTTP_OUT_HEADER_CONTENT_TYPE, HTTP_CONTENT_TEXT_XML);
+
+#if OPENSIM
+    // <FS:Beq> FIRE-30562 [OpenSim] Grid Status
+    std::string url = LFSimFeatureHandler::instance().gridStatusRSS();
+    if (url.empty())
+    {
+        return; // if OpenSim has not defined this or user has set this to undefined, then do nothing.
+    }
+#else
     std::string url = gSavedSettings.getString("GridStatusRSS");
+#endif
 
     LLSD result = httpAdapter->getRawAndSuspend(httpRequest, url, httpOpts, httpHeaders);
     LLSD httpResults = result[LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS];
@@ -110,8 +136,20 @@ void LLFloaterGridStatus::getGridStatusRSSCoro()
     const LLSD::Binary &rawBody = result[LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS_RAW].asBinary();
     std::string body(rawBody.begin(), rawBody.end());
 
-    std::string fullpath = gDirUtilp->getExpandedFilename(LL_PATH_LOGS,"grid_status_rss.xml");
-    if(!gSavedSettings.getBOOL("TestGridStatusRSSFromFile"))
+    std::string fullpath{};
+#if OPENSIM
+    // <FS:Beq> FIRE-30562 [OpenSim] Grid Status
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        const auto& grid_status_file = LLDir::getScrubbedFileName(LLGridManager::getInstance()->getGrid() + "_grid_status_rss.xml");
+        fullpath = gDirUtilp->getExpandedFilename(LL_PATH_LOGS, grid_status_file);
+    }
+    else
+#endif
+    {
+        fullpath = gDirUtilp->getExpandedFilename(LL_PATH_LOGS, "grid_status_rss.xml");
+    }
+    if (!gSavedSettings.getBOOL("TestGridStatusRSSFromFile"))
     {
         llofstream custom_file_out(fullpath.c_str(), std::ios::trunc);
         if (custom_file_out.is_open())

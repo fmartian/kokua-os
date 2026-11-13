@@ -112,9 +112,6 @@ LLViewerObject* getSelectedParentObject(LLViewerObject *object) ;
 constexpr F32 SILHOUETTE_UPDATE_THRESHOLD_SQUARED = 0.02f;
 constexpr S32 MAX_SILS_PER_FRAME = 50;
 constexpr S32 MAX_OBJECTS_PER_PACKET = 254;
-// For linked sets
-constexpr S32 MAX_CHILDREN_PER_TASK = 255;
-
 
 bool LLSelectMgr::sRectSelectInclusive = true;
 bool LLSelectMgr::sRenderHiddenSelections = true;
@@ -731,11 +728,22 @@ bool LLSelectMgr::linkObjects()
     }
 
     S32 object_count = LLSelectMgr::getInstance()->getSelection()->getObjectCount();
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    S32 object_max = LLWorld::getInstance()->getMaxLinkedPrims() + 1;
+    if (object_count > object_max)
+#else
     if (object_count > MAX_CHILDREN_PER_TASK + 1)
+#endif
     {
         LLSD args;
         args["COUNT"] = llformat("%d", object_count);
-        int max = MAX_CHILDREN_PER_TASK+1;
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        int max = object_max;
+#else
+        int max = MAX_CHILDREN_PER_TASK + 1;
+#endif
         args["MAX"] = llformat("%d", max);
         LLNotificationsUtil::add("UnableToLinkObjects", args);
         return true;

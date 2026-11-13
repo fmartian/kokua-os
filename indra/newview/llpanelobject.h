@@ -55,6 +55,10 @@ public:
     virtual void    draw();
     virtual void    clearCtrls();
 
+#if OPENSIM
+    // <AW: opensim-limits>
+    void            updateLimits(bool attachment);
+#endif
     void            refresh();
 
     static bool     precommitValidate(const LLSD& data);
@@ -111,6 +115,16 @@ protected:
     LLSpinCtrl*     mSpinCutBegin;
     LLSpinCtrl*     mSpinCutEnd;
 
+#if OPENSIM
+    // <AW: opensim-limits>
+    F32             mRegionMaxHeight;
+
+    F32             mMinScale;
+    F32             mMaxScale;
+
+    F32             mMaxHollowSize;
+    F32             mMinHoleSize;
+#endif
     LLTextBox*      mLabelHollow;
     LLSpinCtrl*     mSpinHollow;
 

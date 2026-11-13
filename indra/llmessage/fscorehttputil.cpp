@@ -108,14 +108,4 @@ namespace FSCoreHttpUtil
         LLCoros::instance().launch("HttpCoroutineAdapter::genericGetCoroRaw",
                                    boost::bind(trivialGetCoroRaw, url, LLCore::HttpRequest::DEFAULT_POLICY_ID, aHeader, options, success, failure));
     }
-
-    LLCore::HttpHeaders::ptr_t createModifiedSinceHeader( time_t aTime )
-    {
-        std::string strDate = LLDate::toHTTPDateString( gmtime( &aTime ), "%A, %d %b %Y %H:%M:%S GMT" );
-
-        LLCore::HttpHeaders::ptr_t pHeader( new LLCore::HttpHeaders() );
-        pHeader->append( "If-Modified-Since", strDate );
-
-        return pHeader;
-    }
 }

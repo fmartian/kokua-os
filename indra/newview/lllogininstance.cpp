@@ -95,10 +95,9 @@ LLLoginInstance::LLLoginInstance() :
     mDispatcher.add("fail.login",     "", boost::bind(&LLLoginInstance::handleLoginFailure, this, _1));
     mDispatcher.add("connect",        "", boost::bind(&LLLoginInstance::handleLoginSuccess, this, _1));
     mDispatcher.add("disconnect",     "", boost::bind(&LLLoginInstance::handleDisconnect, this, _1));
-    mDispatcher.add("authenticating", "", boost::bind(&LLLoginInstance::handleAuthentication, this, _1));
     mDispatcher.add("indeterminate",  "", boost::bind(&LLLoginInstance::handleIndeterminate, this, _1));
     // Todo, implement "authenticating"?
-    mDispatcher.add("authenticating", "", boost::bind(&LLLoginInstance::handleIndeterminate, this, _1));
+    mDispatcher.add("authenticating", "", boost::bind(&LLLoginInstance::handleAuthentication, this, _1));
 }
 
 void LLLoginInstance::setPlatformInfo(const std::string platform,
@@ -461,7 +460,12 @@ void LLLoginInstance::handleDisconnect(const LLSD& event)
 
 void LLLoginInstance::handleAuthentication(const LLSD& event)
 {
+    // <FM> TODO, implement "authenticating"?
     LL_INFOS("LLLogin") << "LLLoginInstance::handleAuthentication" << LL_ENDL;
+    LLSD message = event.get("data").get("message");
+    if (message.isDefined())
+    {
+    }
 }
 
 void LLLoginInstance::handleIndeterminate(const LLSD& event)

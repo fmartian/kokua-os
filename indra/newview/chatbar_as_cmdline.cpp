@@ -53,6 +53,7 @@
 #include "llvolumemessage.h"
 #include "llworld.h"
 #include "llworldmap.h"
+#include "llweb.h"
 
 LLViewerInventoryItem::item_array_t findInventoryInFolder(const std::string& ifolder)
 {

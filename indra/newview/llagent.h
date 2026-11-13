@@ -34,14 +34,14 @@
 #include "llcoordframe.h"           // for mFrameAgent
 #include "llavatarappearancedefines.h"
 #include "llpermissionsflags.h"
-#include "llviewerinventory.h"          // for LLViewerInventoryItem
-#include "llevents.h"
+#include "llviewerinventory.h"      // for LLViewerInventoryItem
+//#include "llevents.h"
 #include "v3dmath.h"
-#include "llviewerregion.h"
+//#include "llviewerregion.h"
 #include "httprequest.h"
 #include "llcorehttputil.h"
 
-#include <boost/signals2.hpp>
+//#include <boost/signals2.hpp>
 
 #include <functional>
 
@@ -845,6 +845,10 @@ public:
 
 private:
     bool            mShowAvatar;        // Should we render the avatar?
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    U32             mAppearanceSerialNum;
+#endif
 
     //--------------------------------------------------------------------
     // Rendering state bitmap helpers
@@ -949,14 +953,28 @@ public:
     void            sendAgentUserInfoRequest();
 
 // IM to Email and Online visibility
+#if OPENSIM
+    // <FS:Ansariel> Keep this for OpenSim
+    void            sendAgentUpdateUserInfo(bool im_via_email, const std::string& directory_visibility);
+    // <FS:Ansariel> [Legacy Bake]
+    void            dumpSentAppearance(const std::string& dump_prefix);
+    void            sendAgentSetAppearance();
+#else
     void            sendAgentUpdateUserInfo(const std::string& directory_visibility);
+#endif
 
 private:
     void            requestAgentUserInfoCoro(std::string capurl);
+#if OPENSIM
+    // <FS:Ansariel> Keep this for OpenSim
+    void            updateAgentUserInfoCoro(std::string capurl, bool im_via_email, std::string directory_visibility);
+    void            sendAgentUpdateUserInfoMessage(bool im_via_email, const std::string& directory_visibility);
+#else
     void            updateAgentUserInfoCoro(std::string capurl, std::string directory_visibility);
+    void            sendAgentUpdateUserInfoMessage(const std::string& directory_visibility);
+#endif
     // DEPRECATED: may be removed when User Info cap propagates
     void            sendAgentUserInfoRequestMessage();
-    void            sendAgentUpdateUserInfoMessage(const std::string& directory_visibility);
 
     //--------------------------------------------------------------------
     // Receive
@@ -966,6 +984,10 @@ public:
     static void     processAgentGroupDataUpdate(LLMessageSystem *msg, void **);
     static void     processAgentDropGroup(LLMessageSystem *msg, void **);
     static void     processScriptControlChange(LLMessageSystem *msg, void **);
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    static void     processAgentCachedTextureResponse(LLMessageSystem* mesgsys, void** user_data);
+#endif
 
 /**                    Messaging
  **                                                                            **
@@ -1016,6 +1038,7 @@ inline bool operator==(const LLGroupData &a, const LLGroupData &b)
     return (a.mID == b.mID);
 }
 
+#if OPENSIM
 class LLAgentQueryManager
 {
     friend class LLAgent;
@@ -1035,5 +1058,5 @@ private:
 };
 
 extern LLAgentQueryManager gAgentQueryManager;
-
+#endif
 #endif

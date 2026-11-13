@@ -45,7 +45,7 @@
 
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-extern bool gIsInSecondLife; //Opensim or SecondLife
+
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 static const std::string LL_LINDEN = "Linden";
@@ -217,8 +217,11 @@ void FSCommon::applyDefaultBuildPreferences(LLViewerObject* object)
     }
 
     U32 object_local_id = object->getLocalID();
-#ifdef OPENSIM
-    if (!gIsInSecondLife || !LLFloaterPermsDefault::getCapSent())
+    if (
+#if OPENSIM
+        LLGridManager::getInstance()->isInOpenSim() ||
+#endif
+        !LLFloaterPermsDefault::getCapSent())
     {
         gMessageSystem->newMessageFast(_PREHASH_ObjectPermissions);
         gMessageSystem->nextBlockFast(_PREHASH_AgentData);
@@ -243,7 +246,6 @@ void FSCommon::applyDefaultBuildPreferences(LLViewerObject* object)
         gMessageSystem->addU32Fast(_PREHASH_Mask, PERM_TRANSFER);
         gMessageSystem->sendReliable(object->getRegion()->getHost());
     }
-#endif
 
     gMessageSystem->newMessage(_PREHASH_ObjectFlagUpdate);
     gMessageSystem->nextBlockFast(_PREHASH_AgentData);
@@ -270,6 +272,19 @@ bool FSCommon::isLinden(const LLUUID& av_id)
     {
         gCacheName->getFirstLastName(av_id, first_name, last_name);
     }
+
+#if OPENSIM
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        LLViewerRegion* region = gAgent.getRegion();
+        if (!region)
+            return false;
+
+        const auto& gods = region->getGods();
+        return gods.contains(first_name + " " + last_name) || gods.contains(last_name);
+    }
+#endif
+
     return (last_name == LL_LINDEN ||
             last_name == LL_MOLE ||
             last_name == LL_PRODUCTENGINE ||

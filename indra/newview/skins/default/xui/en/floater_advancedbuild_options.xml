@@ -45,7 +45,7 @@
      height="16"
      width="155"
      follows="left|bottom"
-	   name="GridResolution" 
+	   name="GridResolution"
      decimal_digits="3"
      increment="0.1"
      initial_value="1"
@@ -53,7 +53,7 @@
      max_val="1000"
      min_val="0.01"
      mouse_opaque="true"
-    />	
+    />
     <spinner
 	 control_name="GridDrawSize"
      name="GridDrawSize"

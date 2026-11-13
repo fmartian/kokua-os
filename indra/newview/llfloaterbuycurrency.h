@@ -67,13 +67,13 @@ public:
     static void buyCurrency();
     static void buyCurrency(const std::string& name, S32 price);
 
-        static void handleBuyCurrency(bool has_piof, bool has_target, const std::string name, S32 price);
-        /* name should be a noun phrase of the object or service being bought:
+    static void handleBuyCurrency(bool has_piof, bool has_target, const std::string name, S32 price);
+    /* name should be a noun phrase of the object or service being bought:
                 "That object costs"
                 "Trying to give"
                 "Uploading costs"
-            a space and the price will be appended
-        */
+        a space and the price will be appended
+    */
 
     // open the LindeX page where a resident adds a payment method
     static void openPaymentMethodPage();
@@ -81,6 +81,11 @@ public:
     static LLFloater* buildFloater(const LLSD& key);
 
     static LLFetchAvatarPaymentInfo* sPropertiesRequest;
+
+#if OPENSIM
+    // <COLOSI opensim multi-currency support>
+    static void updateCurrencySymbols();
+#endif
 };
 
 #endif

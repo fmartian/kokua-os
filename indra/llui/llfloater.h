@@ -384,6 +384,15 @@ public:
     void            setAutoFocus(bool focus) { mAutoFocus = focus; } // whether to automatically take focus when opened
     bool            getAutoFocus() const { return mAutoFocus; }
 
+#if OPENSIM
+    // <COLOSI opensim multi-currency support>
+    // update currency symbols in titles (if there) and force update of display
+    void            updateCurrencySymbols() { mTitle.updateCurrencySymbols();
+                                              mShortTitle.updateCurrencySymbols();
+                                              applyTitle();
+                                            }
+#endif
+
 protected:
     void            applyControlsAndPosition(LLFloater* other);
 

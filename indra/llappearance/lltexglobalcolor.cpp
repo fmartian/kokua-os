@@ -115,10 +115,18 @@ LLTexParamGlobalColor::~LLTexParamGlobalColor()
     return new LLTexParamGlobalColor(*this);
 }
 
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+void LLTexParamGlobalColor::onGlobalColorChanged(bool upload_bake)
+{
+    mAvatarAppearance->onGlobalColorChanged(mTexGlobalColor, upload_bake);
+}
+#else
 void LLTexParamGlobalColor::onGlobalColorChanged()
 {
     mAvatarAppearance->onGlobalColorChanged(mTexGlobalColor);
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // LLTexGlobalColorInfo

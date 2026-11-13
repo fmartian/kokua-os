@@ -49,7 +49,7 @@
 #include "llagentaccess.h"
 #include "llagentbenefits.h"
 #include "llagentcamera.h"
-#include "llagentui.h"
+//#include "llagentui.h"
 #include "llagentwearables.h"
 #include "llagentpilot.h"
 //MK from KB
@@ -63,9 +63,9 @@
 #include "llderenderlist.h"
 // [/SL:KB]
 #include "llenvironment.h"
-#include "llfilepicker.h"
-#include "llfirstuse.h"
-#include "llfloaterabout.h"
+//#include "llfilepicker.h"
+//#include "llfirstuse.h"
+//#include "llfloaterabout.h"
 #include "llfloaterbuy.h"
 #include "llfloaterbuycontents.h"
 #include "llbuycurrencyhtml.h"
@@ -79,33 +79,34 @@
 #include "llfloaterpay.h"
 #include "llfloaterreporter.h"
 #include "llfloatersearch.h"
-#include "llfloaterscriptdebug.h"
-#include "llfloatersnapshot.h"
+//#include "llfloaterscriptdebug.h"
+//#include "llfloatersnapshot.h"
 #include "llscripteditorws.h"
 #include "llfloatertools.h"
-#include "llfloaterworldmap.h"
-#include "llfloaterbuildoptions.h"
-#include "llfloateradvancedbuildoptions.h"
+//#include "llfloaterworldmap.h"
+//#include "llfloaterbuildoptions.h"
+//#include "llfloateradvancedbuildoptions.h"
 #include "llgroupactions.h"
 #include "llavataractions.h"
 #include "lllandmarkactions.h"
 #include "llgroupmgr.h"
 #include "lltooltip.h"
 #include "lltoolface.h"
-#include "llhints.h"
+//#include "llhints.h"
+#include "llweb.h"
 #include "llhudeffecttrail.h"
 #include "llhudeffectresetskeleton.h"
 #include "llhudmanager.h"
 #include "llimview.h"
-#include "llinventorybridge.h"
+//#include "llinventorybridge.h"
 #include "llinventorydefines.h"
 #include "llinventoryfunctions.h"
-#include "lllogininstance.h" // <FS:AW  opensim destinations and avatar picker>
-#include "llpanellogin.h"
+//#include "lllogininstance.h" // <FS:AW  opensim destinations and avatar picker>
+//#include "llpanellogin.h"
 // [SL:KB] - World-Mute | Checked: 2013-07-10 (Catznip-3.5)
 #include "llfloaterblocked.h"
 // [/SL:KB]
-#include "llpanelblockedlist.h"
+//#include "llpanelblockedlist.h"
 #include "llpanelmaininventory.h"
 #include "llmarketplacefunctions.h"
 #include "llmaterialeditor.h"
@@ -134,19 +135,19 @@
 #include "chatbar_as_cmdline.h"
 #include "llcalc.h"
 #include "fscommon.h"
-#include "llviewerdisplay.h" //for gWindowResized
+//#include "llviewerdisplay.h" //for gWindowResized
 #include "llviewergenericmessage.h"
 #include "llviewerhelp.h"
 #include "llviewermenufile.h"   // init_menu_file()
 #include "llviewermessage.h"
 #include "llviewernetwork.h"
 #include "llviewertexture.h"
-#include "llviewertexturelist.h"
+//#include "llviewertexturelist.h"
 #include "llworld.h"
 #include "llviewerobjectlist.h"
 #include "llviewerparcelmgr.h"
 #include "llviewerregion.h"
-#include "llviewerstats.h"
+//#include "llviewerstats.h"
 #include "llviewerstatsrecorder.h"
 #include "llvlcomposition.h"
 #include "llvoavatarself.h"
@@ -157,7 +158,7 @@
 #else
 #include "llvoicevivox.h"
 #endif
-#include "llworld.h"
+//#include "llworld.h"
 #include "llworldmap.h"
 #include "pipeline.h"
 #include "llviewerjoystick.h"
@@ -165,20 +166,20 @@
 #include "llfloatercamera.h"
 #include "lluilistener.h"
 #include "llappearancemgr.h"
-#include "lltrans.h"
+//#include "lltrans.h"
 #include "lltoolgrab.h"
 #include "llview.h"
 #include "llwindow.h"
 #include "llpathfindingmanager.h"
 #include "llstartup.h"
 #include <unordered_map>
-#include "llvowlsky.h"
+//#include "llvowlsky.h"
 #include "fsfloaterexport.h"
-#include "daeexport.h"
-#include <boost/regex.hpp>
+//#include "daeexport.h"
+//#include <boost/regex.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/json.hpp>
-#include "llcleanup.h"
+//#include <boost/json.hpp>
+//#include "llcleanup.h"
 #include "llviewershadermgr.h"
 #include "gltfscenemanager.h"
 #include "gltf/asset.h"
@@ -438,7 +439,6 @@ void LLMenuParcelObserver::changed()
         }
     }
 }
-
 
 void initialize_menus();
 
@@ -10954,13 +10954,13 @@ class LLEditTakeOff : public view_listener_t
         else
         {
             LLWearableType::EType type = LLWearableType::getInstance()->typeNameToType(clothing);
+            U32 wearable_index = gAgentWearables.getWearableCount(type);
             if (type >= LLWearableType::WT_SHAPE
                 && type < LLWearableType::WT_COUNT
-                && (gAgentWearables.getWearableCount(type) > 0))
+                && (wearable_index > 0))
             {
                 // MULTI-WEARABLES: assuming user wanted to remove top shirt.
-                U32 wearable_index = gAgentWearables.getWearableCount(type) - 1;
-                LLUUID item_id = gAgentWearables.getWearableItemID(type,wearable_index);
+                LLUUID item_id = gAgentWearables.getWearableItemID(type, wearable_index - 1);
                 LLAppearanceMgr::instance().removeItemFromAvatar(item_id);
             }
 
@@ -11401,6 +11401,20 @@ class FSObjectExportCollada : public view_listener_t
     }
 };
 // </FS:CR>
+
+#if OPENSIM
+// <FS:Ansariel> Force HTTP features on SL
+bool use_http_inventory()
+{
+    return (LLGridManager::getInstance()->isInSecondLife() || gSavedSettings.getBOOL("UseHTTPInventory"));
+}
+
+bool use_http_textures()
+{
+    static LLCachedControl<bool> use_http(gSavedSettings, "ImagePipelineUseHTTP", true);
+    return (LLGridManager::getInstance()->isInSecondLife() || use_http);
+}
+#endif
 
 static void register_agent_ui_callbacks()
 {

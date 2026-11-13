@@ -28,9 +28,38 @@
 
 #ifndef LL_LLVIEWERNETWORK_H
 #define LL_LLVIEWERNETWORK_H
+
+#include "llsingleton.h"
+#include <string>
+#if OPENSIM
+#include "llxmlnode.h"
+#include <boost/function.hpp>
+// #include <boost/signals2.hpp>
+#endif
+
+extern const std::string GRID_VALUE;
+extern const std::string GRID_LABEL_VALUE;
+extern const std::string GRID_ID_VALUE;
+extern const std::string GRID_LOGIN_URI_VALUE;
+extern const std::string GRID_UPDATE_SERVICE_URL;
+extern const std::string GRID_HELPER_URI_VALUE;
+extern const std::string GRID_LOGIN_PAGE_VALUE;
+extern const std::string GRID_IS_SYSTEM_GRID_VALUE;
+extern const std::string GRID_LOGIN_IDENTIFIER_TYPES;
+extern const std::string GRID_WEB_PROFILE_VALUE;
+extern const std::string GRID_HELP;
+extern const std::string GRID_ABOUT;
+#if OPENSIM
+extern const std::string GRID_SEARCH;
+extern const std::string GRID_MESSAGE;
+extern const std::string GRID_PLATFORM;
+extern const std::string GRID_GATEKEEPER;
+extern const std::string GRID_REGISTER_NEW_ACCOUNT;
+extern const std::string GRID_FORGOT_PASSWORD;
+#endif
 // @TODO this really should be private, but is used in llslurl
-#define MAINGRID "util.agni.lindenlab.com"
-#define BETAGRID "util.aditi.lindenlab.com"
+extern const std::string MAINGRID;
+extern const std::string BETAGRID;
 
 /// Exception thrown when a grid is not valid
 class LLInvalidGridName
@@ -212,8 +241,98 @@ public:
     * In practice, the implementation is that it
     * @returns true if the login uri for the grid is the uri for MAINGRID
     */
+#if OPENSIM
+    bool isInOpenSim() const { return (EGridPlatform == GP_OPENSIM || EGridPlatform == GP_AURORA); };
+    bool isInAuroraSim() const { return (EGridPlatform == GP_AURORA); };
+    bool isInSecondLife() const { return (EGridPlatform == GP_SLMAIN || EGridPlatform == GP_SLBETA); };
 
+    bool isReadyToLogin();
+
+    // tell if we got this from a Hypergrid SLURL
+    bool isHyperGrid(const std::string& grid) { return mGridList[grid].has("HG"); }
+
+    // tell if we know how to acess this grid via Hypergrid
+    std::string getGatekeeper() { return getGatekeeper(mGrid); }
+    std::string getGatekeeper(const std::string& grid)
+    {
+        return mGridList[grid].has("gatekeeper") ? mGridList[grid]["gatekeeper"].asString() : std::string();
+    }
+
+    void setWebProfileUrl(const std::string webProfileUrl);
+
+    std::string getGridByProbing(const std::string& probe_for, bool case_sensitive = false) const;
+
+    // get the first (and very probably only) login URI of a specified grid
+    std::string getLoginURI(const std::string& grid);
+
+    void setClassifiedFee(const S32 classified_fee) { mClassifiedFee = classified_fee; }
+    S32  getClassifiedFee() const { return mClassifiedFee; }
+    void setDirectoryFee(const S32 directory_fee) { mDirectoryFee = directory_fee; }
+    S32  getDirectoryFee() const { return mDirectoryFee; }
+
+    LLSD getGridData(const std::string& grid);
+    LLSD getGridData() { return getGridData(mGrid); }
+
+    std::string trimHypergrid(const std::string& trim);
+
+    //  void addGrid(const std::string& loginuriz);
+    void resetGridList();
+    void saveGridList();
+    void removeGrid(const std::string& grid);
+    void updateGrid(const std::string& grid, LLSD grid_info);
+
+    typedef boost::function<void(bool success)> grid_list_changed_callback_t;
+    boost::signals2::connection                 addGridListChangedCallback(grid_list_changed_callback_t cb);
+
+    typedef enum
+    {
+        FETCH,
+        RETRY,
+        LEGACY,
+        LOCAL
+    } AddState;
+
+    void fetchGrid(LLSD& grid_info, bool retry);
+    void fetchGridLegacy(LLSD& grid_info);
+    void addGrid(LLSD& grid_info, bool failed);
+    void addGrid(LLSD& grid_info, LLXMLNodePtr xmlData, LLDate& lastModified);
+    void downloadGridInfo(const std::string& loginuri);
+
+protected:
+    void prepareCommon(const std::string& grid, LLSD& grid_info);
+    void prepareSystem(const std::string& grid, LLSD& grid_info);
+    bool finalizeGrid(const std::string& grid, LLSD& grid_info);
+
+    typedef boost::signals2::signal<void(bool success)> grid_list_changed_signal_t;
 private:
+    std::string getLoginURI(LLSD& grid_info);
+
+    std::string getGridByLabel(const std::string& grid_label, bool case_sensitive = false) const;
+    std::string getGridByGridNick(const std::string& grid_nick, bool case_sensitive = false) const;
+    std::string getGridByHostName(const std::string& host_name, bool case_sensitive = false) const;
+    std::string getGridByAttribute(const std::string& attribute, const std::string& attribute_value, bool case_sensitive) const;
+    void        updateGridPlatform(void);
+
+    grid_list_changed_signal_t mGridListChangedSignal;
+
+    enum e_grid_platform
+    {
+        GP_NOTSET,
+        GP_SLMAIN,
+        GP_SLBETA,
+        GP_OPENSIM,
+        GP_AURORA
+    } EGridPlatform;
+
+    S32 mClassifiedFee;
+    S32 mDirectoryFee;
+#endif
+
+    const std::string GRID_SLURL_BASE     = "slurl_base";
+    const std::string GRID_APP_SLURL_BASE = "app_slurl_base";
+
+    const std::string GRID_SENDGRIDINFO  = "SendGridInfoToViewerOnLogin";
+    const std::string GRID_DIRECTORY_FEE = "DirectoryFee";
 
     /// Add a grid to the list of grids
     bool addGrid(LLSD& grid_info);

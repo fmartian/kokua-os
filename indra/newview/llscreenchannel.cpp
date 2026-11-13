@@ -27,21 +27,21 @@
 
 #include "llviewerprecompiledheaders.h" // must be first include
 
-#include "lliconctrl.h"
+//#include "lliconctrl.h"
 #include "lltextbox.h"
 #include "llscreenchannel.h"
 
-#include "lltoastpanel.h"
+//#include "lltoastpanel.h"
 #include "llviewercontrol.h"
 #include "llviewerwindow.h"
-#include "llfloaterreg.h"
+//#include "llfloaterreg.h"
 #include "lltrans.h"
 #include "llagent.h"
 #include "lldockablefloater.h"
-#include "llsyswellwindow.h"
-#include "llfloaterimsession.h"
-#include "llscriptfloater.h"
-#include "llrootview.h"
+//#include "llsyswellwindow.h"
+//#include "llfloaterimsession.h"
+//#include "llscriptfloater.h"
+//#include "llrootview.h"
 
 #include <algorithm>
 
@@ -170,9 +170,11 @@ void LLScreenChannelBase::init(S32 channel_left, S32 channel_right)
 
 void    LLScreenChannelBase::updateRect()
 {
-    const S32 CHANNEL_BOTTOM_PANEL_MARGIN = 35;
+//  const S32 CHANNEL_BOTTOM_PANEL_MARGIN = 35;
     S32 channel_top = getChannelRect().mTop;
-    S32 channel_bottom = getChannelRect().mBottom + CHANNEL_BOTTOM_PANEL_MARGIN;
+//  <FS:Ansariel> Keep custom bottom panel margin
+//  S32 channel_bottom = getChannelRect().mBottom + CHANNEL_BOTTOM_PANEL_MARGIN;
+    S32 channel_bottom = getChannelRect().mBottom + gSavedSettings.getS32("ChannelBottomPanelMargin");
     S32 channel_left = getRect().mLeft;
     S32 channel_right = getRect().mRight;
     setRect(LLRect(channel_left, channel_top, channel_right, channel_bottom));

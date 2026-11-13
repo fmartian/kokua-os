@@ -92,6 +92,9 @@ public:
 
     // static data update, called from message handler
     static void updateUserInfo(const std::string& visibility);
+#if OPENSIM
+    static void updateUserInfo(const std::string& visibility, bool im_via_email, const std::string& email);
+#endif
 
     // refresh all the graphics preferences menus
     static void refreshEnabledGraphics();
@@ -237,6 +240,10 @@ protected:
 
     boost::signals2::connection mLODFactorChangedSignalAdvanced;
 
+#if OPENSIM
+    void setPersonalInfo(const std::string& visibility, bool im_via_email, const std::string& email);
+#endif
+
 public:
 //End Advanced section
 
@@ -259,6 +266,10 @@ private:
     static std::string sSkin;
     notifications_map mNotificationOptions;
     bool mGotPersonalInfo;
+#if OPENSIM
+    // <FS:Ansariel> Keep it for OpenSim
+    bool mOriginalIMViaEmail;
+#endif
     bool mLanguageChanged;
     bool mAvatarDataInitialized;
     U32 mLastQualityLevel = 0;
@@ -283,7 +294,7 @@ private:
     std::unique_ptr< ll::prefs::SearchData > mSearchData;
     bool mSearchDataDirty;
 
-    boost::signals2::connection mImpostorsChangedSignal;
+    boost::signals2::connection mImpostersChangedSignal;
     boost::signals2::connection mComplexityChangedSignal;
 
     void onUpdateFilterTerm( bool force = false );

@@ -27,12 +27,12 @@
 #include "llmemory.h"
 #include "llmath.h"
 
-#include <set>
+//#include <set>
 #if !LL_WINDOWS
 #include <stdint.h>
 #endif
 #include <cmath>
-#include <unordered_map>
+//#include <unordered_map>
 
 #include "llerror.h"
 
@@ -42,7 +42,7 @@
 #include "v4math.h"
 #include "m4math.h"
 #include "m3math.h"
-#include "llmatrix3a.h"
+//#include "llmatrix3a.h"
 #include "lloctree.h"
 #include "llvolume.h"
 #include "llstl.h"
@@ -50,7 +50,7 @@
 #include "llvector4a.h"
 #include "llmatrix4a.h"
 #include "llmeshoptimizer.h"
-#include "lltimer.h"
+//#include "lltimer.h"
 #include "llvolumeoctree.h"
 #include "workqueue.h"
 
@@ -65,7 +65,12 @@
 constexpr F32 MIN_CUT_DELTA = 0.02f;
 
 constexpr F32 HOLLOW_MIN = 0.f;
+#if OPENSIM
+// <AW: opensim-limits>
+constexpr F32 HOLLOW_MAX = 0.99f;
+#else
 constexpr F32 HOLLOW_MAX = 0.95f;
+#endif
 constexpr F32 HOLLOW_MAX_SQUARE = 0.7f;
 
 constexpr F32 TWIST_MIN = -1.f;
@@ -74,10 +79,20 @@ constexpr F32 TWIST_MAX =  1.f;
 constexpr F32 RATIO_MIN = 0.f;
 constexpr F32 RATIO_MAX = 2.f; // Tom Y: Inverted sense here: 0 = top taper, 2 = bottom taper
 
-constexpr F32 HOLE_X_MIN= 0.05f;
+#if OPENSIM
+// <AW: opensim-limits>
+constexpr F32 HOLE_X_MIN = 0.01f;
+#else
+constexpr F32 HOLE_X_MIN = 0.05f;
+#endif
 constexpr F32 HOLE_X_MAX= 1.0f;
 
-constexpr F32 HOLE_Y_MIN= 0.05f;
+#if OPENSIM
+// <AW: opensim-limits>
+constexpr F32 HOLE_Y_MIN = 0.01f;
+#else
+constexpr F32 HOLE_Y_MIN = 0.05f;
+#endif
 constexpr F32 HOLE_Y_MAX= 0.5f;
 
 constexpr F32 SHEAR_MIN = -0.5f;
@@ -3270,7 +3285,6 @@ void LLVolume::sculptGenerateMapVertices(U16 sculpt_width, U16 sculpt_height, S8
     }
 }
 
-
 constexpr S32 SCULPT_REZ_1 = 6;  // changed from 4 to 6 - 6 looks round whereas 4 looks square
 constexpr S32 SCULPT_REZ_2 = 8;
 constexpr S32 SCULPT_REZ_3 = 16;
@@ -3297,8 +3311,6 @@ S32 sculpt_sides(F32 detail)
         return SCULPT_REZ_4;
     }
 }
-
-
 
 // determine the number of vertices in both s and t direction for this sculpt
 void sculpt_calc_mesh_resolution(U16 width, U16 height, U8 type, F32 detail, S32& s, S32& t)
@@ -3417,9 +3429,6 @@ void LLVolume::sculpt(U16 sculpt_width, U16 sculpt_height, S8 sculpt_components,
     createVolumeFaces();
 }
 
-
-
-
 bool LLVolume::isCap(S32 face)
 {
     return mProfilep->mFaces[face].mCap;
@@ -3429,7 +3438,6 @@ bool LLVolume::isFlat(S32 face)
 {
     return mProfilep->mFaces[face].mFlat;
 }
-
 
 bool LLVolumeParams::isSculpt() const
 {
@@ -3475,8 +3483,6 @@ bool LLVolumeParams::operator<(const LLVolumeParams &params) const
     }
 
     return mSculptType < params.mSculptType;
-
-
 }
 
 void LLVolumeParams::copyParams(const LLVolumeParams &params)
@@ -3577,6 +3583,8 @@ bool LLVolumeParams::setHollow(const F32 h)
 
     F32 hollow = h;
     bool valid = limit_range(hollow, HOLLOW_MIN, max_hollow);
+    if (!valid)
+        LL_WARNS() << "Hollow object with h=" << h << " allowed min=" << HOLLOW_MIN << " max=" << max_hollow << LL_ENDL;
     mProfileParams.setHollow(hollow);
 
     return valid;
@@ -3621,7 +3629,9 @@ bool LLVolumeParams::setRatio(const F32 x, const F32 y)
     bool valid = limit_range(ratio_x, min_x, max_x);
     F32 ratio_y = y;
     valid &= limit_range(ratio_y, min_y, max_y);
-
+    if (!valid)
+        LL_WARNS() << "Ratio with x=" << x << " and y=" << y << " min_x=" << min_x << " max_x=" << max_x <<
+                                                                " min_y=" << min_y << " max_y=" << max_y << LL_ENDL;
     mPathParams.setScale(ratio_x, ratio_y);
 
     return valid;

@@ -62,8 +62,13 @@ public:
     bool                isOldVersion() const;
 
     /*virtual*/ void    writeToAvatar(LLAvatarAppearance *avatarp);
-    void                removeFromAvatar()  { LLViewerWearable::removeFromAvatar( mType); }
-    static void         removeFromAvatar( LLWearableType::EType type);
+#if OPENSIM
+    void        removeFromAvatar(bool upload_bake = true) { LLViewerWearable::removeFromAvatar(mType, upload_bake); }
+    static void removeFromAvatar(LLWearableType::EType type, bool upload_bake);
+#else
+    void        removeFromAvatar() { LLViewerWearable::removeFromAvatar(mType); }
+    static void removeFromAvatar(LLWearableType::EType type);
+#endif
 
     /*virtual*/ EImportResult   importStream( std::istream& input_stream, LLAvatarAppearance* avatarp );
 
@@ -93,6 +98,11 @@ public:
     // the wearable was worn. make sure the name of the wearable object matches the LLViewerInventoryItem,
     // not the wearable asset itself.
     void                refreshName();
+
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    /*virtual*/ void    addToBakedTextureHash(LLMD5& hash) const;
+#endif
 
 protected:
     LLAssetID           mAssetID;

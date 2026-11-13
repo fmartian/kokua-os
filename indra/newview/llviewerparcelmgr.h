@@ -85,6 +85,10 @@ public:
     typedef std::function<void()> teleport_failed_callback_t;
     typedef boost::signals2::signal<void()> teleport_failed_signal_t;
 
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    void    initParcelsPerEdge(F32 region_size);
+#endif
     static void cleanupGlobals();
 
     bool    selectionEmpty() const;

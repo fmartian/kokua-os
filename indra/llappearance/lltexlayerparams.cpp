@@ -181,6 +181,64 @@ bool LLTexLayerParamAlpha::getMultiplyBlend() const
     return ((LLTexLayerParamAlphaInfo *)getInfo())->mMultiplyBlend;
 }
 
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+void LLTexLayerParamAlpha::setWeight(F32 weight, bool upload_bake)
+{
+    if (mIsAnimating || mTexLayer == NULL)
+    {
+        return;
+    }
+    F32 min_weight = getMinWeight();
+    F32 max_weight = getMaxWeight();
+    F32 new_weight = llclamp(weight, min_weight, max_weight);
+    U8  cur_u8     = F32_to_U8(mCurWeight, min_weight, max_weight);
+    U8  new_u8     = F32_to_U8(new_weight, min_weight, max_weight);
+    if (cur_u8 != new_u8)
+    {
+        mCurWeight = new_weight;
+
+        if ((mAvatarAppearance->getSex() & getSex()) &&
+            (mAvatarAppearance->isSelf() && !mIsDummy)) // only trigger a baked texture update if we're changing a wearable's visual param.
+        {
+            // <FS:Ansariel> [Legacy Bake]
+            mAvatarAppearance->invalidateComposite(mTexLayer->getTexLayerSet(), upload_bake);
+            mTexLayer->invalidateMorphMasks();
+        }
+    }
+}
+
+// <FS:Ansariel> [Legacy Bake]
+void LLTexLayerParamAlpha::setAnimationTarget(F32 target_value, bool upload_bake)
+{
+    // do not animate dummy parameters
+    if (mIsDummy)
+    {
+        // <FS:Ansariel> [Legacy Bake]
+        setWeight(target_value, upload_bake);
+        return;
+    }
+
+    mTargetWeight = target_value;
+    // <FS:Ansariel> [Legacy Bake]
+    setWeight(target_value, upload_bake);
+    mIsAnimating = true;
+    if (mNext)
+    {
+        // <FS:Ansariel> [Legacy Bake]
+        mNext->setAnimationTarget(target_value, upload_bake);
+    }
+}
+
+// <FS:Ansariel> [Legacy Bake]
+void LLTexLayerParamAlpha::animate(F32 delta, bool upload_bake)
+{
+    if (mNext)
+    {
+        mNext->animate(delta, upload_bake);
+    }
+}
+#else
 void LLTexLayerParamAlpha::setWeight(F32 weight)
 {
     if (mIsAnimating || mTexLayer == NULL)
@@ -230,6 +288,7 @@ void LLTexLayerParamAlpha::animate(F32 delta)
         mNext->animate(delta);
     }
 }
+#endif
 
 bool LLTexLayerParamAlpha::getSkip() const
 {
@@ -474,8 +533,9 @@ LLColor4 LLTexLayerParamColor::getNetColor() const
     }
 }
 
-
-void LLTexLayerParamColor::setWeight(F32 weight)
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+void LLTexLayerParamColor::setWeight(F32 weight, bool upload_bake)
 {
     if (mIsAnimating)
     {
@@ -499,7 +559,74 @@ void LLTexLayerParamColor::setWeight(F32 weight)
             return;
         }
 
-        if ((mAvatarAppearance->getSex() & getSex()) && (mAvatarAppearance->isSelf() && !mIsDummy)) // only trigger a baked texture update if we're changing a wearable's visual param.
+        // only trigger a baked texture update if we're changing a wearable's visual param.
+        if ((mAvatarAppearance->getSex() & getSex()) && (mAvatarAppearance->isSelf() && !mIsDummy))
+        {
+            // <FS:Ansariel> [Legacy Bake]
+            onGlobalColorChanged(upload_bake);
+            if (mTexLayer)
+            {
+                // <FS:Ansariel> [Legacy Bake]
+                mAvatarAppearance->invalidateComposite(mTexLayer->getTexLayerSet(), upload_bake);
+            }
+        }
+
+//      LL_INFOS() << "param " << mName << " = " << new_weight << LL_ENDL;
+    }
+}
+
+// <FS:Ansariel> [Legacy Bake]
+void LLTexLayerParamColor::setAnimationTarget(F32 target_value, bool upload_bake)
+{
+    // set value first then set interpolating flag to ignore further updates
+    mTargetWeight = target_value;
+    // <FS:Ansariel> [Legacy Bake]
+    setWeight(target_value, upload_bake);
+    mIsAnimating = true;
+    if (mNext)
+    {
+        // <FS:Ansariel> [Legacy Bake]
+        mNext->setAnimationTarget(target_value, upload_bake);
+    }
+}
+
+// <FS:Ansariel> [Legacy Bake]
+void LLTexLayerParamColor::animate(F32 delta, bool upload_bake)
+{
+    if (mNext)
+    {
+        // <FS:Ansariel> [Legacy Bake]
+        mNext->animate(delta, upload_bake);
+    }
+}
+
+#else
+void LLTexLayerParamColor::setWeight(F32 weight)
+{
+    if (mIsAnimating)
+    {
+        return;
+    }
+
+    F32 min_weight = getMinWeight();
+    F32 max_weight = getMaxWeight();
+    F32 new_weight = llclamp(weight, min_weight, max_weight);
+    U8  cur_u8     = F32_to_U8(mCurWeight, min_weight, max_weight);
+    U8  new_u8     = F32_to_U8(new_weight, min_weight, max_weight);
+    if (cur_u8 != new_u8)
+    {
+        mCurWeight = new_weight;
+
+        const LLTexLayerParamColorInfo* info = (LLTexLayerParamColorInfo*)getInfo();
+
+        if (info->mNumColors <= 0)
+        {
+            // This will happen when we set the default weight the first time.
+            return;
+        }
+
+        if ((mAvatarAppearance->getSex() & getSex()) &&
+            (mAvatarAppearance->isSelf() && !mIsDummy)) // only trigger a baked texture update if we're changing a wearable's visual param.
         {
             onGlobalColorChanged();
             if (mTexLayer)
@@ -531,6 +658,7 @@ void LLTexLayerParamColor::animate(F32 delta)
         mNext->animate(delta);
     }
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // LLTexLayerParamColorInfo

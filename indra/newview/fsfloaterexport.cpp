@@ -68,6 +68,9 @@
 #include "llappviewer.h"
 #include "fscommon.h"
 
+#if OPENSIM
+#include "lfsimfeaturehandler.h"
+#endif
 #include <boost/algorithm/string_regex.hpp>
 
 const F32 MAX_TEXTURE_WAIT_TIME = 30.0f;
@@ -726,6 +729,27 @@ void FSFloaterObjectExport::inventoryChanged(LLViewerObject* object, LLInventory
         bool exportable = false;
         LLPermissions perms = item->getPermissions();
 
+#if OPENSIM
+        if (LLGridManager::getInstance()->isInOpenSim())
+        {
+            switch (LFSimFeatureHandler::instance().exportPolicy())
+            {
+                case EXPORT_ALLOWED:
+                    exportable = (perms.getMaskOwner() & PERM_EXPORT) == PERM_EXPORT;
+                    break;
+                    /// TODO: Once enough grids adopt a version supporting exports, get consensus
+                    /// on whether we should allow full perm exports anymore.
+                case EXPORT_UNDEFINED:
+                    exportable = (perms.getMaskBase() & PERM_ITEM_UNRESTRICTED) == PERM_ITEM_UNRESTRICTED;
+                    break;
+                case EXPORT_DENIED:
+                default:
+                    exportable = perms.getCreator() == gAgentID;
+                    break;
+            }
+        }
+        else
+#endif
         if (perms.getCreator() == gAgentID)
         {
             exportable = true;

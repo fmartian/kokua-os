@@ -46,7 +46,7 @@
 // Viewer includes
 #include "llagent.h"
 #include "llagentcamera.h"
-#include "llappviewer.h" // for gDisconnected
+//#include "llappviewer.h" // for gDisconnected
 #include "llavataractions.h"
 #include "llcallingcard.h" // LLAvatarTracker
 #include "llfloaterworldmap.h"
@@ -61,7 +61,7 @@
 #include "llviewertexture.h"
 #include "llviewermenu.h"
 #include "llviewerobjectlist.h"
-#include "llavataractions.h"
+//#include "llavataractions.h"
 #include "llfloatersidepanelcontainer.h"
 #include "llviewerparceloverlay.h"
 #include "llviewerregion.h"
@@ -69,6 +69,11 @@
 #include "llworld.h"
 #include "llworldmapview.h"     // shared draw code
 #include "lggcontactsets.h"
+#if OPENSIM
+#include "llviewernetwork.h"
+#endif
+
+#define UseDrawTexMap 1
 
 static LLDefaultChildRegistry::Register<LLNetMap> r1("net_map");
 
@@ -177,7 +182,7 @@ bool LLNetMap::postBuild()
 
     commitRegistrar.add("Minimap.AddToContactSet", boost::bind(&LLNetMap::handleAddToContactSet, this));
 
-    // <FM> 
+    // <FM>
     updateOverlayFlags("MiniMapObjects");
     updateOverlayFlags("MiniMapParcelInfo");
 
@@ -202,7 +207,12 @@ void LLNetMap::setScale( F32 scale )
         F32 height = (F32)(getRect().getHeight());
         F32 diameter = sqrt(width * width + height * height);
         F32 region_widths = diameter / mScale;
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        F32 meters = region_widths * REGION_WIDTH_METERS;
+#else
         F32 meters = region_widths * LLWorld::getInstance()->getRegionWidthInMeters();
+#endif
         F32 num_pixels = (F32)mObjectImagep->getWidth();
         mObjectMapTPM = num_pixels / meters;
         mObjectMapPixels = diameter;
@@ -217,7 +227,6 @@ void LLNetMap::setScale( F32 scale )
     mUpdateParcelImage = true;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////////
 
 void LLNetMap::draw()
@@ -228,7 +237,14 @@ void LLNetMap::draw()
     }
     LL_PROFILE_ZONE_SCOPED;
     static LLFrameTimer map_timer;
-    static LLUIColor map_track_color = LLUIColorTable::instance().getColor("MapTrackColor", LLColor4::white);
+#if OPENSIM
+    // <FS:Ansariel> OpenSim
+    if (!LLWorld::getInstance()->getAllowMinimap())
+    {
+        return;
+    }
+#endif
+    static LLUIColor map_track_color   = LLUIColorTable::instance().getColor("MapTrackColor", LLColor4::white);
     static LLUIColor map_frustum_color = LLUIColorTable::instance().getColor("MapFrustumColor", LLColor4::white);
     static LLUIColor map_parcel_outline_color = LLUIColorTable::instance().getColor("MapParcelOutlineColor", LLColor4(LLColor3(LLColor4::yellow), 0.5f));
     static LLUIColor map_whisper_ring_color = LLUIColorTable::instance().getColor("MapWhisperRingColor", LLColor4::blue); // <FS:LO> FIRE-17460 Add Whisper Chat Ring to Minimap
@@ -312,8 +328,19 @@ void LLNetMap::draw()
             gGL.rotatef( rotation * RAD_TO_DEG, 0.f, 0.f, 1.f);
         }
 
+        bool miniMapWorldMapDefault = false;
+#if OPENSIM
+        miniMapWorldMapDefault = LLGridManager::getInstance()->isInOpenSim();
+#endif
+        static LLCachedControl<bool> use_world_map_textures(gSavedSettings, "MiniMapWorldMapTextures", miniMapWorldMapDefault);
+
         // figure out where agent is
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        const S32 region_width = ll_round(REGION_WIDTH_METERS);
+#else
         const S32 region_width = ll_round(LLWorld::getInstance()->getRegionWidthInMeters());
+#endif
         const F32 scale_pixels_per_meter = mScale / region_width;
 
         for (LLWorld::region_list_t::const_iterator iter = LLWorld::getInstance()->getRegionList().begin();
@@ -329,9 +356,15 @@ void LLNetMap::draw()
             // background region rectangle
             F32 bottom =    relative_y;
             F32 left =      relative_x;
-            F32 top =       bottom + mScale ;
+#if OPENSIM
+            // <FS:CR> OpenSim VarRegion
+            const F32 real_width(regionp->getWidth());
+            F32 top   =     bottom + (real_width / region_width) * mScale;
+            F32 right =     left + (real_width / region_width) * mScale;
+#else
+            F32 top   =     bottom + mScale;
             F32 right =     left + mScale ;
-
+#endif
             if (regionp == gAgent.getRegion())
             {
                 gGL.color4f(1.f, 1.f, 1.f, 1.f);
@@ -345,29 +378,79 @@ void LLNetMap::draw()
             {
                 gGL.color4f(1.f, 0.5f, 0.5f, 1.f);
             }
-            // Draw using texture.
-#if UseDrawTexMap
-            drawTexMap(regionp->getLand().getSTexture(), left, top, right, bottom);
-#else
-            gGL.getTexUnit(0)->bind(regionp->getLand().getSTexture());
-            gGL.begin(LLRender::TRIANGLES);
-            {
-                gGL.texCoord2f(0.f, 1.f);
-                gGL.vertex2f(left, top);
-                gGL.texCoord2f(0.f, 0.f);
-                gGL.vertex2f(left, bottom);
-                gGL.texCoord2f(1.f, 0.f);
-                gGL.vertex2f(right, bottom);
 
-                gGL.texCoord2f(0.f, 1.f);
-                gGL.vertex2f(left, top);
-                gGL.texCoord2f(1.f, 0.f);
-                gGL.vertex2f(right, bottom);
-                gGL.texCoord2f(1.f, 1.f);
-                gGL.vertex2f(right, top);
-            }
-            gGL.end();
+#if OPENSIM
+            if (use_world_map_textures || LLGridManager::getInstance()->isInOpenSim())
+#else
+            if (use_world_map_textures)
 #endif
+            {
+                const LLViewerRegion::tex_matrix_t& tiles(regionp->getWorldMapTiles());
+                S32 scaled_width = (S32)(regionp->getWidth() / region_width);
+                S32 square_width = (S32)(scaled_width * scaled_width);
+                for (S32 i(0); i < square_width; ++i)
+                {
+                    const F32 y((F32)(i / scaled_width));
+                    const F32 x((F32)(i - y * scaled_width));
+                    const F32 local_left(left + x * mScale);
+                    const F32 local_right(local_left + mScale);
+                    const F32 local_bottom(bottom + y * mScale);
+                    const F32 local_top(local_bottom + mScale);
+                    LLViewerTexture* pRegionImage = tiles[(U64)(x * scaled_width + y)];
+                    if (pRegionImage && pRegionImage->hasGLTexture())
+                    {
+#if UseDrawTexMap
+                        drawTexMap(pRegionImage, local_left, local_top, local_right, local_bottom);
+#else
+                        gGL.getTexUnit(0)->bind(pRegionImage);
+                        gGL.begin(LLRender::TRIANGLES);
+                        {
+                            gGL.texCoord2f(0.f, 1.f);
+                            gGL.vertex2f(local_left, local_top);
+                            gGL.texCoord2f(0.f, 0.f);
+                            gGL.vertex2f(local_left, local_bottom);
+                            gGL.texCoord2f(1.f, 0.f);
+                            gGL.vertex2f(local_right, local_bottom);
+
+                            gGL.texCoord2f(0.f, 1.f);
+                            gGL.vertex2f(local_left, local_top);
+                            gGL.texCoord2f(1.f, 0.f);
+                            gGL.vertex2f(local_right, local_bottom);
+                            gGL.texCoord2f(1.f, 1.f);
+                            gGL.vertex2f(local_right, local_top);
+                        }
+                        gGL.end();
+#endif
+                        pRegionImage->setBoostLevel(LLViewerTexture::BOOST_MAP_VISIBLE);
+                    }
+                }
+            }
+            else
+            {
+                // Draw using texture.
+#if UseDrawTexMap
+                drawTexMap(regionp->getLand().getSTexture(), left, top, right, bottom);
+#else
+                gGL.getTexUnit(0)->bind(regionp->getLand().getSTexture());
+                gGL.begin(LLRender::TRIANGLES);
+                {
+                    gGL.texCoord2f(0.f, 1.f);
+                    gGL.vertex2f(left, top);
+                    gGL.texCoord2f(0.f, 0.f);
+                    gGL.vertex2f(left, bottom);
+                    gGL.texCoord2f(1.f, 0.f);
+                    gGL.vertex2f(right, bottom);
+
+                    gGL.texCoord2f(0.f, 1.f);
+                    gGL.vertex2f(left, top);
+                    gGL.texCoord2f(1.f, 0.f);
+                    gGL.vertex2f(right, bottom);
+                    gGL.texCoord2f(1.f, 1.f);
+                    gGL.vertex2f(right, top);
+                }
+                gGL.end();
+#endif
+            }
             gGL.flush();
         }
 
@@ -455,7 +538,6 @@ void LLNetMap::draw()
 
         if (mShowParcelInfo)
         {
-
             map_center_agent = gAgent.getPosAgentFromGlobal(mParcelImageCenterGlobal) - camera_position;
             map_center_agent.mV[VX] *= mScale / region_width;
             map_center_agent.mV[VY] *= mScale / region_width;
@@ -667,8 +749,12 @@ void LLNetMap::draw()
         }
 
         // Draw frustum
-        F32 meters_to_pixels = mScale/ LLWorld::getInstance()->getRegionWidthInMeters();
-
+#if OPENSIM
+        // <FS:CR> OpenSim VarRegion
+        F32 meters_to_pixels = mScale / REGION_WIDTH_METERS;
+#else
+        F32 meters_to_pixels = mScale / LLWorld::getInstance()->getRegionWidthInMeters();
+#endif
         F32 horiz_fov = LLViewerCamera::getInstance()->getView() * LLViewerCamera::getInstance()->getAspect();
         F32 far_clip_meters = LLViewerCamera::getInstance()->getFar();
         F32 far_clip_pixels = far_clip_meters * meters_to_pixels;
@@ -723,7 +809,12 @@ LLVector3 LLNetMap::globalPosToView(const LLVector3d& global_pos)
     LLVector3 pos_local;
     pos_local.setVec(relative_pos_global);  // convert to floats from doubles
 
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    mPixelsPerMeter = mScale / REGION_WIDTH_METERS;
+#else
     mPixelsPerMeter = mScale / LLWorld::getInstance()->getRegionWidthInMeters();
+#endif
     pos_local.mV[VX] *= mPixelsPerMeter;
     pos_local.mV[VY] *= mPixelsPerMeter;
     // leave Z component in meters
@@ -880,8 +971,12 @@ LLVector3d LLNetMap::viewPosToGlobal( S32 x, S32 y )
         pos_local.rotVec( rot );
     }
 
-    pos_local *= ( LLWorld::getInstance()->getRegionWidthInMeters() / mScale );
-
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    pos_local *= (REGION_WIDTH_METERS / mScale);
+#else
+    pos_local *= (LLWorld::getInstance()->getRegionWidthInMeters() / mScale);
+#endif
     LLVector3d pos_global;
     pos_global.setVec( pos_local );
     pos_global += gAgentCamera.getCameraPositionGlobal();

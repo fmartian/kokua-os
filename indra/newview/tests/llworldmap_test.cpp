@@ -116,7 +116,7 @@ namespace tut
         iteminfo_test()
         {
             LLUUID id;
-            mItem = new LLItemInfo(X_WORLD_TEST, Y_WORLD_TEST, ITEM_NAME_TEST, id);
+            mItem = new LLItemInfo((U32)X_WORLD_TEST, (U32)Y_WORLD_TEST, ITEM_NAME_TEST, id);
         }
         ~iteminfo_test()
         {
@@ -295,7 +295,7 @@ namespace tut
 
         // Create an item to be inserted
         LLUUID id;
-        LLItemInfo item(X_WORLD_TEST, Y_WORLD_TEST, ITEM_NAME_TEST, id);
+        LLItemInfo item((U32)X_WORLD_TEST, (U32)Y_WORLD_TEST, ITEM_NAME_TEST, id);
 
         // Insert the item in each list
         mSim->insertTeleHub(item);

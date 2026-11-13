@@ -29,19 +29,22 @@
 
 #include "llslurl.h"
 
-#include "llpanellogin.h"
-#include "llviewercontrol.h"
+//#include "llpanellogin.h"
+//#include "llviewercontrol.h"
 #include "llviewernetwork.h"
 
-#include "curl/curl.h"
-#include <boost/algorithm/string.hpp>
-#include "llworld.h"
+//#include "curl/curl.h"
+//#include <boost/algorithm/string.hpp>
+//#include "llworld.h"
 
 const char* LLSLURL::SLURL_HTTP_SCHEME       = "http";
 const char* LLSLURL::SLURL_HTTPS_SCHEME      = "https";
 const char* LLSLURL::SLURL_SECONDLIFE_SCHEME = "secondlife";
 const char* LLSLURL::SLURL_SECONDLIFE_PATH   = "secondlife";
 const char* LLSLURL::SLURL_COM               = "slurl.com";
+#if OPENSIM
+const char* LLSLURL::HOP_SCHEME = "hop"; // <AW: hop:// protocol>
+#endif
 
 // For DnD - even though www.slurl.com redirects to slurl.com in a browser, you  can copy and drag
 // text with www.slurl.com or a link explicitly pointing at www.slurl.com so testing for this
@@ -58,6 +61,8 @@ const char* LLSLURL::SIM_LOCATION_LAST           = "last";
 // resolve a simstring from a slurl
 LLSLURL::LLSLURL(const std::string& slurl)
 {
+    LLGridManager* gridMgr = LLGridManager::getInstance();
+
     // by default we go to agni.
     mType = INVALID;
 
@@ -82,7 +87,7 @@ LLSLURL::LLSLURL(const std::string& slurl)
             // https://<hostname>/region/ for Standalone grid (the word region, not the region name)
             // these slurls are typically passed in from the 'starting location' box on the login panel,
             // where the user can type in <regionname>/<x>/<y>/<z>
-            std::string fixed_slurl = LLGridManager::getInstance()->getSLURLBase();
+            std::string fixed_slurl = gridMgr->getSLURLBase();
 
             // the slurl that was passed in might have a prepended /, or not.  So,
             // we strip off the prepended '/' so we don't end up with http://slurl.com/secondlife/<region>/<x>/<y>/<z>
@@ -99,6 +104,18 @@ LLSLURL::LLSLURL(const std::string& slurl)
             // We then load the slurl into a LLURI form
             slurl_uri = LLURI(fixed_slurl);
         }
+#if OPENSIM
+        else if (slurl.find("hop://") != std::string::npos)
+        {
+            mHypergrid = true;
+            slurl_uri = LLURI(slurl);
+        }
+        else if (slurl.find(":!!") != std::string::npos)
+        {
+            mHypergrid = true;
+            slurl_uri  = LLURI("hop://" + slurl);
+        }
+#endif
         else
         {
             // as we did have a scheme, implying a URI style slurl, we
@@ -151,7 +168,7 @@ LLSLURL::LLSLURL(const std::string& slurl)
                 // so parse the grid name to derive the grid ID
                 if (!slurl_uri.hostName().empty())
                 {
-                    mGrid = LLGridManager::getInstance()->getGridId(slurl_uri.hostName());
+                    mGrid = gridMgr->getGridId(slurl_uri.hostName());
                 }
                 else if(path_array[0].asString() == LLSLURL::SLURL_SECONDLIFE_PATH)
                 {
@@ -163,7 +180,7 @@ LLSLURL::LLSLURL(const std::string& slurl)
                 {
                     // for app style slurls, where no grid name is specified, assume the currently
                     // selected or logged in grid.
-                    mGrid =  LLGridManager::getInstance()->getGridId();
+                    mGrid = gridMgr->getGridId();
                 }
 
                 if (mGrid.empty())
@@ -199,9 +216,13 @@ LLSLURL::LLSLURL(const std::string& slurl)
                 }
             }
         }
-        else if ((slurl_uri.scheme() == LLSLURL::SLURL_HTTP_SCHEME) ||
-            (slurl_uri.scheme() == LLSLURL::SLURL_HTTPS_SCHEME) ||
-            (slurl_uri.scheme() == LLSLURL::SLURL_X_GRID_LOCATION_INFO_SCHEME))
+        else if ((slurl_uri.scheme() == LLSLURL::SLURL_HTTP_SCHEME)
+            || (slurl_uri.scheme() == LLSLURL::SLURL_HTTPS_SCHEME)
+            || (slurl_uri.scheme() == LLSLURL::SLURL_X_GRID_LOCATION_INFO_SCHEME)
+#if OPENSIM
+            || (slurl_uri.scheme() == LLSLURL::HOP_SCHEME)
+#endif
+        )
         {
             // We're dealing with either a Standalone style slurl or slurl.com slurl
             if ((slurl_uri.hostName() == LLSLURL::SLURL_COM) ||
@@ -213,20 +234,74 @@ LLSLURL::LLSLURL(const std::string& slurl)
             }
             else
             {
+                LL_DEBUGS("SLURL") << "slurl style Standalone" << LL_ENDL;
+#if !OPENSIM
                 // Don't try to match any old http://<host>/ URL as a SLurl.
                 // SLE SLurls will have the grid hostname in the URL, so only
                 // match http URLs if the hostname matches the grid hostname
                 // (or its a slurl.com or maps.secondlife.com URL).
                 if ((slurl_uri.scheme() == LLSLURL::SLURL_HTTP_SCHEME ||
                      slurl_uri.scheme() == LLSLURL::SLURL_HTTPS_SCHEME) &&
-                    slurl_uri.hostName() != LLGridManager::getInstance()->getGrid())
+                    slurl_uri.hostName() != gridMgr->getGrid())
                 {
                     return;
                 }
 
-                // As it's a Standalone grid/open, we will always have a hostname, as Standalone/open  style
+                // As it's a Standalone grid/open, we will always have a hostname, as Standalone/open style
                 // urls are properly formed, unlike the stinky maingrid style
                 mGrid = slurl_uri.hostName();
+#else
+                std::string probe_grid;
+                std::string hypergrid = slurl_uri.hostName();
+
+                if (slurl_uri.port().size())
+                {
+                    hypergrid += ":" + slurl_uri.port();
+                }
+
+                std::string hyper_trimmed = gridMgr->trimHypergrid(hypergrid);
+                if (hypergrid != hyper_trimmed)
+                {
+                    mHypergrid = true;
+                    path_array.insert(0, hypergrid);
+                }
+
+                probe_grid = gridMgr->getGridByProbing(hypergrid);
+                LL_DEBUGS("SLURL") << "Probing Hypergrid (trimmed): " << hypergrid << "(" << hyper_trimmed << ")" << LL_ENDL;
+                LL_DEBUGS("SLURL") << "Probing result: " << (probe_grid.empty() ? "NOT FOUND" : probe_grid.c_str()) << LL_ENDL;
+                if (probe_grid.empty())
+                {
+                    probe_grid = gridMgr->getGridByProbing(slurl_uri.hostName());
+                    LL_DEBUGS("SLURL") << "Probing hostName: " << slurl_uri.hostName() << LL_ENDL;
+                    LL_DEBUGS("SLURL") << "Probing result: " << (probe_grid.empty() ? "NOT FOUND" : probe_grid.c_str()) << LL_ENDL;
+                    LL_DEBUGS("SLURL") << "slurl_uri.hostNameAndPort(): " << hypergrid << LL_ENDL;
+                }
+
+                if ((slurl_uri.scheme() == LLSLURL::SLURL_HTTP_SCHEME || slurl_uri.scheme() == LLSLURL::SLURL_HTTPS_SCHEME) &&
+                    hypergrid != probe_grid)
+                {
+                    LL_DEBUGS("SLURL") << "Don't try to match any old http://<host>/ URL as a SLurl" << LL_ENDL;
+
+                    return;
+                }
+                // As it's a Standalone grid/open, we will always have a hostname,
+                // as Standalone/open style urls are properly formed,
+                // unlike the stinky maingrid style
+                if (probe_grid.empty())
+                {
+                    LL_DEBUGS("SLURL") << "Fallback to hostname and port as grid" << LL_ENDL;
+                    mGrid = hypergrid;
+                }
+                else
+                {
+                    mGrid = probe_grid;
+                    if (!mHypergrid) // only check if we have not already decided HG is true
+                    {
+                        mHypergrid = gridMgr->isHyperGrid(probe_grid);
+                    }
+                    LL_DEBUGS("SLURL") << "using probe result: " << mGrid << " hg=" << ((mHypergrid) ? "true" : "false") << LL_ENDL;
+                }
+#endif
             }
             if (path_array.size() == 0)
             {
@@ -251,6 +326,13 @@ LLSLURL::LLSLURL(const std::string& slurl)
                 path_array.erase(0);
                 // leave app appended.
             }
+#if OPENSIM
+            else if (slurl_uri.scheme() == LLSLURL::HOP_SCHEME)
+            {
+                LL_DEBUGS("SLURL") << "It's a location hop" << LL_ENDL;
+                mType = LOCATION;
+            }
+#endif
             else
             {
                 // not a valid https/http/x-grid-location-info slurl, so it'll likely just be a URL
@@ -334,17 +416,25 @@ LLSLURL::LLSLURL(const std::string& grid, const std::string& region)
 
 // create a slurl given the position.  The position will be modded with the region
 // width handling global positions as well
-LLSLURL::LLSLURL(const std::string& grid,
-        const std::string& region,
-        const LLVector3& position)
+LLSLURL::LLSLURL(const std::string& grid, const std::string& region, const LLVector3& position)
 {
     mGrid = grid;
     mRegion = region;
-    S32 x = ll_round((F32)fmod(position[VX], (F32)REGION_WIDTH_METERS));
-    S32 y = ll_round((F32)fmod(position[VY], (F32)REGION_WIDTH_METERS));
-    S32 z = ll_round((F32)position[VZ]);
-    mType = LOCATION;
-    mPosition = LLVector3((F32)x, (F32)y, (F32)z);
+    mType   = LOCATION;
+
+#if OPENSIM
+    if (!LLGridManager::getInstance()->isInOpenSim())
+    {
+        mPosition = position;
+    }
+    else
+#endif
+    {
+        S32 x     = ll_round((F32)fmod(position[VX], (F32)REGION_WIDTH_METERS));
+        S32 y     = ll_round((F32)fmod(position[VY], (F32)REGION_WIDTH_METERS));
+        S32 z     = ll_round((F32)position[VZ]);
+        mPosition = LLVector3((F32)x, (F32)y, (F32)z);
+    }
 }
 
 // create a simstring
@@ -379,6 +469,35 @@ LLSLURL::LLSLURL(const std::string& command, const LLUUID&id, const std::string&
     mAppPath.append(LLSD(id));
     mAppPath.append(LLSD(verb));
 }
+
+#if OPENSIM
+//<AW: opensim>
+LLSLURL::LLSLURL(const LLSD& path_array, bool from_app) : mHypergrid(false)
+{
+    if (path_array.isArray() && path_array.size() > 0)
+    {
+        std::string query = "hop://";
+        for (int i = 0; path_array.size() > i; i++)
+        {
+            query += path_array[i].asString() + "/";
+        }
+
+        LLSLURL result(query);
+        if (APP == result.getType() && from_app)
+        {
+            mType = INVALID;
+        }
+        else
+        {
+            *this = result;
+        }
+    }
+    else
+    {
+        mType = INVALID;
+    }
+}
+#endif
 
 std::string LLSLURL::getSLURLString() const
 {

@@ -36,8 +36,8 @@
 #include "roles_constants.h"    // for GP_MEMBER_INVITE
 
 #include "llagent.h"
-#include "llappviewer.h"        // for gLastVersionChannel
-#include "llcachename.h"
+//#include "llappviewer.h"        // for gLastVersionChannel
+//#include "llcachename.h"
 #include "llcallingcard.h"      // for LLAvatarTracker
 #include "llconversationlog.h"
 #include "llfloateravatarpicker.h"  // for LLFloaterAvatarPicker
@@ -49,7 +49,7 @@
 #include "llfloaterpay.h"
 #include "llfloaterprofile.h"
 #include "llfloatersidepanelcontainer.h"
-#include "llfloaterwebcontent.h"
+//#include "llfloaterwebcontent.h"
 #include "llfloaterworldmap.h"
 #include "llfolderview.h"
 #include "llgiveinventory.h"
@@ -59,22 +59,23 @@
 #include "llfloaterimcontainer.h"
 #include "llimview.h"           // for gIMMgr
 #include "llmutelist.h"
-#include "llnotificationsutil.h"    // for LLNotificationsUtil
+//#include "llnotificationsutil.h"    // for LLNotificationsUtil
 #include "llpaneloutfitedit.h"
-#include "llpanelprofile.h"
+//#include "llpanelprofile.h"
 #include "llparcel.h"
 #include "llrecentpeople.h"
 #include "lltrans.h"
-#include "llviewercontrol.h"
-#include "llviewerobjectlist.h"
+//#include "llviewercontrol.h"
+//#include "llviewerobjectlist.h"
 #include "llviewermessage.h"    // for handle_lure
 #include "llviewernetwork.h"    // for LLGridManager
 #include "llviewerparcelmgr.h"
 #include "llviewerregion.h"
 #include "llvoavatar.h"
+#include "llweb.h"
 #include "llselectmgr.h"
-#include "lltrans.h"
-#include "llcallingcard.h"
+//#include "lltrans.h"
+//#include "llcallingcard.h"
 #include "llslurl.h"            // IDEVO
 #include "llsidepanelinventory.h"
 #include "llavatarname.h"

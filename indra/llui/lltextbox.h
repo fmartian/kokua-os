@@ -70,6 +70,15 @@ public:
 
     void setShowCursorHand(bool show_cursor) { mShowCursorHand = show_cursor; }
 
+#if OPENSIM
+    // <COLOSI opensim multi-currency support>
+    // Set all LLUIStrings to dirty after currency symbol change to force them to be updated.
+    void updateCurrencySymbols() { mText.updateCurrencySymbols();
+                                   LLTextBase::setText(mText.getString());
+                                   mLabel.updateCurrencySymbols();
+                                 }
+#endif
+
 protected:
     void onUrlLabelUpdated(const std::string& url, const std::string& label);
 

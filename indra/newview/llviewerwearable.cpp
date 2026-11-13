@@ -33,13 +33,13 @@
 #include "lllocaltextureobject.h"
 #include "llnotificationsutil.h"
 #include "llsidepanelappearance.h"
-#include "lltextureentry.h"
-#include "llviewertexlayer.h"
+//#include "lltextureentry.h"
+//#include "llviewertexlayer.h"
 #include "llvoavatarself.h"
 #include "llavatarappearancedefines.h"
 #include "llviewerwearable.h"
 #include "llviewercontrol.h"
-#include "llviewerregion.h"
+//#include "llviewerregion.h"
 
 using namespace LLAvatarAppearanceDefines;
 
@@ -359,7 +359,12 @@ void LLViewerWearable::writeToAvatar(LLAvatarAppearance *avatarp)
 
 // Updates the user's avatar's appearance, replacing this wearables' parameters and textures with default values.
 // static
-void LLViewerWearable::removeFromAvatar( LLWearableType::EType type)
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+void LLViewerWearable::removeFromAvatar(LLWearableType::EType type, bool upload_bake)
+#else
+void LLViewerWearable::removeFromAvatar(LLWearableType::EType type)
+#endif
 {
     if (!isAgentAvatarValid()) return;
 
@@ -378,7 +383,12 @@ void LLViewerWearable::removeFromAvatar( LLWearableType::EType type)
         if( (((LLViewerVisualParam*)param)->getWearableType() == type) && (param->isTweakable() ) )
         {
             S32 param_id = param->getID();
-            gAgentAvatarp->setVisualParamWeight( param_id, param->getDefaultWeight());
+#if OPENSIM
+            // <FS:Ansariel> [Legacy Bake]
+            gAgentAvatarp->setVisualParamWeight(param_id, param->getDefaultWeight(), upload_bake);
+#else
+            gAgentAvatarp->setVisualParamWeight(param_id, param->getDefaultWeight());
+#endif
         }
     }
 
@@ -501,6 +511,16 @@ void LLViewerWearable::refreshName()
         mName = item->getName();
     }
 }
+
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+// virtual
+void LLViewerWearable::addToBakedTextureHash(LLMD5& hash) const
+{
+    LLUUID asset_id = getAssetID();
+    hash.update((const unsigned char*)asset_id.mData, UUID_BYTES);
+}
+#endif
 
 struct LLWearableSaveData
 {

@@ -30,68 +30,68 @@
 
 // viewer includes
 #include "llagent.h"
-#include "llagentcamera.h"
+//#include "llagentcamera.h"
 #include "llaudioengine.h"
 #include "llbutton.h"
 #include "llcommandhandler.h"
 #include "llfirstuse.h"
 #include "llviewercontrol.h"
-#include "llfloaterbuycurrency.h"
+//#include "llfloaterbuycurrency.h"
 #include "llbuycurrencyhtml.h"
 #include "llpanelnearbymedia.h"
 #include "llpanelpresetscamerapulldown.h"
 #include "llpanelpresetspulldown.h"
 #include "llpanelvolumepulldown.h"
 #include "llfloatermarketplace.h"
-#include "llfloaterregioninfo.h"
+//#include "llfloaterregioninfo.h"
 #include "llfloaterscriptdebug.h"
 #include "llhints.h"
-#include "llhudicon.h"
-#include "llnavigationbar.h"
-#include "llkeyboard.h"
+//#include "llhudicon.h"
+//#include "llnavigationbar.h"
+//#include "llkeyboard.h"
 #include "lllayoutstack.h"
-#include "lllineeditor.h"
+//#include "lllineeditor.h"
 #include "llmenugl.h"
 #include "llrootview.h"
 #include "llsd.h"
 #include "lltextbox.h"
 #include "llui.h"
-#include "llviewerparcelmedia.h"
-#include "llviewerparceloverlay.h"
-#include "llviewerregion.h"
+//#include "llviewerparcelmedia.h"
+//#include "llviewerparceloverlay.h"
+//#include "llviewerregion.h"
 #include "llviewerstats.h"
 #include "llviewerwindow.h"
 #include "llframetimer.h"
 #include "llvoavatarself.h"
 #include "llresmgr.h"
-#include "llworld.h"
+//#include "llworld.h"
 #include "llstatgraph.h"
 #include "llvieweraudio.h"
 #include "llviewermedia.h"
 #include "llviewermenu.h"   // for gMenuBarView
-#include "llviewerparcelmgr.h"
+//#include "llviewerparcelmgr.h"
 #include "llviewerthrottle.h"
-#include "lluictrlfactory.h"
+//#include "lluictrlfactory.h"
 
-#include "lltoolmgr.h"
-#include "llfocusmgr.h"
+//#include "lltoolmgr.h"
+//#include "llfocusmgr.h"
 #include "llappviewer.h"
-#include "lltrans.h"
+//#include "lltrans.h"
 
 // library includes
 #include "llfloaterreg.h"
-#include "llfontgl.h"
+//#include "llfontgl.h"
 #include "llrect.h"
 #include "llerror.h"
-#include "llnotificationsutil.h"
-#include "llparcel.h"
+//#include "llnotificationsutil.h"
+//#include "llparcel.h"
 #include "llstring.h"
 #include "message.h"
 #include "llsearchableui.h"
 #include "llsearcheditor.h"
 
 // system includes
-#include <iomanip>
+//#include <iomanip>
 
 //
 // Globals
@@ -302,7 +302,6 @@ bool LLStatusBar::postBuild()
     mPanelNearByMedia->setFollows(FOLLOWS_TOP|FOLLOWS_RIGHT);
     mPanelNearByMedia->setVisible(false);
 
-    mScriptOut = getChildView("scriptout");
     updateBalancePanelPosition();
 
     // Hook up and init for filtering
@@ -971,6 +970,22 @@ void LLStatusBar::setBalanceVisible(bool visible)
 {
     mBoxBalance->setVisible(visible);
 }
+
+#if OPENSIM
+// <COLOSI opensim multi-currency support>
+void LLStatusBar::updateCurrencySymbols()
+{
+    // Update "Buy L$" button because it is only evaluated once when panel is loaded
+    LLButton* buyButton = findChild<LLButton>("buyL");
+    if (buyButton)
+    {
+        buyButton->updateCurrencySymbols();
+    }
+    // Should not need to update the balance display because it is updated frequently.
+    // If it does require an update, do so via a balance update request so we don't
+    // switch the symbol without updating the balance.
+}
+#endif
 
 // Implements secondlife:///app/balance/request to request a L$ balance
 // update via UDP message system. JC

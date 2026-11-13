@@ -35,7 +35,7 @@
 #include "llstartup.h"              // getStartupState()
 #include "llslurl.h"
 #include "llviewercontrol.h"        // gSavedSettings
-#include "llviewernetwork.h"        // EGridInfo
+#include "llviewernetwork.h"        // LLGridManager
 #include "llviewerwindow.h"         // getWindow()
 
 // library includes

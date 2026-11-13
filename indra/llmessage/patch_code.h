@@ -40,7 +40,12 @@ void    end_patch_coding(LLBitPack &bitpack);
 
 void    init_patch_decoding(LLBitPack &bitpack);
 void    decode_patch_group_header(LLBitPack &bitpack, LLGroupHeader *gopp);
-void    decode_patch_header(LLBitPack &bitpack, LLPatchHeader *ph);
+#if OPENSIM
+// <FS:CR> OpenSim VarRegion
+void    decode_patch_header(LLBitPack& bitpack, LLPatchHeader* ph, bool b_large_patch = false);
+#else
+void    decode_patch_header(LLBitPack& bitpack, LLPatchHeader* ph);
+#endif
 void    decode_patch(LLBitPack &bitpack, S32 *patches);
 
 #endif

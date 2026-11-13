@@ -45,7 +45,7 @@
 #include "llsd.h"
 #include "llsdserialize.h"
 #include "llteleportflags.h"
-#include "lltoastnotifypanel.h"
+//#include "lltoastnotifypanel.h"
 #include "lltransactionflags.h"
 #include "llfilesystem.h"
 #include "llxfermanager.h"
@@ -73,31 +73,31 @@
 #include "llinventoryfunctions.h"
 #include "llinventoryobserver.h"
 #include "llinventorypanel.h"
-#include "llfloaterimnearbychat.h"
+//#include "llfloaterimnearbychat.h"
+#include "llviewerchat.h"
 #include "llmarketplacefunctions.h"
 #include "llnotifications.h"
 #include "llnotificationsutil.h"
 #include "llpanelgrouplandmoney.h"
 #include "llpanelmaininventory.h"
 #include "llrecentpeople.h"
-#include "llscriptfloater.h"
+//#include "llscriptfloater.h"
 #include "llscriptruntimeperms.h"
 #include "llselectmgr.h"
 #include "llstartup.h"
-#include "llsky.h"
+//#include "llsky.h"
 #include "llslurl.h"
-#include "llstatenums.h"
+//#include "llstatenums.h"
 #include "llstatusbar.h"
-#include "llimview.h"
+//#include "llimview.h"
 #include "llspeakers.h"
 #include "lltrans.h"
 #include "lltranslate.h"
 #include "llviewerfoldertype.h"
 #include "llvoavatar.h"             // IDEVO HACK
 #include "lluri.h"
-#include "llviewergenericmessage.h"
-#include "llviewermenu.h"
-#include "llviewerinventory.h"
+//#include "llviewermenu.h"
+//#include "llviewerinventory.h"
 #include "llviewerjoystick.h"
 #include "llviewerobjectlist.h"
 #include "llviewerparcelmgr.h"
@@ -122,19 +122,24 @@
 //#include "llpanelblockedlist.h"
 #include "llpanelplaceprofile.h"
 #include "llviewerregion.h"
+#include "llweb.h"
 #include "llfloaterregionrestarting.h"
 
 #include "llnotificationmanager.h" //
 #include "llexperiencecache.h"
 #include "lluiusage.h"
 
-#include "llfloaterreg.h"
+//#include "llfloaterreg.h"
 #include "fsmoneytracker.h"
 #include "fsareasearch.h"
 #include "kokuafloateravatarattachments.h"
 
 #include "animationexplorer.h"      // <FS:Zi> Animation Explorer
 #include "NACLfloaterexploresounds.h" // KKA-796 adding Block to Sound Explorer
+#if OPENSIM
+#include "kokuaeconomy.h"
+#include "llviewernetwork.h"
+#endif
 
 extern void on_new_message(const LLSD& msg);
 
@@ -3075,6 +3080,25 @@ void process_teleport_finish(LLMessageSystem* msg, void**)
     std::string seedCap;
     msg->getStringFast(_PREHASH_Info, _PREHASH_SeedCapability, seedCap);
 
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    U32 region_size_x = 256;
+    U32 region_size_y = 256;
+
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        msg->getU32Fast(_PREHASH_Info, _PREHASH_RegionSizeX, region_size_x);
+        msg->getU32Fast(_PREHASH_Info, _PREHASH_RegionSizeY, region_size_y);
+
+        // and a little hack for Second Life compatibility
+        if (region_size_y == 0 || region_size_x == 0)
+        {
+            region_size_x = 256;
+            region_size_y = 256;
+        }
+    }
+#endif
+
     LL_DEBUGS("Teleport") << "TeleportFinish message params are:"
                           << " sim_ip " << sim_ip
                           << " sim_port " << sim_port
@@ -3098,7 +3122,12 @@ void process_teleport_finish(LLMessageSystem* msg, void**)
 
     // Viewer trusts the simulator.
     gMessageSystem->enableCircuit(sim_host, true);
-    LLViewerRegion* regionp =  LLWorld::getInstance()->addRegion(region_handle, sim_host);
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    LLViewerRegion* regionp = LLWorld::getInstance()->addRegion(region_handle, sim_host, region_size_x, region_size_y);
+#else
+    LLViewerRegion* regionp = LLWorld::getInstance()->addRegion(region_handle, sim_host);
+#endif
 
 /*
     // send camera update to new region
@@ -3246,6 +3275,25 @@ void process_agent_movement_complete(LLMessageSystem* msg, void**)
         gAgent.getRegion()->getOriginGlobal());
     gAgent.setRegion(regionp);
     gObjectList.shiftObjects(shift_vector);
+#if OPENSIM
+    // <FS:CR> FIRE-11593: Opensim "4096 Bug" Fix by Latif Khalifa
+    // Is this a really long jump?
+    if (shift_vector.length() > 2048.f * 256.f)
+    {
+        regionp->initPartition(true);
+        gAgent.setRegion(regionp);
+        // Kill objects in the regions we left behind
+        for (LLWorld::region_list_t::const_iterator r = LLWorld::getInstance()->getRegionList().begin();
+             r != LLWorld::getInstance()->getRegionList().end();
+             ++r)
+        {
+            if (*r != regionp)
+            {
+                gObjectList.killObjects(*r);
+            }
+        }
+    }
+#endif
     gAssetStorage->setUpstream(msg->getSender());
     gCacheName->setUpstream(msg->getSender());
     gViewerThrottle.sendToSim();
@@ -3449,6 +3497,7 @@ void process_crossed_region(LLMessageSystem* msg, void**)
     {
         gAgentAvatarp->resetRegionCrossingTimer();
     }
+    // <FS:Ansariel> FIRE-12004: Attachments getting lost on TP; this is apparently the place to
     //               hook in for region crossings - we get an info from the simulator that we
     //               crossed a region and then the viewer starts the handover process. We only
     //               receive this message if we can actually cross the region and aren't blocked
@@ -3466,9 +3515,29 @@ void process_crossed_region(LLMessageSystem* msg, void**)
     std::string seedCap;
     msg->getStringFast(_PREHASH_RegionData, _PREHASH_SeedCapability, seedCap);
 
-    send_complete_agent_movement(sim_host);
+#if OPENSIM
+    // <FS:CR> Aurora Sim
+    U32 region_size_x = 256;
+    U32 region_size_y = 256;
 
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        msg->getU32(_PREHASH_RegionData, _PREHASH_RegionSizeX, region_size_x);
+        msg->getU32(_PREHASH_RegionData, _PREHASH_RegionSizeY, region_size_y);
+
+        // and a little hack for Second Life compatibility
+        if (region_size_y == 0 || region_size_x == 0)
+        {
+            region_size_x = 256;
+            region_size_y = 256;
+        }
+    }
+    send_complete_agent_movement(sim_host);
+    LLViewerRegion* regionp = LLWorld::getInstance()->addRegion(region_handle, sim_host, region_size_x, region_size_y);
+#else
+    send_complete_agent_movement(sim_host);
     LLViewerRegion* regionp = LLWorld::getInstance()->addRegion(region_handle, sim_host);
+#endif
 
     LL_DEBUGS("CrossingCaps") << "Calling setSeedCapability from process_crossed_region(). Seed cap == "
             << seedCap << LL_ENDL;
@@ -6066,7 +6135,22 @@ void process_frozen_message(LLMessageSystem *msgsystem, void **user_data)
 // do some extra stuff once we get our economy data
 void process_economy_data(LLMessageSystem *msg, void** /*user_data*/)
 {
-    LL_DEBUGS("Benefits") << "Received economy data, not currently used" << LL_ENDL;
+#if OPENSIM
+    // <FS:AW opensim currency support>
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        LLGlobalEconomy::getInstance()->processEconomyData(msg, reinterpret_cast<void**>(LLGlobalEconomy::getInstance()));
+
+        const std::string texture_upload_cost_str   = std::to_string(LLAgentBenefitsMgr::current().getTextureUploadCost());
+        const std::string sound_upload_cost_str     = std::to_string(LLAgentBenefitsMgr::current().getSoundUploadCost());
+        const std::string animation_upload_cost_str = std::to_string(LLAgentBenefitsMgr::current().getAnimationUploadCost());
+        //        gMenuHolder->getChild<LLUICtrl>("Upload Image")->setLabelArg("[COST]", texture_upload_cost_str);
+        //        gMenuHolder->getChild<LLUICtrl>("Upload Sound")->setLabelArg("[COST]", sound_upload_cost_str);
+        //        gMenuHolder->getChild<LLUICtrl>("Upload Animation")->setLabelArg("[COST]", animation_upload_cost_str);
+    }
+    else
+#endif
+        LL_DEBUGS("Benefits") << "Received economy data, not currently used" << LL_ENDL;
 }
 
 void notify_cautioned_script_question(const LLSD& notification, const LLSD& response, S32 orig_questions, bool granted)

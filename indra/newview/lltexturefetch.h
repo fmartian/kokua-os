@@ -30,16 +30,16 @@
 #include <vector>
 #include <map>
 
-#include "lldir.h"
+//#include "lldir.h"
 #include "llimage.h"
 #include "lluuid.h"
 #include "llworkerthread.h"
 #include "lltextureinfo.h"
-#include "llimageworker.h"
+//#include "llimageworker.h"
 #include "httprequest.h"
 #include "httpoptions.h"
 #include "httpheaders.h"
-#include "httphandler.h"
+//#include "httphandler.h"
 #include "lltrace.h"
 #include "llviewertexture.h"
 
@@ -110,6 +110,15 @@ public:
 
     // Threads:  T*
     bool updateRequestPriority(const LLUUID& id, F32 priority);
+
+#if OPENSIM
+    // <FS:Ansariel> OpenSim compatibility
+    // Threads:  T*
+    bool receiveImageHeader(const LLHost& host, const LLUUID& id, U8 codec, U16 packets, U32 totalbytes, U16 data_size, U8* data);
+
+    // Threads:  T*
+    bool receiveImagePacket(const LLHost& host, const LLUUID& id, U16 packet_num, U16 data_size, U8* data);
+#endif
 
     // Threads:  T* (but not safe)
     void setTextureBandwidth(F32 bandwidth) { mTextureBandwidth = bandwidth; }
@@ -240,6 +249,15 @@ public:
     // ----------------------------------
 
 protected:
+#if OPENSIM
+    // <FS:Ansariel> OpenSim compatibility
+    // Threads:  T* (but Ttf in practice)
+    void addToNetworkQueue(LLTextureFetchWorker* worker);
+
+    // Threads:  T*
+    void removeFromNetworkQueue(LLTextureFetchWorker* worker, bool cancel);
+#endif
+
     // Threads:  T*
     void addToHTTPQueue(const LLUUID& id);
 
@@ -258,6 +276,12 @@ protected:
     bool runCondition();
 
 private:
+#if OPENSIM
+    // <FS:Ansariel> OpenSim compatibility
+    // Threads:  Tmain
+    void sendRequestListToSimulators();
+#endif
+
     // Threads:  Ttf
     /*virtual*/ void startThread(void);
 
@@ -311,7 +335,13 @@ public:
     S32 mDebugCount;
     bool mDebugPause;
 
-    static LLTrace::CountStatHandle<F64>        sCacheHit;
+#if OPENSIM
+    // <FS:Ansariel> OpenSim compatibility
+    S32 mPacketCount;
+    S32 mBadPacketCount;
+#endif
+
+    static LLTrace::CountStatHandle<F64>                            sCacheHit;
     static LLTrace::CountStatHandle<F64>        sCacheAttempt;
     static LLTrace::SampleStatHandle<F32Seconds> sCacheReadLatency;
     static LLTrace::SampleStatHandle<F32Seconds> sTexDecodeLatency;
@@ -321,25 +351,32 @@ public:
 
 private:
     LLMutex mQueueMutex;        //to protect mRequestMap and mCommands only
-    LLMutex mNetworkQueueMutex; //to protect mHTTPTextureQueue
+    LLMutex mNetworkQueueMutex; // to protect mHTTPTextureQueue,
+    // <FS:Ansariel> OpenSim compatibility: and mCancelQueue.
 
     LLTextureCache* mTextureCache;
 
     // Map of all requests by UUID
     typedef std::map<LLUUID,LLTextureFetchWorker*> map_t;
-    map_t mRequestMap;                                                  // Mfq
+    map_t mRequestMap;                                          // Mfq
 
     // Set of requests that require network data
     typedef std::set<LLUUID> queue_t;
-    queue_t mHTTPTextureQueue;                                          // Mfnq
+    queue_t mHTTPTextureQueue;                                  // Mfnq
     typedef std::map<LLHost,std::set<LLUUID> > cancel_queue_t;
-    F32 mTextureBandwidth;                                              // <none>
-    F32 mMaxBandwidth;                                                  // Mfnq
+    F32 mTextureBandwidth;                                      // <none>
+    F32 mMaxBandwidth;                                          // Mfnq
     LLTextureInfo mTextureInfo;
     LLTextureInfo mTextureInfoMainThread;
 
+#if OPENSIM
+    // <FS:Ansariel> OpenSim compatibility
+    queue_t mNetworkQueue;                                      // Mfnq
+    cancel_queue_t mCancelQueue;  // Mfnq
+#endif
+
     // XXX possible delete
-    U32Bits mHTTPTextureBits;                                               // Mfnq
+    U32Bits mHTTPTextureBits;                                   // Mfnq
 
     // XXX possible delete
     //debug use
@@ -350,7 +387,7 @@ private:
     // QueuedRequest instances and so must be covered by the
     // same locks.
     typedef std::vector<TFRequest *> command_queue_t;
-    command_queue_t mCommands;                                          // Mfq
+    command_queue_t mCommands;                                  // Mfq
 
     // If true, modifies some behaviors that help with QA tasks.
     const bool mQAMode;

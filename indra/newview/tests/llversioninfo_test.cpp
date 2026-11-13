@@ -31,7 +31,6 @@
 
 // This brings in the version information instead of the cmake mechanism
 // which rebuilds the whole of newbuild for each hg commit
-#include "kokuabuildversion.h"
 #include "llversioninfovars.h"
 
  #include <iostream>
@@ -39,13 +38,7 @@
 // LL_VIEWER_CHANNEL is a macro defined on the compiler command line. The
 // macro expands to the string name of the channel, but without quotes. We
 // need to turn it into a quoted string. LL_TO_STRING() does that.
-//#define ll_viewer_channel LL_TO_STRING(LL_VIEWER_CHANNEL)
-
-// The above is no longer true - we now pick this up via a CMAKE processed header
-// and the quotes are taken off since otherwise they were are retained throughout
-// the viewer with various adverse effects
-
-#define ll_viewer_channel LL_VIEWER_CHANNEL
+#define ll_viewer_channel LL_TO_STRING(LL_VIEWER_CHANNEL)
 
 namespace tut
 {

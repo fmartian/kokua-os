@@ -285,6 +285,10 @@ public:
     // AND the creator of the object.
     inline bool allowExportBy(const LLUUID& agent_id) const;
 
+#if OPENSIM
+    inline bool allowOpenSimExportBy(const LLUUID& agent) const;
+#endif
+
     //
     // MISC METHODS and OPERATORS
     //
@@ -344,6 +348,13 @@ bool LLPermissions::allowExportBy(const LLUUID& agent) const
 {
     return agent == mOwner && agent == mCreator;
 }
+
+#if OPENSIM
+bool LLPermissions::allowOpenSimExportBy(const LLUUID& agent) const
+{
+    return ((mCreator == agent) ? true : (allowOperationBy(PERM_EXPORT, agent, LLUUID::null)));
+}
+#endif
 
 bool LLPermissions::allowTransferTo(const LLUUID &agent_id) const
 {

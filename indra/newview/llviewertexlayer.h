@@ -47,6 +47,11 @@ public:
     virtual ~LLViewerTexLayerSet();
 
     /*virtual*/void             requestUpdate();
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    void                        requestUpload();
+    void                        cancelUpload();
+#endif
     bool                        isLocalTextureDataAvailable() const;
     bool                        isLocalTextureDataFinal() const;
     void                        updateComposite();
@@ -95,7 +100,12 @@ private:
     // Tex Layer Render
     //--------------------------------------------------------------------
     virtual void            preRenderTexLayerSet();
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    virtual void midRenderTexLayerSet(bool success, LLRenderTarget* bound_target);
+#else
     virtual void            midRenderTexLayerSet(bool success);
+#endif
     virtual void            postRenderTexLayerSet(bool success);
     virtual S32             getCompositeOriginX() const { return getOriginX(); }
     virtual S32             getCompositeOriginY() const { return getOriginY(); }
@@ -113,6 +123,34 @@ protected:
     virtual void            postRender(bool success) { postRenderTexLayerSet(success); }
     virtual bool            render() { return renderTexLayerSet(mBoundTarget); }
 
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    //--------------------------------------------------------------------
+    // Uploads
+    //--------------------------------------------------------------------
+public:
+    void        requestUpload();
+    void        cancelUpload();
+    bool        uploadNeeded() const;     // We need to upload a new texture
+    bool        uploadInProgress() const; // We have started uploading a new texture and are awaiting the result
+    bool        uploadPending() const;    // We are expecting a new texture to be uploaded at some point
+    static void onTextureUploadComplete(const LLUUID& uuid, void* userdata, S32 result, LLExtStat ext_status);
+
+protected:
+    bool isReadyToUpload() const;
+    void doUpload(LLRenderTarget* bound_target); // Does a read back and upload.
+    void conditionalRestartUploadTimer();
+
+private:
+    bool         mNeedsUpload;      // Whether we need to send our baked textures to the server
+    U32          mNumLowresUploads; // Number of times we've sent a lowres version of our baked textures to the server
+    bool         mUploadPending;    // Whether we have received back the new baked textures
+    LLUUID       mUploadID;         // The current upload process (null if none).
+    LLFrameTimer mNeedsUploadTimer; // Tracks time since upload was requested and performed.
+    S32          mUploadFailCount;  // Number of consecutive upload failures
+    LLFrameTimer mUploadRetryTimer; // Tracks time since last upload failure.
+#endif
+
     //--------------------------------------------------------------------
     // Updates
     //--------------------------------------------------------------------
@@ -129,5 +167,23 @@ private:
     LLFrameTimer            mNeedsUpdateTimer;              // Tracks time since update was requested and performed.
 };
 
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// LLBakedUploadData
+//
+// Used by LLTexLayerSetBuffer for a callback.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+struct LLBakedUploadData
+{
+    LLBakedUploadData(const LLVOAvatarSelf* avatar, LLViewerTexLayerSet* layerset, const LLUUID& id, bool highest_res);
+    ~LLBakedUploadData() {}
+    const LLUUID          mID;
+    const LLVOAvatarSelf* mAvatar; // note: backlink only; don't LLPointer
+    LLViewerTexLayerSet*  mTexLayerSet;
+    const U64             mStartTime;    // for measuring baked texture upload time
+    const bool            mIsHighestRes; // whether this is a "final" bake, or intermediate low res
+};
+#endif
 #endif  // LL_VIEWER_TEXLAYER_H
 

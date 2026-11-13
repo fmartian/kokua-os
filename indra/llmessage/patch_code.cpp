@@ -228,7 +228,12 @@ void    decode_patch_group_header(LLBitPack &bitpack, LLGroupHeader *gopp)
     gPatchSize = gopp->patch_size;
 }
 
-void    decode_patch_header(LLBitPack &bitpack, LLPatchHeader *ph)
+#if OPENSIM
+// <FS:CR> OpenSim VarRegion
+void    decode_patch_header(LLBitPack& bitpack, LLPatchHeader* ph, bool b_large_patch)
+#else
+void    decode_patch_header(LLBitPack& bitpack, LLPatchHeader* ph)
+#endif
 {
     U8 retvalu8;
 
@@ -267,6 +272,33 @@ void    decode_patch_header(LLBitPack &bitpack, LLPatchHeader *ph)
 #endif
     ph->range = retvalu16;
 
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    retvalu32 = 0;
+#ifdef LL_BIG_ENDIAN
+    if (b_large_patch)
+    {
+        // todo test
+        ret = (U8*)&retvalu32;
+        bitpack.bitUnpack(&(ret[3]), 8);
+        bitpack.bitUnpack(&(ret[2]), 8);
+        bitpack.bitUnpack(&(ret[1]), 8);
+        bitpack.bitUnpack(&(ret[0]), 8);
+    }
+    else
+    {
+        ret = (U8*)&retvalu32;
+        bitpack.bitUnpack(&(ret[1]), 8);
+        bitpack.bitUnpack(&(ret[0]), 2);
+    }
+#else
+    if (b_large_patch)
+        bitpack.bitUnpack((U8*)&retvalu32, 32);
+    else
+        bitpack.bitUnpack((U8*)&retvalu32, 10);
+#endif
+    ph->patchids = retvalu32;
+#else
     retvalu16 = 0;
 #ifdef LL_BIG_ENDIAN
     ret = (U8 *)&retvalu16;
@@ -276,6 +308,7 @@ void    decode_patch_header(LLBitPack &bitpack, LLPatchHeader *ph)
     bitpack.bitUnpack((U8 *)&retvalu16, 10);
 #endif
     ph->patchids = retvalu16;
+#endif
 
     gWordBits = (ph->quant_wbits & 0xf) + 2;
 }

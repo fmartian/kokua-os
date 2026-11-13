@@ -77,7 +77,12 @@ public:
     void disconnectNeighbor(LLSurface *neighborp);
     void disconnectAllNeighbors();
 
-    virtual void decompressDCTPatch(LLBitPack &bitpack, LLGroupHeader *gopp, bool b_large_patch);
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    void rebuildWater();
+#endif
+
+    virtual void decompressDCTPatch(LLBitPack& bitpack, LLGroupHeader* gopp, bool b_large_patch);
     virtual void updatePatchVisibilities(LLAgent &agent);
 
     inline F32 getZ(const U32 k) const              { return mSurfaceZ[k]; }

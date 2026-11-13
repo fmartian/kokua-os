@@ -77,9 +77,16 @@ public:
     // LLVisualParam Virtual functions
     ///*virtual*/ bool      parseData(LLXmlTreeNode* node);
     /*virtual*/ void        apply( ESex avatar_sex ) {}
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    /*virtual*/ void        setWeight(F32 weight, bool upload_bake = false);
+    /*virtual*/ void        setAnimationTarget(F32 target_value, bool upload_bake = false);
+    /*virtual*/ void        animate(F32 delta, bool upload_bake = false);
+#else
     /*virtual*/ void        setWeight(F32 weight);
     /*virtual*/ void        setAnimationTarget(F32 target_value);
     /*virtual*/ void        animate(F32 delta);
+#endif
 
     // LLViewerVisualParam Virtual functions
     /*virtual*/ F32                 getTotalDistortion()                                    { return 1.f; }
@@ -160,10 +167,16 @@ public:
     // LLVisualParam Virtual functions
     ///*virtual*/ bool          parseData(LLXmlTreeNode* node);
     /*virtual*/ void            apply( ESex avatar_sex ) {}
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    /*virtual*/ void            setWeight(F32 weight, bool upload_bake = false);
+    /*virtual*/ void            setAnimationTarget(F32 target_value, bool upload_bake = false);
+    /*virtual*/ void            animate(F32 delta, bool upload_bake = false);
+#else
     /*virtual*/ void            setWeight(F32 weight);
     /*virtual*/ void            setAnimationTarget(F32 target_value);
     /*virtual*/ void            animate(F32 delta);
-
+#endif
 
     // LLViewerVisualParam Virtual functions
     /*virtual*/ F32                 getTotalDistortion()                                    { return 1.f; }
@@ -178,7 +191,12 @@ public:
 protected:
     LLTexLayerParamColor(const LLTexLayerParamColor& pOther);
 
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    virtual void onGlobalColorChanged(bool upload_bake) {}
+#else
     virtual void onGlobalColorChanged() {}
+#endif
 private:
     LLVector4a              mAvgDistortionVec;
 };

@@ -35,7 +35,7 @@
 #include "llfilepicker.h"
 #include "llfloaterreg.h"
 #include "llbuycurrencyhtml.h"
-#include "llfloatermap.h"
+//#include "llfloatermap.h"
 #include "llfloatermodelpreview.h"
 #include "llmaterialeditor.h"
 #include "llfloaterperms.h"
@@ -46,7 +46,7 @@
 #include "llimagepng.h"
 #include "llimagej2c.h"
 #include "llimagejpeg.h"
-#include "llimagetga.h"
+//#include "llimagetga.h"
 #include "llinventorymodel.h"   // gInventory
 #include "llpluginclassmedia.h"
 #include "llresourcedata.h"
@@ -55,24 +55,24 @@
 #include "lltoast.h"
 #include "llviewercontrol.h"    // gSavedSettings
 #include "llviewertexturelist.h"
-#include "lluictrlfactory.h"
+//#include "lluictrlfactory.h"
 #include "llviewerinventory.h"
 #include "llviewermenu.h"   // gMenuHolder
-#include "llviewerparcelmgr.h"
+//#include "llviewerparcelmgr.h"
 #include "llviewerregion.h"
-#include "llviewerstats.h"
+//#include "llviewerstats.h"
 #include "llviewerwindow.h"
 #include "llappviewer.h"
 #include "lluploaddialog.h"
-#include "lltrans.h"
-#include "llfloaterbuycurrency.h"
+//#include "lltrans.h"
+//#include "llfloaterbuycurrency.h"
 #include "llviewerassetupload.h"
 
 // linden libraries
 #include "llfilesystem.h"
 #include "llnotificationsutil.h"
-#include "llsdserialize.h"
-#include "llsdutil.h"
+//#include "llsdserialize.h"
+//#include "llsdutil.h"
 #include "llstring.h"
 #include "lltransactiontypes.h"
 #include "lluuid.h"
@@ -494,45 +494,45 @@ void upload_single_file(
         LLSD args;
         args["filename"] = filename;
         args["dest"] = dest;
-    if (type == LLFilePicker::FFLOAD_WAV)
-    {
-        // pre-qualify wavs to make sure the format is acceptable
-        std::string error_msg;
-        if (check_for_invalid_wav_formats(filename,error_msg))
+        if (type == LLFilePicker::FFLOAD_WAV)
         {
-            LL_INFOS() << error_msg << ": " << filename << LL_ENDL;
-            LLSD args;
-            args["FILE"] = filename;
-            LLNotificationsUtil::add( error_msg, args );
-            return;
-        }
-        else
-        {
-                LLFloaterReg::showInstance("upload_sound", args);
-                }
-            }
-        if (type == LLFilePicker::FFLOAD_IMAGE)
+            // pre-qualify wavs to make sure the format is acceptable
+            std::string error_msg;
+            if (check_for_invalid_wav_formats(filename, error_msg))
             {
+                LL_INFOS() << error_msg << ": " << filename << LL_ENDL;
+                LLSD args;
+                args["FILE"] = filename;
+                LLNotificationsUtil::add(error_msg, args);
+                return;
+            }
+            else
+            {
+                LLFloaterReg::showInstance("upload_sound", args);
+            }
+        }
+        if (type == LLFilePicker::FFLOAD_IMAGE)
+        {
             LLFloaterReg::showInstance("upload_image", args);
-}
+        }
         if (type == LLFilePicker::FFLOAD_ANIM)
-    {
+        {
             std::string filename_lc(filename);
             LLStringUtil::toLower(filename_lc);
             if (filename_lc.rfind(".anim") != std::string::npos)
-        {
+            {
                 LLFloaterReg::showInstance("upload_anim_anim", args);
-        }
-        else
-        {
+            }
+         else
+            {
                 LLFloaterReg::showInstance("upload_anim_bvh", args);
+            }
+        }
+        if (type == LLFilePicker::FFLOAD_IMPORT)
+        {
+            LLFloaterReg::showInstance("fs_import", args);
         }
     }
-    if (type == LLFilePicker::FFLOAD_IMPORT)
-    {
-       LLFloaterReg::showInstance("fs_import", args);
-    }
-}
     return;
 }
 

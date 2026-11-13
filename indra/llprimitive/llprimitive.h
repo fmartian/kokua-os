@@ -80,6 +80,12 @@ extern const F32 OBJECT_TWIST_LINEAR_MIN;
 extern const F32 OBJECT_TWIST_LINEAR_MAX;
 extern const F32 OBJECT_TWIST_LINEAR_INC;
 
+#if OPENSIM
+// <AW: opensim-limits>
+extern const F32 SL_OBJECT_MAX_HOLLOW_SIZE;
+extern const F32 OS_OBJECT_MAX_HOLLOW_SIZE;
+extern const F32 OS_OBJECT_MIN_HOLE_SIZE;
+#endif
 extern const F32 OBJECT_MIN_HOLE_SIZE;
 extern const F32 OBJECT_MAX_HOLE_SIZE_X;
 extern const F32 OBJECT_MAX_HOLE_SIZE_Y;
@@ -550,9 +556,6 @@ public:
     U8                  getExpectedNumTEs() const;
 
     U8                  getMaterial() const         { return mMaterial; }
-
-    void                setVolumeType(const U8 code);
-    U8                  getVolumeType();
 
     // clears existing textures
     // copies the contents of other_list into mEntryList

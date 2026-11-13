@@ -144,6 +144,9 @@ void LLUICtrlFactory::createChildren(LLView* viewp, LLXMLNodePtr node, const wid
             }
             else
             {
+                LLXMLNodePtr attr_node;
+                if (child_node->mParent->getAttribute("label", attr_node, false))
+                    LL_WARNS() << "Could not create widget for parent " << attr_node->getValue().c_str() << LL_ENDL;
                 LL_WARNS() << "Could not create widget named " << child_node->getName()->mString << LL_ENDL;
             }
         }

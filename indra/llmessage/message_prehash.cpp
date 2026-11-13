@@ -1406,3 +1406,15 @@ char const* const _PREHASH_Experience = LLMessageStringTable::getInstance()->get
 char const* const _PREHASH_ExperienceID = LLMessageStringTable::getInstance()->getString("ExperienceID");
 char const* const _PREHASH_LargeGenericMessage = LLMessageStringTable::getInstance()->getString("LargeGenericMessage");
 char const* const _PREHASH_MetaData = LLMessageStringTable::getInstance()->getString("MetaData");
+
+#if OPENSIM
+// <FS:Ansariel> OpenSim compatibility
+char const* const _PREHASH_RequestImage = LLMessageStringTable::getInstance()->getString("RequestImage");
+char const* const _PREHASH_ImagePacket = LLMessageStringTable::getInstance()->getString("ImagePacket");
+char const* const _PREHASH_ImageData = LLMessageStringTable::getInstance()->getString("ImageData");
+// <FS:CR> OpenSim VarRegion
+char const* const _PREHASH_RegionSizeX = LLMessageStringTable::getInstance()->getString("RegionSizeX");
+char const* const _PREHASH_RegionSizeY = LLMessageStringTable::getInstance()->getString("RegionSizeY");
+char const* const _PREHASH_SizeX = LLMessageStringTable::getInstance()->getString("SizeX");
+char const* const _PREHASH_SizeY = LLMessageStringTable::getInstance()->getString("SizeY");
+#endif

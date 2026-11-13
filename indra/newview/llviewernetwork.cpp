@@ -32,7 +32,7 @@
 #include "llsdserialize.h"
 #include "llsecapi.h"
 #include "lltrans.h"
-#include "llweb.h"
+//#include "llweb.h"
 
 
 /// key used to store the grid, and the name attribute in the grid data
@@ -55,13 +55,10 @@ const std::string  GRID_WEB_PROFILE_VALUE = "web_profile_url";
 const std::string  GRID_IS_SYSTEM_GRID_VALUE = "system_grid";
 /// whether this is single or double names
 const std::string  GRID_LOGIN_IDENTIFIER_TYPES = "login_identifier_types";
-
-// defines slurl formats associated with various grids.
-// we need to continue to support existing forms, as slurls
-// are shared between viewers that may not understand newer
-// forms.
-const std::string GRID_SLURL_BASE = "slurl_base";
-const std::string GRID_APP_SLURL_BASE = "app_slurl_base";
+/// help uri
+const std::string GRID_HELP = "help";
+/// network name
+const std::string GRID_ABOUT = "about";
 
 const std::string DEFAULT_LOGIN_PAGE = "https://viewer-splash-v2.secondlife.com/";
 
@@ -78,8 +75,20 @@ const char* SYSTEM_GRID_SLURL_BASE = "secondlife://%s/secondlife/";
 const char* DEFAULT_SLURL_BASE = "https://%s/region/";
 const char* DEFAULT_APP_SLURL_BASE = "x-grid-location-info://%s/app";
 
-LLGridManager::LLGridManager()
-:   mIsInProductionGrid(false)
+#if OPENSIM && defined(SINGLEGRID)
+const std::string MAINGRID = SINGLEGRID_URI;
+#else
+const std::string MAINGRID = "util.agni.lindenlab.com";
+#endif
+const std::string BETAGRID = "util.aditi.lindenlab.com";
+
+LLGridManager::LLGridManager() :
+#if OPENSIM
+    EGridPlatform(GP_NOTSET),
+    mClassifiedFee(0),
+    mDirectoryFee(0),
+#endif
+    mIsInProductionGrid(false)
 {
     // by default, we use the 'grids.xml' file in the user settings directory
     // this file is an LLSD file containing multiple grid definitions.
@@ -94,12 +103,10 @@ LLGridManager::LLGridManager()
 
 }
 
-
 //
 // LLGridManager - class for managing the list of known grids, and the current
 // selection
 //
-
 
 //
 // LLGridManager::initialze - initialize the list of known grids based
@@ -155,18 +162,24 @@ void LLGridManager::initialize(const std::string& grid_file)
                     LLSD::String key_name = grid_itr->first;
                     LLSD grid = grid_itr->second;
 
-                    std::string existingGrid = getGrid(grid);
-                    if (mGridList.has(key_name) || !existingGrid.empty())
+                    std::string existingGrid = getGrid(key_name);
+                    if (existingGrid.empty())
                     {
-                        LL_WARNS("GridManager") << "Cannot override existing grid '" << key_name << "'; ignoring definition from '"<<grid_file<<"'" << LL_ENDL;
+                        // grid isn't present in our current grids, try to add it
+                        if (addGrid(grid))
+                        {
+                            LL_INFOS("GridManager") << "added grid '" << key_name << "'" << LL_ENDL;
+                        }
+                        else
+                        {
+                            LL_WARNS("GridManager") << "failed to add invalid grid '" << key_name << "'" << LL_ENDL;
+                        }
                     }
-                    else if ( addGrid(grid) )
+                    else if (!isSystemGrid(existingGrid))
                     {
-                        LL_INFOS("GridManager") << "added grid '"<<key_name<<"'"<<LL_ENDL;
-                    }
-                    else
-                    {
-                        LL_WARNS("GridManager") << "failed to add invalid grid '"<<key_name<<"'"<<LL_ENDL;
+                        // Only give a warning for non-system grids and just ignore any attempt to replace any of th system ones
+                        LL_WARNS("GridManager") << "Cannot override existing grid '" << key_name << "'; ignoring definition from '"
+                                                << grid_file << "'" << LL_ENDL;
                     }
                 }
                 llsd_xml.close();
@@ -234,8 +247,8 @@ void LLGridManager::initialize(const std::string& grid_file)
         grid_control->getSignal()->connect(boost::bind(&LLGridManager::updateIsInProductionGrid, this));
     }
 
-    // since above only triggers on changes, trigger the callback manually to initialize state
-    updateIsInProductionGrid();
+    // This is also called in setGridChoice()
+    // updateIsInProductionGrid();
 
     setGridChoice(mGrid);
 }
@@ -386,7 +399,7 @@ void LLGridManager::addSystemGrid(const std::string& label,
 std::map<std::string, std::string> LLGridManager::getKnownGrids()
 {
     std::map<std::string, std::string> result;
-    for(LLSD::map_iterator grid_iter = mGridList.beginMap();
+    for (LLSD::map_iterator grid_iter = mGridList.beginMap();
         grid_iter != mGridList.endMap();
         grid_iter++)
     {
@@ -399,22 +412,21 @@ std::map<std::string, std::string> LLGridManager::getKnownGrids()
 void LLGridManager::setGridChoice(const std::string& grid)
 {
     // Set the grid choice based on a string.
-    LL_DEBUGS("GridManager")<<"requested "<<grid<<LL_ENDL;
+    LL_DEBUGS("GridManager") << "requested " << grid << LL_ENDL;
     std::string grid_name = getGrid(grid); // resolved either the name or the id to the name
 
-    if(!grid_name.empty())
-    {
-        LL_INFOS("GridManager")<<"setting "<<grid_name<<LL_ENDL;
-        mGrid = grid_name;
-        gSavedSettings.setString("CurrentGrid", grid_name);
-
-        updateIsInProductionGrid();
-    }
-    else
+    if (grid_name.empty())
     {
         // the grid was not in the list of grids.
-        LL_WARNS("GridManager")<<"unknown grid "<<grid<<LL_ENDL;
+        LL_WARNS("GridManager") << "unknown grid " << grid << LL_ENDL;
+        return;
     }
+
+    LL_INFOS("GridManager") << "setting " << grid_name << LL_ENDL;
+    mGrid = grid_name;
+    gSavedSettings.setString("CurrentGrid", grid_name);
+
+    updateIsInProductionGrid();
 }
 
 std::string LLGridManager::getGrid( const std::string &grid )
@@ -429,7 +441,7 @@ std::string LLGridManager::getGrid( const std::string &grid )
     else
     {
         // search the grid list for a grid with a matching id
-        for(LLSD::map_iterator grid_iter = mGridList.beginMap();
+        for (LLSD::map_iterator grid_iter = mGridList.beginMap();
             grid_name.empty() && grid_iter != mGridList.endMap();
             grid_iter++)
         {
@@ -620,17 +632,18 @@ void LLGridManager::updateIsInProductionGrid()
     }
     else
     {
-        for ( std::vector<std::string>::iterator uri_it = uris.begin();
-              ! mIsInProductionGrid && uri_it != uris.end();
-              uri_it++
-             )
+        for (std::vector<std::string>::iterator uri_it = uris.begin(); uri_it != uris.end(); uri_it++)
         {
-            if( MAIN_GRID_LOGIN_URI == *uri_it )
+            if (MAIN_GRID_LOGIN_URI == *uri_it)
             {
                 mIsInProductionGrid = true;
+                break;
             }
         }
     }
+#if OPENSIM
+    updateGridPlatform();
+#endif
 }
 
 bool LLGridManager::isInProductionGrid()
@@ -642,7 +655,7 @@ bool LLGridManager::isSystemGrid(const std::string& grid)
 {
     std::string grid_name = getGrid(grid);
 
-    return (   !grid_name.empty()
+    return (!grid_name.empty()
             && mGridList.has(grid)
             && mGridList[grid].has(GRID_IS_SYSTEM_GRID_VALUE)
             && mGridList[grid][GRID_IS_SYSTEM_GRID_VALUE].asBoolean()

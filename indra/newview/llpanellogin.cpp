@@ -31,11 +31,11 @@
 
 #include "indra_constants.h"        // for key and mask constants
 #include "llfloaterreg.h"
-#include "llfontgl.h"
+//#include "llfontgl.h"
 #include "llmd5.h"
-#include "v4color.h"
+//#include "v4color.h"
 
-#include "llappviewer.h"
+//#include "llappviewer.h"
 #include "llbutton.h"
 #if LL_VELOPACK
 #include "llvelopack.h"
@@ -51,23 +51,23 @@
 #include "llstartup.h"
 #include "lltextbox.h"
 #include "llui.h"
-#include "llframetimer.h"
-#include "lluiconstants.h"
+//#include "llframetimer.h"
+//#include "lluiconstants.h"
 #include "llslurl.h"
 #include "llversioninfo.h"
-#include "llviewerhelp.h"
-#include "llviewertexturelist.h"
+//#include "llviewerhelp.h"
+//#include "llviewertexturelist.h"
 #include "llviewermenu.h"           // for handle_preferences()
 #include "llviewernetwork.h"
 #include "llviewerwindow.h"         // to link into child list
-#include "lluictrlfactory.h"
+//#include "lluictrlfactory.h"
 #include "llweb.h"
 #include "llmediactrl.h"
-#include "llrootview.h"
+//#include "llrootview.h"
 
-#include "llfloatertos.h"
+//#include "llfloatertos.h"
 #include "lltrans.h"
-#include "llglheaders.h"
+//#include "llglheaders.h"
 #include "llpanelloginlistener.h"
 #include "stringize.h"
 
@@ -77,7 +77,12 @@
 
 #include "llsdserialize.h"
 
-LLPanelLogin *LLPanelLogin::sInstance = NULL;
+#if OPENSIM
+const S32 MAX_PASSWORD_SL      = 16;
+const S32 MAX_PASSWORD_OPENSIM = 255;
+#endif
+
+LLPanelLogin* LLPanelLogin::sInstance                = NULL;
 bool LLPanelLogin::sCapslockDidNotification = false;
 bool LLPanelLogin::sCredentialSet = false;
 
@@ -1048,9 +1053,20 @@ void LLPanelLogin::onClickVersion(void*)
 //static
 void LLPanelLogin::onClickForgotPassword(void*)
 {
-    if (sInstance )
+#if OPENSIM
+    if (LLGridManager::getInstance()->isInOpenSim())
     {
-        LLWeb::loadURLExternal(sInstance->getString( "forgot_password_url" ));
+        LLSD grid_info = LLGridManager::getInstance()->getGridData();
+        if (grid_info.has(GRID_FORGOT_PASSWORD))
+        {
+            LLWeb::loadURLInternal(grid_info[GRID_FORGOT_PASSWORD]);
+            return;
+        }
+    }
+#endif // OPENSIM
+    if (sInstance)
+    {
+        LLWeb::loadURLExternal(sInstance->getString("forgot_password_url"));
     }
 }
 
@@ -1208,6 +1224,10 @@ void LLPanelLogin::updateServer()
 
             // grid changed so show new splash screen (possibly)
             loadLoginPage();
+#if OPENSIM
+            sInstance->getChild<LLLineEditor>("password_edit")
+                ->setMaxTextChars(LLGridManager::getInstance()->isInSecondLife() ? MAX_PASSWORD_SL : MAX_PASSWORD_OPENSIM);
+#endif
         }
         catch (LLInvalidGridName ex)
         {

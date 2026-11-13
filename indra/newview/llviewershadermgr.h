@@ -42,10 +42,6 @@ public:
     LLViewerShaderMgr();
     /* virtual */ ~LLViewerShaderMgr();
 
-    // Add shaders to mShaderList for later uniform propagation
-    // Will assert on redundant shader entries in debug builds
-    void finalizeShaderList();
-
     // singleton pattern implementation
     static LLViewerShaderMgr * instance();
     static void releaseInstance();
@@ -134,6 +130,12 @@ public:
     /* virtual */ void updateShaderUniforms(LLGLSLShader * shader);
 
 private:
+    // Add shaders to mShaderList for later uniform propagation
+    // Will assert on redundant shader entries in debug builds
+    void finalizeShaderList();
+
+    void addWLShader(LLGLSLShader* shader);
+
     // the list of shaders we need to propagate parameters to.
     std::vector<LLGLSLShader *> mShaderList;
 

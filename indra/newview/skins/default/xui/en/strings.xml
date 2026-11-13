@@ -2554,6 +2554,18 @@ If you continue to receive this message, please contact Second Life support for 
 	<string name="InvFolder Animations">Animations</string>
 	<string name="InvFolder Gestures">Gestures</string>
 	<string name="InvFolder Favorite">Favorites Bar</string>
+	<!-- Library inventory folder -->
+	<string name="InvFolder OpenSim Library">OpenSimulator</string>
+	<string name="InvFolder Settings Library">Settings</string>
+	<string name="InvFolder Scripts Library">Scripts</string>
+	<string name="InvFolder Notecards Library">Notecards</string>
+	<string name="InvFolder Landmarks Library">Landmarks</string>
+	<string name="InvFolder Gestures Library">Gestures</string>
+	<string name="InvFolder Clothing Library">Clothing</string>
+	<string name="InvFolder Sounds Library">Sounds</string>
+	<string name="InvFolder Photos Library">Photos</string>
+	<string name="InvFolder BodyParts Library">BodyParts</string>
+	<string name="InvFolder Animations Library">Animations</string>
   <!-- historically default name of the Favorites folder can start from either "f" or "F" letter.
       Also, it can be written as "Favorite" or "Favorites".
   We should localize all variants of them with the same value -->

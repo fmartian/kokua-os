@@ -28,7 +28,7 @@
 
 #include "llchathistory.h"
 
-#include <boost/signals2.hpp>
+//#include <boost/signals2.hpp>
 
 #include "llavatarnamecache.h"
 #include "llinstantmessage.h"
@@ -37,19 +37,19 @@
 #include "llcommandhandler.h"
 #include "llpanel.h"
 #include "lluictrlfactory.h"
-#include "llscrollcontainer.h"
+//#include "llscrollcontainer.h"
 #include "llagent.h"
 #include "llagentdata.h"
 #include "llavataractions.h"
 #include "llavatariconctrl.h"
 #include "llcallingcard.h" //for LLAvatarTracker
-#include "llgroupactions.h"
+//#include "llgroupactions.h"
 #include "llgroupmgr.h"
 #include "llspeakers.h" //for LLIMSpeakerMgr
 #include "lltrans.h"
 #include "llfloaterreg.h"
 #include "llfloaterreporter.h"
-#include "llfloatersidepanelcontainer.h"
+//#include "llfloatersidepanelcontainer.h"
 #include "llmutelist.h"
 #include "llstylemap.h"
 #include "llslurl.h"
@@ -57,28 +57,29 @@
 #include "llnotifications.h"
 #include "llnotificationsutil.h"
 #include "lltoastnotifypanel.h"
-#include "lltooltip.h"
+//#include "lltooltip.h"
 #include "llviewerregion.h"
-#include "llviewertexteditor.h"
+//#include "llviewertexteditor.h"
 #include "llworld.h"
-#include "lluiconstants.h"
+//#include "lluiconstants.h"
 #include "llstring.h"
 #include "llurlaction.h"
 #include "llviewercontrol.h"
 #include "llviewermenu.h"
 #include "llviewerobjectlist.h"
+#include "llweb.h"
 
 // additional Kokua headers
-#include "llviewermenu.h"
+//#include "llviewermenu.h"
 #include "llwindow.h"
-#include "llmutelist.h"
+//#include "llmutelist.h"
 #include "lltabcontainer.h"
-#include "llviewermenu.h"
+//#include "llviewermenu.h"
 #include "llaudioengine.h"
 #include "llvieweraudio.h"
 #include "llviewermedia.h"
 #include "llviewermedia_streamingaudio.h"
-#include "llfloaterreporter.h"
+//#include "llfloaterreporter.h"
 #include "fskeywords.h"
 
 static LLDefaultChildRegistry::Register<LLChatHistory> r("chat_history");

@@ -31,7 +31,6 @@
  * Generated from message template version number 2.000
  */
 
-
 extern F32 const gPrehashVersionNumber;
 
 extern char const* const _PREHASH_X;
@@ -1407,5 +1406,17 @@ extern char const* const _PREHASH_Experience;
 extern char const* const _PREHASH_ExperienceID;
 extern char const* const _PREHASH_LargeGenericMessage;
 extern char const* const _PREHASH_MetaData;
+
+#if OPENSIM
+// <FS:Ansariel> OpenSim compatibility
+extern char const* const _PREHASH_RequestImage;
+extern char const* const _PREHASH_ImagePacket;
+extern char const* const _PREHASH_ImageData;
+// <FS:CR> OpenSim VarRegion
+extern char const* const _PREHASH_RegionSizeX;
+extern char const* const _PREHASH_RegionSizeY;
+extern char const* const _PREHASH_SizeX;
+extern char const* const _PREHASH_SizeY;
+#endif
 
 #endif

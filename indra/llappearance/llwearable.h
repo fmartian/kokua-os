@@ -31,6 +31,9 @@
 #include "llpermissions.h"
 #include "llsaleinfo.h"
 #include "llwearabletype.h"
+#if OPENSIM
+#include "llmd5.h"
+#endif
 
 class LLVisualParam;
 class LLTexGlobalColorInfo;
@@ -94,20 +97,42 @@ public:
 
     void                setLocalTextureObject(S32 index, LLLocalTextureObject &lto);
     void                addVisualParam(LLVisualParam *param);
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    void                setVisualParamWeight(S32 index, F32 value, bool upload_bake = false);
+#else
     void                setVisualParamWeight(S32 index, F32 value);
+#endif
     F32                 getVisualParamWeight(S32 index) const;
     LLVisualParam*      getVisualParam(S32 index) const;
     void                getVisualParams(visual_param_vec_t &list);
+
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    void                animateParams(F32 delta, bool upload_bake = false);
+#else
     void                animateParams(F32 delta);
+#endif
 
     LLColor4            getClothesColor(S32 te) const;
-    void                setClothesColor( S32 te, const LLColor4& new_color);
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    void                setClothesColor(S32 te, const LLColor4& new_color, bool upload_bake = false);
+#else
+    void                setClothesColor(S32 te, const LLColor4& new_color);
+#endif
 
     virtual void        revertValues();
     virtual void        saveValues();
 
     // Something happened that requires the wearable to be updated (e.g. worn/unworn).
     virtual void        setUpdated() const = 0;
+
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    // Update the baked texture hash.
+    virtual void        addToBakedTextureHash(LLMD5& hash) const = 0;
+#endif
 
     typedef std::map<S32, LLVisualParam *>    visual_param_index_map_t;
     visual_param_index_map_t mVisualParamIndexMap;

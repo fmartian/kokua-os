@@ -29,7 +29,7 @@
 
 #include "llaisapi.h"
 #include "llagent.h"
-#include "llappviewer.h"
+//#include "llappviewer.h"
 #include "llappearancemgr.h"
 #include "llcallbacklist.h"
 #include "llinventorymodel.h"
@@ -38,13 +38,16 @@
 #include "llstartup.h"
 #include "llviewercontrol.h"
 #include "llviewerinventory.h"
-#include "llviewermessage.h"
+//#include "llviewermessage.h"
 #include "llviewerregion.h"
-#include "llviewerwindow.h"
+//#include "llviewerwindow.h"
 #include "llhttpconstants.h"
 #include "bufferarray.h"
-#include "bufferstream.h"
+//#include "bufferstream.h"
 #include "llcorehttputil.h"
+#if OPENSIM
+#include "llviewernetwork.h"
+#endif
 
 // History (may be apocryphal)
 //
@@ -52,9 +55,7 @@
 // along with inventory LINK items referencing other inventory
 // items.  As part of this, at login, the entire inventory
 // structure is downloaded 'in the background' using the
-// backgroundFetch()/bulkFetch() methods.  The UDP path can
-// still be used and is found in the 'DEPRECATED OLD CODE'
-// section.
+// backgroundFetch()/bulkFetch() methods.
 //
 // The old UDP path implemented a throttle that adapted
 // itself during running.  The mechanism survived info HTTP
@@ -72,7 +73,7 @@
 //
 // Possible future work:
 //
-// * Don't download the entire heirarchy in one go (which
+// * Don't download the entire hierarchy in one go (which
 //   might have been how V1 worked).  Implications for
 //   links (which may not have a valid target) and search
 //   which would then be missing data.
@@ -176,6 +177,9 @@ private:
     const uuid_vec_t mRecursiveCatUUIDs; // hack for storing away which cat fetches are recursive
 };
 
+#if OPENSIM
+const S32 MAX_FETCH_RETRIES = 10; // <FS:ND/> For legacy inventory
+#endif
 
 const char* const LOG_INV("Inventory");
 
@@ -1169,7 +1173,13 @@ void LLInventoryModelBackgroundFetch::bulkFetch()
                             folder_count++;
                         }
                     }
+#if OPENSIM
+                    if (LLViewerInventoryCategory::VERSION_UNKNOWN != cat->getVersion() ||
+                        LLGridManager::getInstance()->isInOpenSim())
+#else
                     else
+#endif
+
                     {
                         // May already have this folder, but append child folders to list.
                         if (fetch_info.mFetchType >= FT_CONTENT_RECURSIVE)
@@ -1381,7 +1391,6 @@ void BGFolderHttpHandler::onCompleted(LLCore::HttpHandle handle, LLCore::HttpRes
     while (false);
 }
 
-
 void BGFolderHttpHandler::processData(LLSD& content, LLCore::HttpResponse* response)
 {
     LLInventoryModelBackgroundFetch* fetcher(LLInventoryModelBackgroundFetch::getInstance());
@@ -1440,6 +1449,13 @@ void BGFolderHttpHandler::processData(LLSD& content, LLCore::HttpResponse* respo
                         titem->setParent(lost_uuid);
                         titem->updateParentOnServer(false);
                         gInventory.updateItem(titem);
+#if OPENSIM
+                        // <FS:Ansariel> FIRE-21376: Inventory not loading properly on OpenSim
+                        if (LLGridManager::getInstance()->isInOpenSim())
+                        {
+                            gInventory.notifyObservers();
+                        }
+#endif
                     }
                 }
             }
@@ -1512,8 +1528,15 @@ void BGFolderHttpHandler::processData(LLSD& content, LLCore::HttpResponse* respo
     {
         fetcher->setAllFoldersFetched();
     }
-}
 
+#if OPENSIM
+    // <FS:Ansariel> FIRE-21376: Inventory not loading properly on OpenSim
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        gInventory.notifyObservers();
+    }
+#endif
+}
 
 void BGFolderHttpHandler::processFailure(LLCore::HttpStatus status, LLCore::HttpResponse* response)
 {
@@ -1526,7 +1549,6 @@ void BGFolderHttpHandler::processFailure(LLCore::HttpStatus status, LLCore::Http
                       << LLCoreHttpUtil::responseToString(response) << "]" << LL_ENDL;
 
     // Could use a 404 test here to try to detect revoked caps...
-
     if (status == LLCore::HttpStatus(HTTP_FORBIDDEN))
     {
         // Too large, split into two if possible
@@ -1582,6 +1604,14 @@ void BGFolderHttpHandler::processFailure(LLCore::HttpStatus status, LLCore::Http
             // Can't split
             LLNotificationsUtil::add("InventoryLimitReachedAIS");
         }
+
+#if OPENSIM
+        // <FS:Ansariel> FIRE-21376: Inventory not loading properly on OpenSim
+        if (LLGridManager::getInstance()->isInOpenSim())
+        {
+            gInventory.notifyObservers();
+        }
+#endif
     }
 
     // This was originally the request retry logic for the inventory
@@ -1611,6 +1641,14 @@ void BGFolderHttpHandler::processFailure(LLCore::HttpStatus status, LLCore::Http
             fetcher->setAllFoldersFetched();
         }
     }
+
+#if OPENSIM
+    // <FS:Ansariel> FIRE-21376: Inventory not loading properly on OpenSim
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        gInventory.notifyObservers();
+    }
+#endif
 }
 
 
@@ -1648,6 +1686,14 @@ void BGFolderHttpHandler::processFailure(const char* const reason, LLCore::HttpR
             fetcher->setAllFoldersFetched();
         }
     }
+
+#if OPENSIM
+    // <FS:Ansariel> FIRE-21376: Inventory not loading properly on OpenSim
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        gInventory.notifyObservers();
+    }
+#endif
 }
 
 

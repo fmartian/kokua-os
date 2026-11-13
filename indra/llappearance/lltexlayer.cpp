@@ -30,7 +30,7 @@
 
 #include "llavatarappearance.h"
 #include "llcrc.h"
-#include "llimagej2c.h"
+//#include "llimagej2c.h"
 #include "llimagetga.h"
 #include "lldir.h"
 #include "lltexlayerparams.h"
@@ -41,7 +41,7 @@
 #include "llwearabledata.h"
 #include "llvertexbuffer.h"
 #include "llviewervisualparam.h"
-#include "llfasttimer.h"
+//#include "llfasttimer.h"
 
 //#include "../tools/imdebug/imdebug.h"
 
@@ -153,7 +153,13 @@ bool LLTexLayerSetBuffer::renderTexLayerSet(LLRenderTarget* bound_target)
                                      getCompositeWidth(), getCompositeHeight(), bound_target );
     gGL.flush();
 
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    // midRenderTexLayerSet(success);
+    midRenderTexLayerSet(success, bound_target);
+#else
     midRenderTexLayerSet(success);
+#endif
 
     gAlphaMaskProgram.unbind();
 

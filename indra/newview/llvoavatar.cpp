@@ -28,8 +28,8 @@
 
 #include "llvoavatar.h"
 
-#include <stdio.h>
-#include <ctype.h>
+//#include <stdio.h>
+//#include <ctype.h>
 #include <sstream>
 
 #include "llaudioengine.h"
@@ -47,7 +47,7 @@
 #include "llavatarpropertiesprocessor.h"
 #include "llavatarrendernotifier.h"
 #include "llcontrolavatar.h"
-#include "llexperiencecache.h"
+//#include "llexperiencecache.h"
 #include "llphysicsmotion.h"
 #include "llviewercontrol.h"
 #include "llcallingcard.h"      // IDEVO for LLAvatarTracker
@@ -58,12 +58,12 @@
 #include "llemote.h"
 #include "llfloatertools.h"
 #include "llheadrotmotion.h"
-#include "llhudeffecttrail.h"
+//#include "llhudeffecttrail.h"
 #include "llhudmanager.h"
 #include "llhudnametag.h"
 #include "llhudtext.h"              // for mText/mDebugText
-#include "llimview.h"
-#include "llinitparam.h"
+//#include "llimview.h"
+//#include "llinitparam.h"
 #include "llkeyframefallmotion.h"
 #include "llkeyframestandmotion.h"
 #include "llkeyframewalkmotion.h"
@@ -72,20 +72,20 @@
 #include "llmutelist.h"
 #include "llmoveview.h"
 #include "llnotificationsutil.h"
-#include "llphysicsshapebuilderutil.h"
+//#include "llphysicsshapebuilderutil.h"
 #include "llquantize.h"
-#include "llrand.h"
+//#include "llrand.h"
 #include "llregionhandle.h"
 #include "llresmgr.h"
 #include "llselectmgr.h"
-#include "llsprite.h"
+//#include "llsprite.h"
 #include "lltargetingmotion.h"
 #include "lltoolmgr.h"
-#include "lltoolmorph.h"
+//#include "lltoolmorph.h"
 #include "llviewercamera.h"
 #include "llviewertexlayer.h"
 #include "llviewertexturelist.h"
-#include "llviewermenu.h"
+//#include "llviewermenu.h"
 #include "llviewerobjectlist.h"
 #include "llviewerparcelmgr.h"
 #include "llviewerregion.h"
@@ -96,8 +96,8 @@
 #include "llvovolume.h"
 #include "llworld.h"
 #include "pipeline.h"
-#include "llviewershadermgr.h"
-#include "llsky.h"
+//#include "llviewershadermgr.h"
+//#include "llsky.h"
 #include "llanimstatelabels.h"
 #include "lltrans.h"
 #include "llappearancemgr.h"
@@ -106,7 +106,7 @@
 #include "llvoiceclient.h"
 #include "llvoicevisualizer.h" // Ventrella
 
-#include "lldebugmessagebox.h"
+//#include "lldebugmessagebox.h"
 #include "llsdutil.h"
 #include "llscenemonitor.h"
 #include "llsdserialize.h"
@@ -120,7 +120,10 @@
 #include "lggcontactsets.h"
 #include "llnetmap.h"
 #include "llsidepanelappearance.h"
-#include <boost/lexical_cast.hpp>
+//#include <boost/lexical_cast.hpp>
+#if OPENSIM
+#include "llviewernetwork.h"
+#endif
 
 extern F32 SPEED_ADJUST_MAX;
 extern F32 SPEED_ADJUST_MAX_SEC;
@@ -768,6 +771,10 @@ LLVOAvatar::LLVOAvatar(const LLUUID& id,
     mLastRezzedStatus(-1),
     mIsEditingAppearance(false),
     mUseLocalAppearance(false),
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    mUseServerBakes(false),
+#endif
     mLastUpdateRequestCOFVersion(-1),
     mLastUpdateReceivedCOFVersion(-1),
     mCachedMuteListUpdateTime(0),
@@ -862,6 +869,45 @@ LLVOAvatar::LLVOAvatar(const LLUUID& id,
         LLAvatarPropertiesProcessor::getInstance()->sendAvatarTexturesRequest(getID());
     }
 }
+
+#if OPENSIM
+//<FS:Beq> BOM constrain number of bake requests when BOM not supported
+S32 LLVOAvatar::getNumBakes() const
+{
+    // BAKED_LEFT_ARM is equal to the pre-BOM BAKED_NUM_INDICES
+    if (getRegion())
+    {
+        // LL_INFOS("BOMOS")
+        //              << getFullname()
+        //              << "Using avatar region settings [" << getRegion()->getName() << "]"
+        //              << " bakesOnMesh = " << static_cast<const char *>(getRegion()->bakesOnMeshEnabled()?"True":"False")
+        //              << LL_ENDL;
+        return getRegion()->getRegionMaxBakes();
+    }
+    // LL_INFOS("BOMOS")
+    //              << " Using fallback settings"
+    //              << " bakesOnMesh = " << static_cast<const char *>(LLGridManager::instance().isInSecondLife()?"True":"False")
+    //              << LL_ENDL;
+    // fallback, in SL assume BOM, elsewhere assume not.
+    return LLGridManager::getInstance()->isInOpenSim() ? BAKED_LEFT_ARM : BAKED_NUM_INDICES;
+}
+
+// U8 LLVOAvatar::getNumTEs() const
+// {
+// #ifdef OPENSIM
+//  // TEX_HEAD_UNIVERSAL_TATTOO is equal to the pre-BOM TEX_NUM_INDICES
+//  if(!mTEImages){return 0;}
+//  if(getRegion())
+//  {
+//      return getRegion()->getRegionMaxTEs();
+//  }
+//  // fallback, in SL assume BOM, elsewhere assume not.
+//  return LLGridManager::instance().isInSecondLife()?TEX_NUM_INDICES:TEX_HEAD_UNIVERSAL_TATTOO;
+// #else
+//  return TEX_NUM_INDICES;
+// #endif
+// }
+#endif
 
 std::string LLVOAvatar::avString() const
 {
@@ -2750,17 +2796,27 @@ LLViewerFetchedTexture *LLVOAvatar::getBakedTextureImage(const U8 te, const LLUU
 
         if (url.empty())
         {
+#if OPENSIM
+            // <FS:Ansariel> [Legacy Bake]
+            LL_DEBUGS("Avatar") << avString() << "get old-bake image from host " << uuid << LL_ENDL;
+            LLHost host = getObjectHost();
+            result      = LLViewerTextureManager::getFetchedTexture(uuid, FTT_HOST_BAKE, true, LLGLTexture::BOOST_NONE,
+                                                                    LLViewerTexture::LOD_TEXTURE, 0, 0, host);
+#else
             LL_WARNS() << "unable to determine URL for te " << te << " uuid " << uuid << LL_ENDL;
             return NULL;
+#endif
         }
-        LL_DEBUGS("Avatar") << avString() << "get server-bake image from URL " << url << LL_ENDL;
-        result = LLViewerTextureManager::getFetchedTextureFromUrl(
-            url, FTT_SERVER_BAKE, true, LLGLTexture::BOOST_NONE, LLViewerTexture::LOD_TEXTURE, 0, 0, uuid);
+        else
+        {
+            LL_DEBUGS("Avatar") << avString() << "get server-bake image from URL " << url << LL_ENDL;
+            result = LLViewerTextureManager::getFetchedTextureFromUrl(url, FTT_SERVER_BAKE, true, LLGLTexture::BOOST_NONE,
+                                                                      LLViewerTexture::LOD_TEXTURE, 0, 0, uuid);
+        }
         if (result->isMissingAsset())
         {
             result->setIsMissingAsset(false);
         }
-
     }
     return result;
 }
@@ -6167,6 +6223,17 @@ void LLVOAvatar::updateTextures()
             const S32 boost_level = getAvatarBakedBoostLevel();
             imagep = LLViewerTextureManager::staticCastToFetchedTexture(getImage(texture_index,0), true);
             addBakedTextureStats( imagep, mPixelArea, texel_area_ratio, boost_level );
+#if OPENSIM
+            // <FS:Ansariel> [Legacy Bake]
+            // Spam if this is a baked texture, not set to default image, without valid host info
+            if (isIndexBakedTexture((ETextureIndex)texture_index) && imagep->getID() != IMG_DEFAULT_AVATAR &&
+                imagep->getID() != IMG_INVISIBLE && !isUsingServerBakes() && !imagep->getTargetHost().isOk())
+            {
+                LL_WARNS_ONCE("Texture") << "LLVOAvatar::updateTextures No host for texture " << imagep->getID() << " for avatar "
+                                         << (isSelf() ? "<myself>" : getID().asString()) << " on host " << getRegion()->getHost()
+                                         << LL_ENDL;
+            }
+#endif
         }
     }
 
@@ -6175,7 +6242,6 @@ void LLVOAvatar::updateTextures()
         setDebugText(llformat("%4.0f:%4.0f", (F32) sqrt(mMinPixelArea),(F32) sqrt(mMaxPixelArea)));
     }
 }
-
 
 void LLVOAvatar::addLocalTextureStats( ETextureIndex idx, LLViewerFetchedTexture* imagep,
                                        F32 texel_area_ratio, bool render_avatar, bool covered_by_baked)
@@ -6312,18 +6378,25 @@ const std::string LLVOAvatar::getImageURL(const U8 te, const LLUUID &uuid)
     llassert(isIndexBakedTexture(ETextureIndex(te)));
     std::string url = "";
     const std::string& appearance_service_url = LLAppearanceMgr::instance().getAppearanceServiceURL();
-    if (appearance_service_url.empty())
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    if (isUsingServerBakes())
+#endif
     {
-        // Probably a server-side issue if we get here:
-        LL_WARNS() << "AgentAppearanceServiceURL not set - Baked texture requests will fail" << LL_ENDL;
-        return url;
-    }
+        const std::string& appearance_service_url = LLAppearanceMgr::instance().getAppearanceServiceURL();
+        if (appearance_service_url.empty())
+        {
+            // Probably a server-side issue if we get here:
+            LL_WARNS() << "AgentAppearanceServiceURL not set - Baked texture requests will fail" << LL_ENDL;
+            return url;
+        }
 
-    const LLAvatarAppearanceDictionary::TextureEntry* texture_entry = LLAvatarAppearance::getDictionary()->getTexture((ETextureIndex)te);
-    if (texture_entry != NULL)
-    {
-        url = appearance_service_url + "texture/" + getID().asString() + "/" + texture_entry->mDefaultImageName + "/" + uuid.asString();
-        //LL_INFOS() << "baked texture url: " << url << LL_ENDL;
+        const LLAvatarAppearanceDictionary::TextureEntry* texture_entry = LLAvatarAppearance::getDictionary()->getTexture((ETextureIndex)te);
+        if (texture_entry != NULL)
+        {
+            url = appearance_service_url + "texture/" + getID().asString() + "/" + texture_entry->mDefaultImageName + "/" + uuid.asString();
+            // LL_INFOS() << "baked texture url: " << url << LL_ENDL;
+        }
     }
     return url;
 }
@@ -7852,12 +7925,21 @@ bool LLVOAvatar::updateGeometry(LLDrawable *drawable)
 //-----------------------------------------------------------------------------
 // updateSexDependentLayerSets()
 //-----------------------------------------------------------------------------
+#if OPENSIM
+void LLVOAvatar::updateSexDependentLayerSets(bool upload_bake)
+{
+    invalidateComposite(mBakedTextureDatas[BAKED_HEAD].mTexLayerSet, upload_bake);
+    invalidateComposite(mBakedTextureDatas[BAKED_UPPER].mTexLayerSet, upload_bake);
+    invalidateComposite(mBakedTextureDatas[BAKED_LOWER].mTexLayerSet, upload_bake);
+}
+#else
 void LLVOAvatar::updateSexDependentLayerSets()
 {
     invalidateComposite( mBakedTextureDatas[BAKED_HEAD].mTexLayerSet);
     invalidateComposite( mBakedTextureDatas[BAKED_UPPER].mTexLayerSet);
     invalidateComposite( mBakedTextureDatas[BAKED_LOWER].mTexLayerSet);
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // dirtyMesh()
@@ -8652,7 +8734,12 @@ LLViewerObject *    LLVOAvatar::findAttachmentByID( const LLUUID & target_id ) c
 }
 
 // virtual
-void LLVOAvatar::invalidateComposite( LLTexLayerSet* layerset)
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+void LLVOAvatar::invalidateComposite(LLTexLayerSet* layerset, bool upload_bake)
+#else
+void LLVOAvatar::invalidateComposite(LLTexLayerSet* layerset)
+#endif
 {
 }
 
@@ -8661,6 +8748,47 @@ void LLVOAvatar::invalidateAll()
 }
 
 // virtual
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+void LLVOAvatar::onGlobalColorChanged(const LLTexGlobalColor* global_color,
+                                      bool upload_bake)
+{
+    if (global_color == mTexSkinColor)
+    {
+        invalidateComposite(mBakedTextureDatas[BAKED_HEAD].mTexLayerSet, upload_bake);
+        invalidateComposite(mBakedTextureDatas[BAKED_UPPER].mTexLayerSet, upload_bake);
+        invalidateComposite(mBakedTextureDatas[BAKED_LOWER].mTexLayerSet, upload_bake);
+    }
+    else if (global_color == mTexHairColor)
+    {
+        invalidateComposite(mBakedTextureDatas[BAKED_HEAD].mTexLayerSet, upload_bake);
+        invalidateComposite(mBakedTextureDatas[BAKED_HAIR].mTexLayerSet, upload_bake);
+
+        // ! BACKWARDS COMPATIBILITY !
+        // Fix for dealing with avatars from viewers that don't bake hair.
+        if (!isTextureDefined(mBakedTextureDatas[BAKED_HAIR].mTextureIndex))
+        {
+            LLColor4                           color = mTexHairColor->getColor();
+            avatar_joint_mesh_list_t::iterator iter  = mBakedTextureDatas[BAKED_HAIR].mJointMeshes.begin();
+            avatar_joint_mesh_list_t::iterator end   = mBakedTextureDatas[BAKED_HAIR].mJointMeshes.end();
+            for (; iter != end; ++iter)
+            {
+                LLAvatarJointMesh* mesh = (*iter);
+                if (mesh)
+                {
+                    mesh->setColor(color);
+                }
+            }
+        }
+    }
+    else if (global_color == mTexEyeColor)
+    {
+        // LL_INFOS() << "invalidateComposite cause: onGlobalColorChanged( eyecolor )" << LL_ENDL;
+        invalidateComposite(mBakedTextureDatas[BAKED_EYES].mTexLayerSet, upload_bake);
+    }
+    updateMeshTextures();
+}
+#else
 void LLVOAvatar::onGlobalColorChanged(const LLTexGlobalColor* global_color)
 {
     if (global_color == mTexSkinColor)
@@ -8698,6 +8826,7 @@ void LLVOAvatar::onGlobalColorChanged(const LLTexGlobalColor* global_color)
     }
     updateMeshTextures();
 }
+#endif
 
 // virtual
 // Do rigged mesh attachments display with this av?
@@ -8912,7 +9041,12 @@ void LLVOAvatar::logMetricsTimerRecord(const std::string& phase_name, F32 elapse
     }
     record["grid_x"] = LLSD::Integer(grid_x);
     record["grid_y"] = LLSD::Integer(grid_y);
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    record["is_using_server_bakes"] = isUsingServerBakes();
+#else
     record["is_using_server_bakes"] = true;
+#endif
     record["is_self"] = isSelf();
 
     if (isAgentAvatarValid())
@@ -9395,7 +9529,12 @@ void LLVOAvatar::updateMeshTextures()
 
     mBakedTextureDebugText += llformat("%06d\n",update_counter++);
     mBakedTextureDebugText += "indx layerset linvld ltda ilb ulkg ltid\n";
-    for (U32 i=0; i < mBakedTextureDatas.size(); i++)
+#if OPENSIM
+    // <FS:Beq> BOM OS
+    for (S32 i = 0; i < getNumBakes(); i++)
+#else
+    for (U32 i = 0; i < mBakedTextureDatas.size(); i++)
+#endif
     {
         is_layer_baked[i] = isTextureDefined(mBakedTextureDatas[i].mTextureIndex);
         LLViewerTexLayerSet* layerset = NULL;
@@ -9444,7 +9583,12 @@ void LLVOAvatar::updateMeshTextures()
                                            last_id_string.c_str());
     }
 
-    for (U32 i=0; i < mBakedTextureDatas.size(); i++)
+#if OPENSIM
+    // <FS:Beq> BOM OS
+    for (S32 i = 0; i < getNumBakes(); i++)
+#else
+    for (U32 i = 0; i < mBakedTextureDatas.size(); i++)
+#endif
     {
         debugColorizeSubMeshes(i, LLColor4::white);
 
@@ -9550,7 +9694,6 @@ void LLVOAvatar::updateMeshTextures()
         }
     }
 
-
     for (LLAvatarAppearanceDictionary::BakedTextures::const_iterator baked_iter =
              LLAvatarAppearance::getDictionary()->getBakedTextures().begin();
          baked_iter != LLAvatarAppearance::getDictionary()->getBakedTextures().end();
@@ -9572,7 +9715,7 @@ void LLVOAvatar::updateMeshTextures()
         }
     }
 
-    // removeMissingBakedTextures() will call back into this rountine if something is removed, and can blow up the stack
+    // removeMissingBakedTextures() will call back into this routine if something is removed, and can blow up the stack
     static bool call_remove_missing = true;
     if (call_remove_missing)
     {
@@ -9730,7 +9873,12 @@ void LLVOAvatar::releaseComponentTextures()
         }
     }
 
+#if OPENSIM
+    //<FS:Beq> BOM constrain number of bake requests when BOM not supported
+    for (U8 baked_index = 0; baked_index < getNumBakes(); baked_index++)
+#else
     for (U8 baked_index = 0; baked_index < BAKED_NUM_INDICES; baked_index++)
+#endif
     {
         const LLAvatarAppearanceDictionary::BakedEntry * bakedDicEntry = LLAvatarAppearance::getDictionary()->getBakedTexture((EBakedTextureIndex)baked_index);
         // skip if this is a skirt and av is not wearing one, or if we don't have a baked texture UUID
@@ -10184,13 +10332,22 @@ bool resolve_appearance_version(const LLAppearanceMessageContents& contents, S32
     {
         appearance_version = contents.mAppearanceVersion;
     }
-    else // still not set, go with 1.
+    else
     {
+#if OPENSIM
+        // <FS:Ansariel> [Legacy Bake]
+        // still not set, go with 0.
+        appearance_version = 0;
+#else
+        // still not set, go with 1.
         appearance_version = 1;
+#endif
     }
-    //LL_DEBUGS("Avatar") << "appearance version info - field " << contents.mAppearanceVersion
-    //                  << " param: " << contents.mParamAppearanceVersion
-    //                  << " final: " << appearance_version << LL_ENDL;
+#if LL_RELEASE_WITH_DEBUG_INFO
+    LL_DEBUGS("Avatar") << "appearance version info - field " << contents.mAppearanceVersion
+                        << " param: " << contents.mParamAppearanceVersion
+                        << " final: " << appearance_version << LL_ENDL;
+#endif
     return true;
 }
 
@@ -10226,7 +10383,9 @@ void LLVOAvatar::processAvatarAppearance( LLMessageSystem* mesgsys )
         LL_WARNS() << "bad appearance version info, discarding" << LL_ENDL;
         return;
     }
+#if !OPENSIM
     llassert(appearance_version > 0);
+#endif
     if (appearance_version > 1)
     {
         LL_WARNS() << "unsupported appearance version " << appearance_version << ", discarding appearance message" << LL_ENDL;
@@ -10247,7 +10406,17 @@ void LLVOAvatar::processAvatarAppearance( LLMessageSystem* mesgsys )
             " (highest seen #" << mLastUpdateReceivedCOFVersion <<
             ") (AISCOF=#" << aisCOFVersion << ")" << LL_ENDL;
 
+#if OPENSIM
+        // <FS:Ansariel> [Legacy Bake]
+        if (mFirstTEMessageReceived && (appearance_version == 0))
+        {
+            return;
+        }
+
+        if (appearance_version > 0 && mLastUpdateReceivedCOFVersion >= thisAppearanceVersion)
+#else
         if (mLastUpdateReceivedCOFVersion >= thisAppearanceVersion)
+#endif
         {
             LL_WARNS("Avatar") << "Stale appearance received #" << thisAppearanceVersion <<
                 " attempt to roll back from #" << mLastUpdateReceivedCOFVersion <<
@@ -10270,7 +10439,17 @@ void LLVOAvatar::processAvatarAppearance( LLMessageSystem* mesgsys )
         // appearance version, which may cause us to look for baked
         // textures in the wrong place and flag them as missing
         // assets.
-        LL_DEBUGS("Avatar") << "ignoring appearance message due to lack of params" << LL_ENDL;
+#if OPENSIM
+        // <FS:Beq> Attempt to deal with empty appearance for self
+        if (isSelf() && mLastUpdateReceivedCOFVersion != -1)
+        {
+            LL_INFOS("Avatar") << "Empty appearance for self. Forcing a refresh" << LL_ENDL;
+            LLNotificationsUtil::add("AvatarRezSelfBakeForceUpdateNotification");
+            LLAppearanceMgr::instance().syncCofVersionAndRefresh();
+        }
+        else
+#endif
+            LL_DEBUGS("Avatar") << "ignoring appearance message due to lack of params" << LL_ENDL;
         return;
     }
 
@@ -10297,6 +10476,11 @@ void LLVOAvatar::processAvatarAppearance( LLMessageSystem* mesgsys )
 
     mLastProcessedAppearance = contents;
 
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    setIsUsingServerBakes(appearance_version > 0);
+#endif
+
     bool slam_params = false;
     applyParsedAppearanceMessage(*contents, slam_params);
     if (getOverallAppearance() != AOA_NORMAL)
@@ -10314,6 +10498,25 @@ void LLVOAvatar::applyParsedAppearanceMessage(LLAppearanceMessageContents& conte
     {
         updateVisualComplexity();
     }
+
+#if OPENSIM
+    // <FS:clientTags>
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        // Wolfspirit: Read the UUID, system and Texturecolor
+        const LLTEContents& tec        = contents.mTEContents;
+        const LLUUID        tag_uuid   = tec.image_data[TEX_HEAD_BODYPAINT];
+        bool                new_system = (tec.glow[TEX_HEAD_BODYPAINT]);
+
+        // WS: Write them into an LLSD map
+        mClientTagData["uuid"]      = tag_uuid.asString();
+        mClientTagData["id_based"]  = new_system;
+        mClientTagData["tex_color"] = tec.colors[TEX_HEAD_BODYPAINT].getValue();
+
+        // WS: Clear mNameString to force a rebuild
+        mNameIsSet = false;
+    }
+#endif
 
     // prevent the overwriting of valid baked textures with invalid baked textures
     for (U8 baked_index = 0; baked_index < mBakedTextureDatas.size(); baked_index++)
@@ -12715,3 +12918,76 @@ void LLVOAvatar::revokePermissionsOnObject(LLViewerObject *sit_object)
         gAgent.sendReliableMessage();
     }
 }
+
+#if OPENSIM
+// <FS:Ansariel> [Legacy Bake]
+//-----------------------------------------------------------------------------
+// Legacy baking
+//-----------------------------------------------------------------------------
+void LLVOAvatar::bakedTextureOriginCounts(S32& sb_count,      // server-bake, has origin URL.
+                                          S32& host_count,    // host-based bake, has host.
+                                          S32& both_count,    // error - both host and URL set.
+                                          S32& neither_count) // error - neither set.
+{
+    sb_count = host_count = both_count = neither_count = 0;
+
+    std::set<LLUUID> baked_ids;
+    collectBakedTextureUUIDs(baked_ids);
+    for (std::set<LLUUID>::const_iterator it = baked_ids.begin(); it != baked_ids.end(); ++it)
+    {
+        LLViewerFetchedTexture* imagep  = gTextureList.findImage(*it, TEX_LIST_STANDARD);
+        bool                    has_url = false, has_host = false;
+        if (!imagep->getUrl().empty())
+        {
+            has_url = true;
+        }
+        if (imagep->getTargetHost().isOk())
+        {
+            has_host = true;
+        }
+        if (has_url && !has_host)
+            sb_count++;
+        else if (has_host && !has_url)
+            host_count++;
+        else if (has_host && has_url)
+            both_count++;
+        else if (!has_host && !has_url)
+            neither_count++;
+    }
+}
+
+// virtual
+void LLVOAvatar::bodySizeChanged()
+{
+    if (isSelf() && !LLAppearanceMgr::instance().isInUpdateAppearanceFromCOF())
+    { // notify simulator of change in size
+        // but not if we are in the middle of updating appearance
+        gAgent.sendAgentSetAppearance();
+    }
+}
+
+bool LLVOAvatar::isUsingServerBakes() const
+{
+#if 1
+    // Sanity check - visual param for appearance version should match mUseServerBakes
+    LLVisualParam* appearance_version_param = getVisualParam(11000);
+    llassert(appearance_version_param);
+    F32 wt        = appearance_version_param->getWeight();
+    F32 expect_wt = mUseServerBakes ? 1.0f : 0.0f;
+    if (!is_approx_equal(wt, expect_wt))
+    {
+        LL_WARNS() << "wt " << wt << " differs from expected " << expect_wt << LL_ENDL;
+    }
+#endif
+
+    return mUseServerBakes;
+}
+
+void LLVOAvatar::setIsUsingServerBakes(bool newval)
+{
+    mUseServerBakes                         = newval;
+    LLVisualParam* appearance_version_param = getVisualParam(11000);
+    llassert(appearance_version_param);
+    appearance_version_param->setWeight(newval ? 1.0f : 0.0f);
+}
+#endif

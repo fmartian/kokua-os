@@ -107,6 +107,11 @@ public:
                                                      bool force_square = false,
                                                      bool force_lossless = false);
     static void processImageNotInDatabase( LLMessageSystem *msg, void **user_data );
+#if OPENSIM
+    // <FS:Ansariel> OpenSim compatibility
+    static void receiveImageHeader(LLMessageSystem* msg, void** user_data);
+    static void receiveImagePacket(LLMessageSystem* msg, void** user_data);
+#endif
 
 public:
     LLViewerTextureList();

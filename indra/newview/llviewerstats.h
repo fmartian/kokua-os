@@ -27,7 +27,7 @@
 #ifndef LL_LLVIEWERSTATS_H
 #define LL_LLVIEWERSTATS_H
 
-#include "lltextureinfo.h"
+//#include "lltextureinfo.h"
 #include "lltracerecording.h"
 #include "lltrace.h"
 #include "llstatsaccumulator.h"
@@ -162,6 +162,11 @@ extern SimMeasurement<>                     SIM_TIME_DILATION,
                                             SIM_OBJECTS,
                                             SIM_ACTIVE_OBJECTS,
                                             SIM_ACTIVE_SCRIPTS,
+#if OPENSIM
+                                            SIM_LSLIPS,
+                                            SIM_REGION_IDLE,
+                                            SIM_REGION_IDLE_POSSIBLE,
+#endif
                                             SIM_IN_PACKETS_PER_SEC,
                                             SIM_OUT_PACKETS_PER_SEC,
                                             SIM_PENDING_DOWNLOADS,
@@ -191,41 +196,48 @@ extern LLTrace::SampleStatHandle<LLUnit<F32, LLUnits::Percent> > PACKETS_LOST_PE
 
 extern LLTrace::SampleStatHandle<F64Megabytes > FORMATTED_MEM;
 
-extern SimMeasurement<F64Milliseconds > SIM_FRAME_TIME,
-                                                            SIM_NET_TIME,
-                                                            SIM_OTHER_TIME,
-                                                            SIM_PHYSICS_TIME,
-                                                            SIM_PHYSICS_STEP_TIME,
-                                                            SIM_PHYSICS_SHAPE_UPDATE_TIME,
-                                                            SIM_PHYSICS_OTHER_TIME,
-                                                            SIM_AI_TIME,
-                                                            SIM_AGENTS_TIME,
-                                                            SIM_IMAGES_TIME,
-                                                            SIM_SCRIPTS_TIME,
-                                                            SIM_SPARE_TIME,
-                                                            SIM_SLEEP_TIME,
-                                                            SIM_PUMP_IO_TIME;
+extern SimMeasurement<F64Milliseconds> SIM_FRAME_TIME,
+                                       SIM_NET_TIME,
+                                       SIM_OTHER_TIME,
+                                       SIM_PHYSICS_TIME,
+                                       SIM_PHYSICS_STEP_TIME,
+                                       SIM_PHYSICS_SHAPE_UPDATE_TIME,
+                                       SIM_PHYSICS_OTHER_TIME,
+                                       SIM_AI_TIME,
+                                       SIM_AGENTS_TIME,
+                                       SIM_IMAGES_TIME,
+                                       SIM_SCRIPTS_TIME,
+                                       SIM_SPARE_TIME,
+                                       SIM_SLEEP_TIME,
+                                       SIM_PUMP_IO_TIME;
 
-extern SimMeasurement<F64Kilobytes >    SIM_UNACKED_BYTES;
-extern SimMeasurement<F64Megabytes >    SIM_PHYSICS_MEM;
+#if OPENSIM
+extern SimMeasurement<F64Kilobytes>    SIM_UNACKED_BYTES,
+SIM_VIRTUAL_SIZE_KB,
+SIM_RESIDENT_SIZE_KB;
+#else
+extern SimMeasurement<F64Kilobytes>    SIM_UNACKED_BYTES;
+#endif
+extern SimMeasurement<F64Megabytes>    SIM_PHYSICS_MEM;
 
 
-extern LLTrace::SampleStatHandle<F64Milliseconds >  FRAMETIME_JITTER,
-                                                    FRAMETIME,
-                                                    SIM_PING,
-                                                    FRAMETIME_JITTER_99TH,
-                                                    FRAMETIME_JITTER_95TH,
-                                                    FRAMETIME_99TH,
-                                                    FRAMETIME_95TH,
-                                                    FRAMETIME_JITTER_CUMULATIVE,
-                                                    FRAMETIME_JITTER_STDDEV,
-                                                    FRAMETIME_STDDEV;
 
-extern LLTrace::SampleStatHandle<U32>               FRAMETIME_JITTER_EVENTS,
-                                                    FRAMETIME_JITTER_EVENTS_PER_MINUTE,
-                                                    FRAMETIME_JITTER_EVENTS_LAST_MINUTE;
+extern LLTrace::SampleStatHandle<F64Milliseconds> FRAMETIME_JITTER,
+                                                  FRAMETIME,
+                                                  SIM_PING,
+                                                  FRAMETIME_JITTER_99TH,
+                                                  FRAMETIME_JITTER_95TH,
+                                                  FRAMETIME_99TH,
+                                                  FRAMETIME_95TH,
+                                                  FRAMETIME_JITTER_CUMULATIVE,
+                                                  FRAMETIME_JITTER_STDDEV,
+                                                  FRAMETIME_STDDEV;
 
-extern LLTrace::SampleStatHandle<U64>               DOFRAME_TIME_US;
+extern LLTrace::SampleStatHandle<U32> FRAMETIME_JITTER_EVENTS,
+                                      FRAMETIME_JITTER_EVENTS_PER_MINUTE,
+                                      FRAMETIME_JITTER_EVENTS_LAST_MINUTE;
+
+extern LLTrace::SampleStatHandle<U64> DOFRAME_TIME_US;
 
 extern LLTrace::SampleStatHandle<F64> NOTRMALIZED_FRAMETIME_JITTER_SESSION;
 extern LLTrace::SampleStatHandle<F64> NFTV;

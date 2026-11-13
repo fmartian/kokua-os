@@ -276,7 +276,12 @@ protected:
     void                    pushProjection() const;
     void                    popProjection() const;
     virtual void            preRenderTexLayerSet();
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    virtual void            midRenderTexLayerSet(bool success, LLRenderTarget* bound_target) {}
+#else
     virtual void            midRenderTexLayerSet(bool success) {}
+#endif
     virtual void            postRenderTexLayerSet(bool success);
     virtual S32             getCompositeOriginX() const = 0;
     virtual S32             getCompositeOriginY() const = 0;

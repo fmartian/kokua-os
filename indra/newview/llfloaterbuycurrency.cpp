@@ -38,15 +38,12 @@
 #include "llstatusbar.h"
 #include "lltextbox.h"
 #include "llviewchildren.h"
-#include "llviewerwindow.h"
-#include "lluictrlfactory.h"
-#include "llviewercontrol.h"
 #include "llviewernetwork.h"
 #include "llweb.h"
-#include "llwindow.h"
-#include "llappviewer.h"
 
 static const S32 MINIMUM_BALANCE_AMOUNT = 0;
+
+extern LLControlGroup gSavedSettings;
 
 class LLFloaterBuyCurrencyUI
 :   public LLFloater
@@ -105,7 +102,6 @@ LLFloaterBuyCurrencyUI::LLFloaterBuyCurrencyUI(const LLSD& key)
 LLFloaterBuyCurrencyUI::~LLFloaterBuyCurrencyUI()
 {
 }
-
 
 void LLFloaterBuyCurrencyUI::noTarget()
 {
@@ -351,6 +347,33 @@ void LLFloaterBuyCurrency::openPaymentMethodPage()
     LLWeb::loadURL(url);
 }
 
+#if OPENSIM
+// <COLOSI opensim multi-currency support>
+// static
+void LLFloaterBuyCurrency::updateCurrencySymbols()
+{
+    LLFloater* fbc = LLFloaterReg::findInstance("buy_currency");
+    if (fbc)
+    {
+        // Call update on the floater to update the title
+        fbc->updateCurrencySymbols();
+
+        // update all text boxes with currency symbols.
+        static const std::list<std::string> sctb = { "info_need_more",  "info_buying",    "target_price", "balance_amount",
+                                                     "required_amount", "currency_label", "total_amount", "purchase_warning_repurchase" };
+        // Do not include balance_amount and total_amount because they are updated on every display when amounts are replaced.
+        for (std::list<std::string>::const_iterator iter = sctb.begin(); iter != sctb.end(); ++iter)
+        {
+            LLTextBox* tb = fbc->findChild<LLTextBox>(*iter);
+            if (tb)
+            {
+                tb->updateCurrencySymbols();
+            }
+        }
+    }
+}
+#endif
+
 LLFetchAvatarPaymentInfo::LLFetchAvatarPaymentInfo(bool has_target, const std::string& name, S32 price)
 :   mAvatarID(gAgent.getID()),
     mHasTarget(has_target),
@@ -376,6 +399,12 @@ void LLFetchAvatarPaymentInfo::sendRequest()
     processor->addObserver(mAvatarID, this);
     // send a request (duplicates will be suppressed inside the avatar
     // properties processor)
+#if OPENSIM
+    // <FS> OpenSim
+    if (gAgent.getRegionCapability("AgentProfile").empty())
+        processor->sendAvatarLegacyPropertiesRequest(mAvatarID);
+    else
+#endif
     processor->sendAvatarPropertiesRequest(mAvatarID);
 }
 

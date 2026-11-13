@@ -31,15 +31,15 @@
 // linden libraries
 #include "indra_constants.h"
 #include "llaisapi.h"
-#include "llavatarnamecache.h"      // name lookup cap url
-#include "llfloaterreg.h"
+//#include "llavatarnamecache.h"      // name lookup cap url
+//#include "llfloaterreg.h"
 #include "llmath.h"
 #include "llregionflags.h"
 #include "llregionhandle.h"
 #include "llsurface.h"
 #include "message.h"
 #include "v3math.h"
-#include "v4math.h"
+//#include "v4math.h"
 
 #include "llagent.h"
 #include "llagentcamera.h"
@@ -47,12 +47,12 @@
 #include "llavatarrenderinfoaccountant.h"
 #include "llcallingcard.h"
 #include "llcommandhandler.h"
-#include "lldir.h"
+//#include "lldir.h"
 #include "lleventpoll.h"
 #include "llfloatergodtools.h"
-#include "llfloaterreporter.h"
+//#include "llfloaterreporter.h"
 #include "llfloaterregioninfo.h"
-#include "llgltfmateriallist.h"
+//#include "llgltfmateriallist.h"
 #include "llhttpnode.h"
 #include "llpbrterrainfeatures.h"
 #include "llregioninfomodel.h"
@@ -67,21 +67,26 @@
 #include "llvlcomposition.h"
 #include "llvoavatarself.h"
 #include "llvocache.h"
+#include "llweb.h"
 #include "llworld.h"
 #include "llspatialpartition.h"
 #include "stringize.h"
 #include "llviewercontrol.h"
 #include "llsdserialize.h"
-#include "llviewerparcelmgr.h"
 #include "llfloaterperms.h"
 #include "llvieweroctree.h"
-#include "llviewerdisplay.h"
+//#include "llviewerdisplay.h"
 #include "llviewerwindow.h"
 #include "llprogressview.h"
 #include "llcoros.h"
-#include "lleventcoro.h"
+//#include "lleventcoro.h"
 #include "llcorehttputil.h"
-#include "llsettingsdaycycle.h"
+//#include "llsettingsdaycycle.h"
+#if OPENSIM
+#include "llviewernetwork.h"
+#include "llviewermenu.h"
+#include "llviewerparcelmgr.h"
+#endif
 
 #include <boost/regex.hpp>
 
@@ -630,7 +635,23 @@ LLViewerRegion::LLViewerRegion(const U64 &handle,
     mSimAccess( SIM_ACCESS_MIN ),
     mBillableFactor(1.0),
     mMaxTasks(DEFAULT_MAX_REGION_WIDE_PRIM_COUNT),
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    mCentralBakeVersion(0),
+    // <FS:Beq> BOM tests for OS
+    mMaxBakes(LLGridManager::getInstance()->isInOpenSim() ? LLAvatarAppearanceDefines::EBakedTextureIndex::BAKED_LEFT_ARM
+                                                          : LLAvatarAppearanceDefines::EBakedTextureIndex::BAKED_NUM_INDICES),
+    mMaxTEs(LLGridManager::getInstance()->isInOpenSim() ? LLAvatarAppearanceDefines::ETextureIndex::TEX_HEAD_UNIVERSAL_TATTOO
+                                                        : LLAvatarAppearanceDefines::ETextureIndex::TEX_NUM_INDICES),
+    // <FS:Ansariel> FIRE-19563: Scaling for OpenSim VarRegions
+    mWidthScaleFactor(region_width_meters / REGION_WIDTH_METERS),
+    // <FS:humbletim> FIRE-33613: [OpenSim] [PBR] Camera cannot be located at negative Z
+    mMinSimHeight(0.f),
+    // <FS:Ansariel> [UDP Assets]
+    mHttpUrl(""),
+#else
     mCentralBakeVersion(1),
+#endif
     mClassID(0),
     mCPURatio(0),
     mColoName("unknown"),
@@ -662,7 +683,12 @@ LLViewerRegion::LLViewerRegion(const U64 &handle,
     mImpl->mCompositionp =
         new LLVLComposition(mImpl->mLandp,
                             grids_per_region_edge,
+#if OPENSIM
+                            // <FS:CR> OpenSim  VarRegion
+                            mWidth / grids_per_region_edge);
+#else
                             region_width_meters / grids_per_region_edge);
+#endif
     mImpl->mCompositionp->setSurface(mImpl->mLandp);
 
     // Create the surfaces
@@ -672,15 +698,24 @@ LLViewerRegion::LLViewerRegion(const U64 &handle,
                     mImpl->mOriginGlobal,
                     mWidth);
 
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    mParcelOverlay = new LLViewerParcelOverlay(this, mWidth);
+    LLViewerParcelMgr::getInstance()->initParcelsPerEdge(mWidth);
+#else
     mParcelOverlay = new LLViewerParcelOverlay(this, region_width_meters);
-
+#endif
     setOriginGlobal(from_region_handle(handle));
     calculateCenterGlobal();
 
     // Create the object lists
     initStats();
 
-    //create object partitions
+#if OPENSIM
+    // <FS:CR> FIRE-11593: Opensim "4096 Bug" Fix by Latif Khalifa
+    initPartition(false);
+#else
+    // create object partitions
     //MUST MATCH declaration of eObjectPartitions
     mImpl->mObjectPartition.push_back(new LLHUDPartition(this));        //PARTITION_HUD
     mImpl->mObjectPartition.push_back(new LLTerrainPartition(this));    //PARTITION_TERRAIN
@@ -699,11 +734,45 @@ LLViewerRegion::LLViewerRegion(const U64 &handle,
     mImpl->mVOCachePartition = getVOCachePartition();
 
     setCapabilitiesReceivedCallback(boost::bind(&LLAvatarRenderInfoAccountant::scanNewRegion, _1));
+#endif
 }
 
+#if OPENSIM
+// <FS:CR> FIRE-11593: Opensim "4096 Bug" Fix by Latif Khalifa
+// FM: Combined reinitPartition and initPartition into one function
+void LLViewerRegion::initPartition(bool reinit)
+{
+    if (reinit)
+    {
+        std::for_each(mImpl->mObjectPartition.begin(), mImpl->mObjectPartition.end(), DeletePointer());
+        mImpl->mObjectPartition.clear();
+    }
+
+    // create object partitions
+    // MUST MATCH declaration of eObjectPartitions
+    mImpl->mObjectPartition.push_back(new LLHUDPartition(this));         // PARTITION_HUD
+    mImpl->mObjectPartition.push_back(new LLTerrainPartition(this));     // PARTITION_TERRAIN
+    mImpl->mObjectPartition.push_back(new LLVoidWaterPartition(this));   // PARTITION_VOIDWATER
+    mImpl->mObjectPartition.push_back(new LLWaterPartition(this));       // PARTITION_WATER
+    mImpl->mObjectPartition.push_back(new LLTreePartition(this));        // PARTITION_TREE
+    mImpl->mObjectPartition.push_back(new LLParticlePartition(this));    // PARTITION_PARTICLE
+    mImpl->mObjectPartition.push_back(new LLGrassPartition(this));       // PARTITION_GRASS
+    mImpl->mObjectPartition.push_back(new LLVolumePartition(this));      // PARTITION_VOLUME
+    mImpl->mObjectPartition.push_back(new LLBridgePartition(this));      // PARTITION_BRIDGE
+    mImpl->mObjectPartition.push_back(new LLAvatarPartition(this));      // PARTITION_AVATAR
+    mImpl->mObjectPartition.push_back(new LLControlAVPartition(this));   // PARTITION_CONTROL_AV
+    mImpl->mObjectPartition.push_back(new LLHUDParticlePartition(this)); // PARTITION_HUD_PARTICLE
+    mImpl->mObjectPartition.push_back(new LLVOCachePartition(this));     // PARTITION_VO_CACHE
+    mImpl->mObjectPartition.push_back(NULL);                             // PARTITION_NONE
+    mImpl->mVOCachePartition = getVOCachePartition();
+
+    setCapabilitiesReceivedCallback(boost::bind(&LLAvatarRenderInfoAccountant::scanNewRegion, _1));
+}
+#endif
 
 void LLViewerRegion::initStats()
 {
+    LL_INFOS() << "Initializing region " << getName() << LL_ENDL;
     mImpl->mLastNetUpdate.reset();
     mPacketsIn = 0;
     mBitsIn = (U32Bits)0;
@@ -862,6 +931,14 @@ F32 LLViewerRegion::getWaterHeight() const
 {
     return mImpl->mLandp->getWaterHeight();
 }
+
+#if OPENSIM
+// <FS:CR> OpenSim VarRegion
+void LLViewerRegion::rebuildWater()
+{
+    mImpl->mLandp->rebuildWater();
+}
+#endif
 
 bool LLViewerRegion::isVoiceEnabled() const
 {
@@ -1987,6 +2064,93 @@ LLVLComposition * LLViewerRegion::getComposition() const
 
 F32 LLViewerRegion::getCompositionXY(const S32 x, const S32 y) const
 {
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    if (x >= mWidth)
+    {
+        if (y >= mWidth)
+        {
+            LLVector3d      center  = getCenterGlobal() + LLVector3d(mWidth, mWidth, 0.f);
+            LLViewerRegion* regionp = LLWorld::getInstance()->getRegionFromPosGlobal(center);
+            if (regionp)
+            {
+                // OK, we need to do some hackery here - different simulators no longer use
+                // the same composition values, necessarily.
+                // If we're attempting to blend, then we want to make the fractional part of
+                // this region match the fractional of the adjacent.  For now, just minimize
+                // the delta.
+                F32 our_comp = getComposition()->getValueScaled(mWidth - 1.f, mWidth - 1.f);
+                F32 adj_comp = regionp->getComposition()->getValueScaled(x - regionp->getWidth(), y - regionp->getWidth());
+                while (llabs(our_comp - adj_comp) >= 1.f)
+                {
+                    if (our_comp > adj_comp)
+                    {
+                        adj_comp += 1.f;
+                    }
+                    else
+                    {
+                        adj_comp -= 1.f;
+                    }
+                }
+                return adj_comp;
+            }
+        }
+        else
+        {
+            LLVector3d      center  = getCenterGlobal() + LLVector3d(mWidth, 0.f, 0.f);
+            LLViewerRegion* regionp = LLWorld::getInstance()->getRegionFromPosGlobal(center);
+            if (regionp)
+            {
+                // OK, we need to do some hackery here - different simulators no longer use
+                // the same composition values, necessarily.
+                // If we're attempting to blend, then we want to make the fractional part of
+                // this region match the fractional of the adjacent.  For now, just minimize
+                // the delta.
+                F32 our_comp = getComposition()->getValueScaled(mWidth - 1.f, (F32)y);
+                F32 adj_comp = regionp->getComposition()->getValueScaled(x - regionp->getWidth(), (F32)y);
+                while (llabs(our_comp - adj_comp) >= 1.f)
+                {
+                    if (our_comp > adj_comp)
+                    {
+                        adj_comp += 1.f;
+                    }
+                    else
+                    {
+                        adj_comp -= 1.f;
+                    }
+                }
+                return adj_comp;
+            }
+        }
+    }
+    else if (y >= mWidth)
+    {
+        LLVector3d      center  = getCenterGlobal() + LLVector3d(0.f, mWidth, 0.f);
+        LLViewerRegion* regionp = LLWorld::getInstance()->getRegionFromPosGlobal(center);
+        if (regionp)
+        {
+            // OK, we need to do some hackery here - different simulators no longer use
+            // the same composition values, necessarily.
+            // If we're attempting to blend, then we want to make the fractional part of
+            // this region match the fractional of the adjacent.  For now, just minimize
+            // the delta.
+            F32 our_comp = getComposition()->getValueScaled((F32)x, mWidth - 1.f);
+            F32 adj_comp = regionp->getComposition()->getValueScaled((F32)x, y - regionp->getWidth());
+            while (llabs(our_comp - adj_comp) >= 1.f)
+            {
+                if (our_comp > adj_comp)
+                {
+                    adj_comp += 1.f;
+                }
+                else
+                {
+                    adj_comp -= 1.f;
+                }
+            }
+            return adj_comp;
+        }
+    }
+#else
     if (x >= 256)
     {
         if (y >= 256)
@@ -2071,7 +2235,7 @@ F32 LLViewerRegion::getCompositionXY(const S32 x, const S32 y) const
             return adj_comp;
         }
     }
-
+#endif
     return getComposition()->getValueScaled((F32)x, (F32)y);
 }
 
@@ -2106,7 +2270,6 @@ std::ostream& operator<<(std::ostream &s, const LLViewerRegion &region)
     return s;
 }
 
-
 // ---------------- Protected Member Functions ----------------
 
 void LLViewerRegion::updateNetStats()
@@ -2137,7 +2300,6 @@ void LLViewerRegion::updateNetStats()
     mBitsReceived += mBitsIn - mLastBitsIn;
     mPacketsReceived += mPacketsIn - mLastPacketsIn;
 }
-
 
 U32 LLViewerRegion::getPacketsLost() const
 {
@@ -2320,8 +2482,14 @@ public:
             if(i == target_index)
             {
                 LLVector3d global_pos(region->getOriginGlobal());
+#if OPENSIM
+                // <FS:Ansariel> FIRE-19563: Scaling for OpenSim VarRegions
+                global_pos.mdV[VX] += (F64)x * region->getWidthScaleFactor();
+                global_pos.mdV[VY] += (F64)y * region->getWidthScaleFactor();
+#else
                 global_pos.mdV[VX] += (F64)x;
                 global_pos.mdV[VY] += (F64)y;
+#endif
                 global_pos.mdV[VZ] += (F64)z * 4.0;
                 LLAvatarTracker::instance().setTrackedCoarseLocation(global_pos);
             }
@@ -2354,7 +2522,6 @@ public:
 LLHTTPRegistration<CoarseLocationUpdate>
    gHTTPRegistrationCoarseLocationUpdate(
        "/message/CoarseLocationUpdate");
-
 
 // the deprecated coarse location handler
 void LLViewerRegion::updateCoarseLocations(LLMessageSystem* msg)
@@ -2395,8 +2562,14 @@ void LLViewerRegion::updateCoarseLocations(LLMessageSystem* msg)
         if(i == target_index)
         {
             LLVector3d global_pos(mImpl->mOriginGlobal);
+#if OPENSIM
+            // <FS:Ansariel> FIRE-19563: Scaling for OpenSim VarRegions
+            global_pos.mdV[VX] += (F64)(x_pos) * mWidthScaleFactor;
+            global_pos.mdV[VY] += (F64)(y_pos) * mWidthScaleFactor;
+#else
             global_pos.mdV[VX] += (F64)(x_pos);
             global_pos.mdV[VY] += (F64)(y_pos);
+#endif
             global_pos.mdV[VZ] += (F64)(z_pos) * 4.0;
             LLAvatarTracker::instance().setTrackedCoarseLocation(global_pos);
         }
@@ -2562,8 +2735,45 @@ void LLViewerRegion::setSimulatorFeatures(const LLSD& sim_features)
             }
         };
 
-
     LLAppViewer::instance()->postToMainCoro(work);
+#if OPENSIM
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        mGodNames.clear();
+        if (mSimulatorFeatures.has("god_names"))
+        {
+            if (mSimulatorFeatures["god_names"].has("full_names"))
+            {
+                for (const auto& item : llsd::inArray(mSimulatorFeatures["god_names"]["full_names"]))
+                {
+                    mGodNames.emplace(item.asString());
+                }
+            }
+            if (mSimulatorFeatures["god_names"].has("last_names"))
+            {
+                for (const auto& item : llsd::inArray(mSimulatorFeatures["god_names"]["last_names"]))
+                {
+                    mGodNames.emplace(item.asString());
+                }
+            }
+        }
+    }
+
+    if (LLGridManager::getInstance()->isInSecondLife() ||
+        (mSimulatorFeatures.has("BakesOnMeshEnabled") && mSimulatorFeatures["BakesOnMeshEnabled"].asBoolean()))
+    {
+        mMaxBakes = LLAvatarAppearanceDefines::EBakedTextureIndex::BAKED_NUM_INDICES;
+        mMaxTEs   = LLAvatarAppearanceDefines::ETextureIndex::TEX_NUM_INDICES;
+    }
+    else
+    {
+        mMaxBakes = LLAvatarAppearanceDefines::EBakedTextureIndex::BAKED_LEFT_ARM;
+        mMaxTEs   = LLAvatarAppearanceDefines::ETextureIndex::TEX_HEAD_UNIVERSAL_TATTOO;
+    }
+    mMinSimHeight = mSimulatorFeatures.has("OpenSimExtras") && mSimulatorFeatures["OpenSimExtras"].has("MinSimHeight")
+                        ? (F32)mSimulatorFeatures["OpenSimExtras"]["MinSimHeight"].asReal()
+                        : 0.0f;
+#endif
 }
 
 //this is called when the parent is not cacheable.
@@ -2814,7 +3024,7 @@ LLViewerRegion::eCacheUpdateResult LLViewerRegion::cacheFullUpdate(LLDataPackerB
     entry->setUpdateFlags(flags);
 
     return result;
-    }
+}
 
 LLViewerRegion::eCacheUpdateResult LLViewerRegion::cacheFullUpdate(LLViewerObject* objectp, LLDataPackerBinaryBuffer &dp, U32 flags)
 {
@@ -2891,7 +3101,7 @@ void LLViewerRegion::removeFromCreatedList(U32 local_id)
             mImpl->mNonCacheableCreatedList.erase(iter);
         }
     }
-    }
+}
 
 void LLViewerRegion::addToCreatedList(U32 local_id)
 {
@@ -3137,7 +3347,21 @@ void LLViewerRegion::unpackRegionHandshake()
     }
 
     mCentralBakeVersion = region_protocols & 1; // was (S32)gSavedSettings.getBOOL("UseServerTextureBaking");
-    LLVLComposition *compp = getComposition();
+#if OPENSIM
+    // <FS:Beq> Earlier trigger for BOM support on region
+    constexpr U64 REGION_SUPPORTS_BOM{ 1ULL << 63 };
+    if (region_protocols & REGION_SUPPORTS_BOM) // OS sets bit 63 when BOM supported
+    {
+        mMaxBakes = LLAvatarAppearanceDefines::EBakedTextureIndex::BAKED_NUM_INDICES;
+        mMaxTEs   = LLAvatarAppearanceDefines::ETextureIndex::TEX_NUM_INDICES;
+    }
+    else
+    {
+        mMaxBakes = LLAvatarAppearanceDefines::EBakedTextureIndex::BAKED_LEFT_ARM;
+        mMaxTEs   = LLAvatarAppearanceDefines::ETextureIndex::TEX_HEAD_UNIVERSAL_TATTOO;
+    }
+#endif
+    LLVLComposition* compp = getComposition();
     if (compp)
     {
         LLUUID tmp_id;
@@ -3316,15 +3540,22 @@ void LLViewerRegionImpl::buildCapabilityNames(LLSD& capabilityNames)
     capabilityNames.append("EventQueueGet");
     capabilityNames.append("ExtEnvironment");
 
-    capabilityNames.append("FetchLib2");
-    capabilityNames.append("FetchLibDescendents2");
-    capabilityNames.append("FetchInventory2");
-    capabilityNames.append("FetchInventoryDescendents2");
-    capabilityNames.append("IncrementCOFVersion");
-    capabilityNames.append("CreateTaskInventoryItem");
-    capabilityNames.append("RequestTaskInventory");
-    AISAPI::getCapNames(capabilityNames);
-
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegion
+    capabilityNames.append("DispatchOpenRegionSettings");
+    // <FS:Ansariel> Force HTTP features on SL
+    if (use_http_inventory())
+#endif
+    {
+        capabilityNames.append("FetchLib2");
+        capabilityNames.append("FetchLibDescendents2");
+        capabilityNames.append("FetchInventory2");
+        capabilityNames.append("FetchInventoryDescendents2");
+        capabilityNames.append("IncrementCOFVersion");
+        capabilityNames.append("CreateTaskInventoryItem");
+        capabilityNames.append("RequestTaskInventory");
+        AISAPI::getCapNames(capabilityNames);
+    }
     capabilityNames.append("InterestList");
 
     capabilityNames.append("InventoryThumbnailUpload");
@@ -3342,6 +3573,12 @@ void LLViewerRegionImpl::buildCapabilityNames(LLSD& capabilityNames)
     capabilityNames.append("IsExperienceContributor");
     capabilityNames.append("RegionExperiences");
     capabilityNames.append("ExperienceQuery");
+#if OPENSIM
+    // <FS:Ansariel> [UDP Assets]
+    capabilityNames.append("GetMesh");
+    capabilityNames.append("GetMesh2");
+    capabilityNames.append("GetTexture");
+#endif
     capabilityNames.append("GetMetadata");
     capabilityNames.append("GetObjectCost");
     capabilityNames.append("GetObjectPhysicsData");
@@ -3411,7 +3648,11 @@ void LLViewerRegionImpl::buildCapabilityNames(LLSD& capabilityNames)
     capabilityNames.append("ViewerMetrics");
     capabilityNames.append("ViewerStartAuction");
     capabilityNames.append("ViewerStats");
-
+#if OPENSIM
+    // <FS:Beq> [FIRE-34104] Add special opensim Capability for signalling PBR Terrain support
+    constexpr char OpenSimPBRTerrain[]{ "VETPBR" };
+    capabilityNames.append(OpenSimPBRTerrain);
+#endif
     // Please add new capabilities alphabetically to reduce
     // merge conflicts.
 }
@@ -3496,6 +3737,13 @@ void LLViewerRegion::setCapability(const std::string& name, const std::string& u
             /*==============================================================*/
             mViewerAssetUrl = url;
         }
+#if OPENSIM
+        // <FS:Ansariel> [UDP Assets]
+        else if (name == "GetTexture")
+        {
+            mHttpUrl = url;
+        }
+#endif
     }
 }
 
@@ -3520,6 +3768,13 @@ void LLViewerRegion::setCapabilityDebug(const std::string& name, const std::stri
             /*==============================================================*/
             mViewerAssetUrl = url;
         }
+#if OPENSIM
+        // <FS:Ansariel> [UDP Assets]
+        else if (name == "GetTexture")
+        {
+            mHttpUrl = url;
+        }
+#endif
     }
 }
 
@@ -3615,7 +3870,6 @@ void LLViewerRegion::logActiveCapabilities() const
     log_capabilities(mImpl->mCapabilities);
 }
 
-
 bool LLViewerRegion::requestPostCapability(const std::string &capName, LLSD &postData, httpCallback_t cbSuccess, httpCallback_t cbFailure)
 {
     std::string url = getCapability(capName);
@@ -3703,7 +3957,6 @@ void LLViewerRegion::setInterestListMode(const std::string &new_mode)
     }
 }
 
-
 void LLViewerRegion::resetInterestList()
 {
     if (requestDelCapability("InterestList", [](const LLSD &response) {
@@ -3717,7 +3970,6 @@ void LLViewerRegion::resetInterestList()
         LL_WARNS("360Capture") << "Region " << getRegionID() << " Unable to DEL InterestList capability request" << LL_ENDL;
     }
 }
-
 
 LLSpatialPartition *LLViewerRegion::getSpatialPartition(U32 type)
 {
@@ -3802,6 +4054,14 @@ bool LLViewerRegion::bakesOnMeshEnabled() const
     return (mSimulatorFeatures.has("BakesOnMeshEnabled") &&
         mSimulatorFeatures["BakesOnMeshEnabled"].asBoolean());
 }
+
+#if OPENSIM
+// <FS:Beq> FIRE-35602 etc - Mesh not appearing after TP/login (opensim only)
+bool LLViewerRegion::meshRezEnabled() const
+{
+    return (mSimulatorFeatures.has("MeshRezEnabled") && mSimulatorFeatures["MeshRezEnabled"].asBoolean());
+}
+#endif
 
 bool LLViewerRegion::dynamicPathfindingEnabled() const
 {

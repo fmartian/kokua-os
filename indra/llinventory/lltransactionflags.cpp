@@ -30,6 +30,9 @@
 #include "lluuid.h"
 #include "lltransactionflags.h"
 #include "lltransactiontypes.h"
+#if OPENSIM
+#include "kokuaeconomy.h"
+#endif
 
 const U8 TRANSACTION_FLAGS_NONE = 0;
 const U8 TRANSACTION_FLAG_SOURCE_GROUP = 1;
@@ -112,7 +115,12 @@ std::string build_transfer_message_to_source(
         // *NOTE: Do not change these strings!  The viewer matches
         // them in llviewermessage.cpp to perform localization.
         // If you need to make changes, add a new, localizable message. JC
+#if OPENSIM
+        // <FS:AW opensim currency support>
+        ostr << LLGlobalEconomy::getInstance()->wrapCurrency("You paid L$") << amount;
+#else
         ostr << "You paid L$" << amount;
+#endif
         switch(transaction_type)
         {
         case TRANS_GROUP_CREATE:
@@ -130,7 +138,12 @@ std::string build_transfer_message_to_source(
     }
     else
     {
+#if OPENSIM
+        // <FS:AW opensim currency support>
+        ostr << "You paid " << dest_name << LLGlobalEconomy::getInstance()->wrapCurrency(" L$") << amount;
+#else
         ostr << "You paid " << dest_name << " L$" << amount;
+#endif
         append_reason(ostr, transaction_type, description);
     }
     ostr << ".";
@@ -161,7 +174,12 @@ std::string build_transfer_message_to_destination(
     // *NOTE: Do not change these strings!  The viewer matches
     // them in llviewermessage.cpp to perform localization.
     // If you need to make changes, add a new, localizable message. JC
+#if OPENSIM
+    // <FS:AW opensim currency support>
+    ostr << source_name << LLGlobalEconomy::getInstance()->wrapCurrency(" paid you L$") << amount;
+#else
     ostr << source_name << " paid you L$" << amount;
+#endif
     append_reason(ostr, transaction_type, description);
     ostr << ".";
     return ostr.str();

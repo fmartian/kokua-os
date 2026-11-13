@@ -28,22 +28,22 @@
 #include "llviewerprecompiledheaders.h"
 #include "llfloaterregioninfo.h"
 
-#include <algorithm>
-#include <functional>
+//#include <algorithm>
+//#include <functional>
 
-#include "lldir.h"
+//#include "lldir.h"
 #include "lldispatcher.h"
-#include "llglheaders.h"
+//#include "llglheaders.h"
 #include "llregionflags.h"
-#include "llstl.h"
+//#include "llstl.h"
 #include "llfilesystem.h"
 #include "llxfermanager.h"
 #include "indra_constants.h"
 #include "message.h"
-#include "llloadingindicator.h"
+//#include "llloadingindicator.h"
 #include "llradiogroup.h"
 #include "llsd.h"
-#include "llsdserialize.h"
+//#include "llsdserialize.h"
 
 #include "llagent.h"
 #include "llappviewer.h"
@@ -60,9 +60,9 @@
 #include "llfloatertopobjects.h" // added to fix SL-32336
 #include "llfloatergroups.h"
 #include "llfloaterreg.h"
-#include "llfloaterregiondebugconsole.h"
+//#include "llfloaterregiondebugconsole.h"
 #include "llfloaterregionrestartschedule.h"
-#include "llfloatertelehub.h"
+//#include "llfloatertelehub.h"
 #include "llgltfmateriallist.h"
 #include "llinventorymodel.h"
 #include "lllineeditor.h"
@@ -81,25 +81,31 @@
 #include "lltexturectrl.h"
 #include "lltrans.h"
 #include "llviewercontrol.h"
-#include "lluictrlfactory.h"
+//#include "lluictrlfactory.h"
 #include "llviewerinventory.h"
 #include "llviewertexture.h"
-#include "llviewertexturelist.h"
+//#include "llviewertexturelist.h"
 #include "llviewerregion.h"
-#include "llviewerstats.h"
+//#include "llviewerstats.h"
 #include "llviewertexteditor.h"
-#include "llviewerwindow.h"
-#include "lltrans.h"
+//#include "llviewerwindow.h"
+//#include "lltrans.h"
 #include "llagentui.h"
-#include "llmeshrepository.h"
-#include "llfloaterregionrestarting.h"
+//#include "llmeshrepository.h"
+//#include "llfloaterregionrestarting.h"
+#include "llpanelenvironment.h"
 #include "llpanelexperiencelisteditor.h"
 #include "llpanelexperiencepicker.h"
 #include "llexperiencecache.h"
-#include "llpanelexperiences.h"
+//#include "llpanelexperiences.h"
 #include "llcorehttputil.h"
 #include "llavatarnamecache.h"
 #include "llenvironment.h"
+#if OPENSIM
+#include "llworld.h"
+#include "llstartup.h"
+#include "llviewernetwork.h"
+#endif
 
 const S32 CORNER_COUNT = 4;
 
@@ -262,6 +268,18 @@ bool LLFloaterRegionInfo::postBuild()
     panel->getCommitCallbackRegistrar().add("RegionInfo.ManageRestart", boost::bind(&LLPanelRegionInfo::onClickManageRestartSchedule, panel));
     panel->buildFromFile("panel_region_general.xml");
     mTab->addTabPanel(panel);
+
+#if OPENSIM
+    // <FS:CR> OpenSim VarRegions - Region Settings Console
+    std::string url = gAgent.getRegionCapability("DispatchOpenRegionSettings");
+    if (!url.empty())
+    {
+        panel = new LLPanelRegionOpenSettingsInfo;
+        mInfoPanels.push_back(panel);
+        panel->buildFromFile("panel_region_open_region_settings.xml");
+        mTab->addTabPanel(panel);
+    }
+#endif
 
     panel = new LLPanelRegionTerrainInfo;
     mInfoPanels.push_back(panel);
@@ -688,6 +706,20 @@ void LLFloaterRegionInfo::disableTabCtrls()
     tab->getChild<LLPanel>("Estate")->setCtrlsEnabled(false);
     tab->getChild<LLPanel>("Access")->setCtrlsEnabled(false);
 }
+
+#if OPENSIM
+// <FS:CR> OpenSim VarRegions - Region Settings Console
+// static
+LLPanelRegionOpenSettingsInfo* LLFloaterRegionInfo::getPanelOpenSettings()
+{
+    LLFloaterRegionInfo* floater = LLFloaterReg::getTypedInstance<LLFloaterRegionInfo>("region_info");
+    if (!floater)
+        return NULL;
+    LLTabContainer* tab   = floater->getChild<LLTabContainer>("region_panels");
+    LLPanelRegionOpenSettingsInfo* panel = (LLPanelRegionOpenSettingsInfo*)tab->getChild<LLPanel>("RegionSettings");
+    return panel;
+}
+#endif
 
 void LLFloaterRegionInfo::onTabSelected(const LLSD& param)
 {
@@ -1173,6 +1205,118 @@ bool LLPanelRegionGeneralInfo::sendUpdate()
 
     return true;
 }
+
+#if OPENSIM
+// <FS:CR> Aurora Sim - Region Settings Panel
+/////////////////////////////////////////////////////////////////////////////
+// LLPanelRegionOpenSettingsInfo
+/////////////////////////////////////////////////////////////////////////////
+bool LLPanelRegionOpenSettingsInfo::refreshFromRegion(LLViewerRegion* region)
+{
+    // Data gets filled in by hippo manager
+    bool allow_modify = gAgent.isGodlike() || (region && region->canManageEstate());
+
+    LLWorld* regionlimits = LLWorld::getInstance();
+
+    childSetValue("draw_distance", LLSD(regionlimits->getDrawDistance()));
+    childSetValue("force_draw_distance", LLSD(regionlimits->getLockedDrawDistance()));
+    childSetValue("allow_minimap", LLSD(regionlimits->getAllowMinimap()));
+    childSetValue("allow_physical_prims", LLSD(regionlimits->getAllowPhysicalPrims()));
+    childSetValue("max_drag_distance", LLSD(regionlimits->getMaxDragDistance()));
+    childSetValue("min_hole_size", LLSD(regionlimits->getRegionMinHoleSize()));
+    childSetValue("max_hollow_size", LLSD(regionlimits->getRegionMaxHollowSize()));
+    childSetValue("max_inventory_items_transfer", LLSD(regionlimits->getMaxInventoryItemsTransfer()));
+    childSetValue("max_link_count", LLSD((LLSD::Integer)regionlimits->getMaxLinkedPrims()));
+    childSetValue("max_link_count_phys", LLSD(regionlimits->getMaxPhysLinkedPrims()));
+    childSetValue("max_phys_prim_scale", LLSD(regionlimits->getMaxPhysPrimScale()));
+    childSetValue("max_prim_scale", LLSD(regionlimits->getRegionMaxPrimScale()));
+    childSetValue("min_prim_scale", LLSD(regionlimits->getRegionMinPrimScale()));
+    childSetValue("render_water", LLSD(regionlimits->getAllowRenderWater()));
+    childSetValue("show_tags", LLSD(regionlimits->getAllowRenderName()));
+    childSetValue("max_groups", LLSD(gMaxAgentGroups));
+    childSetValue("allow_parcel_windlight", LLSD(regionlimits->getAllowParcelWindLight()));
+    childSetValue("enable_teen_mode", LLSD(regionlimits->getEnableTeenMode()));
+    childSetValue("enforce_max_build", LLSD(regionlimits->getEnforceMaxBuild()));
+    childSetValue("terrain_detail_scale", LLSD(regionlimits->getTerrainDetailScale()));
+
+    setCtrlsEnabled(allow_modify);
+
+    return LLPanelRegionInfo::refreshFromRegion(region);
+}
+
+bool LLPanelRegionOpenSettingsInfo::postBuild()
+{
+    // Enable the "Apply" button if something is changed. JC
+    initCtrl("draw_distance");
+    initCtrl("force_draw_distance");
+    initCtrl("max_drag_distance");
+    initCtrl("max_prim_scale");
+    initCtrl("min_prim_scale");
+    initCtrl("max_phys_prim_scale");
+    initCtrl("max_hollow_size");
+    initCtrl("min_hole_size");
+    initCtrl("max_link_count");
+    initCtrl("max_link_count_phys");
+    initCtrl("max_inventory_items_transfer");
+    initCtrl("max_groups");
+    initCtrl("render_water");
+    initCtrl("allow_minimap");
+    initCtrl("allow_physical_prims");
+    initCtrl("enable_teen_mode");
+    initCtrl("show_tags");
+    initCtrl("allow_parcel_windlight");
+    initCtrl("terrain_detail_scale");
+
+    childSetAction("apply_ors_btn", onClickOrs, this);
+
+    refreshFromRegion(gAgent.getRegion());
+
+    return LLPanelRegionInfo::postBuild();
+}
+
+void LLPanelRegionOpenSettingsInfo::onClickHelp(void* data)
+{
+    std::string* xml_alert = (std::string*)data;
+    LLNotifications::instance().add(*xml_alert);
+}
+
+void LLPanelRegionOpenSettingsInfo::onClickOrs(void* userdata)
+{
+    LLPanelRegionOpenSettingsInfo* self;
+    self = (LLPanelRegionOpenSettingsInfo*)userdata;
+
+    LL_INFOS() << "LLPanelRegionOpenSettingsInfo::onClickOrs()" << LL_ENDL;
+
+    LLSD        body;
+    std::string url = gAgent.getRegionCapability("DispatchOpenRegionSettings");
+    if (!url.empty())
+    {
+        body["draw_distance"]                = (LLSD::Integer)self->childGetValue("draw_distance");
+        body["force_draw_distance"]          = (LLSD::Boolean)self->childGetValue("force_draw_distance");
+        body["allow_minimap"]                = (LLSD::Boolean)self->childGetValue("allow_minimap");
+        body["allow_physical_prims"]         = (LLSD::Boolean)self->childGetValue("allow_physical_prims");
+        body["max_drag_distance"]            = (LLSD::Real)self->childGetValue("max_drag_distance");
+        body["min_hole_size"]                = (LLSD::Real)self->childGetValue("min_hole_size");
+        body["max_hollow_size"]              = (LLSD::Real)self->childGetValue("max_hollow_size");
+        body["max_inventory_items_transfer"] = (LLSD::Integer)self->childGetValue("max_inventory_items_transfer");
+        body["max_link_count"]               = (LLSD::Real)self->childGetValue("max_link_count");
+        body["max_link_count_phys"]          = (LLSD::Real)self->childGetValue("max_link_count_phys");
+        body["max_phys_prim_scale"]          = (LLSD::Real)self->childGetValue("max_phys_prim_scale");
+        body["max_prim_scale"]               = (LLSD::Real)self->childGetValue("max_prim_scale");
+        body["min_prim_scale"]               = (LLSD::Real)self->childGetValue("min_prim_scale");
+        body["render_water"]                 = (LLSD::Boolean)self->childGetValue("render_water");
+        body["terrain_detail_scale"]         = (LLSD::Real)self->childGetValue("terrain_detail_scale");
+        body["show_tags"]                    = (LLSD::Real)self->childGetValue("show_tags");
+        body["max_groups"]                   = (LLSD::Real)self->childGetValue("max_groups");
+        body["allow_parcel_windlight"]       = (LLSD::Boolean)self->childGetValue("allow_parcel_windlight");
+        body["enable_teen_mode"]             = (LLSD::Boolean)self->childGetValue("enable_teen_mode");
+        body["enforce_max_build"]            = (LLSD::Boolean)self->childGetValue("enforce_max_build");
+
+        LLCoreHttpUtil::HttpCoroutineAdapter::messageHttpPost(url, body, "Posted onClickOrs", "Error posting onClickOrs");
+        // LL_INFOS() << "data: " << LLSDXMLStreamer(body) << LL_ENDL;
+    }
+}
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // LLPanelRegionDebugInfo
@@ -1890,7 +2034,12 @@ bool LLPanelRegionTerrainInfo::sendUpdate()
     }
 
     // Make sure user hasn't chosen wacky textures.
-    if (!validateTextureSizes())
+    if (!validateTextureSizes()
+#if OPENSIM
+        // unless we're on Aurora-sim
+        && !LLGridManager::getInstance()->isInAuroraSim()
+#endif
+       )
     {
         return false;
     }
@@ -3742,7 +3891,13 @@ void LLPanelEstateAccess::accessAddCore3(const uuid_vec_t& ids, std::vector<LLAv
         {
             LLSD args;
             args["NUM_ADDED"] = llformat("%d", ids.size());
-            args["MAX_AGENTS"] = llformat("%d", ESTATE_MAX_BANNED_IDS);
+            args["MAX_AGENTS"] = llformat("%d",
+#if OPENSIM
+                // <FS:Ansariel> OpenSim
+                LLGridManager::getInstance()->isInOpenSim() ? ESTATE_MAX_BANNED_IDS_OS :
+#endif
+                ESTATE_MAX_BANNED_IDS);
+
             args["LIST_TYPE"] = LLTrans::getString("RegionInfoListTypeBannedAgents");
             args["NUM_EXCESS"] = llformat("%d", (ids.size() + currentCount) - ESTATE_MAX_BANNED_IDS);
             LLNotificationsUtil::add("MaxAgentOnRegionBatch", args);

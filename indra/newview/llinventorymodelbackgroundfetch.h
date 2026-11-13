@@ -145,6 +145,12 @@ private:
     fetch_queue_t mFetchItemQueue;
     uuid_set_t mForceFetchSet;
     std::list<LLUUID> mExpectedFolderIds; // for debug, should this track time?
+#if OPENSIM
+    // <FS:ND> For legacy inventory
+    bool mTimelyFetchPending;
+    S32  mNumFetchRetries;
+    F32  mMaxTimeBetweenFetches;
+#endif
 };
 
 #endif // LL_LLINVENTORYMODELBACKGROUNDFETCH_H

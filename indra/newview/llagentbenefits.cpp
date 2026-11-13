@@ -26,6 +26,13 @@
 #include "llviewerprecompiledheaders.h"
 #include "llagentbenefits.h"
 #include "llviewertexture.h"
+#if OPENSIM
+#include "llagent.h"
+#include "llstartup.h"
+#include "kokuaeconomy.h"
+#include "llviewerregion.h"
+#include "llviewernetwork.h"
+#endif
 
 LLAgentBenefits::LLAgentBenefits():
     m_initalized(false),
@@ -123,41 +130,134 @@ bool LLAgentBenefits::init(const LLSD& benefits_sd)
 
 S32 LLAgentBenefits::getAnimatedObjectLimit() const
 {
+#if OPENSIM
+    // <FS:Ansariel> OpenSim legacy economy
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        S32 max_attach = 0;
+        if (gAgent.getRegion())
+        {
+            LLSD features;
+            gAgent.getRegion()->getSimulatorFeatures(features);
+            if (features.has("AnimatedObjects"))
+            {
+                max_attach = features["AnimatedObjects"]["MaxAgentAnimatedObjectAttachments"].asInteger();
+            }
+        }
+        return max_attach;
+    }
+#endif
     return m_animated_object_limit;
 }
 
 S32 LLAgentBenefits::getAnimationUploadCost() const
 {
+#if OPENSIM
+    // <FS:Ansariel> OpenSim legacy economy
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        LLGlobalEconomy::getInstance()->getPriceUpload();
+    }
+#endif
     return m_animation_upload_cost;
 }
 
 S32 LLAgentBenefits::getAttachmentLimit() const
 {
+#if OPENSIM
+    // <FS:Ansariel> OpenSim legacy economy
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        const S32 MAX_AGENT_ATTACHMENTS = 38;
+
+        S32 max_attach = MAX_AGENT_ATTACHMENTS;
+
+        if (gAgent.getRegion())
+        {
+            LLSD features;
+            gAgent.getRegion()->getSimulatorFeatures(features);
+            if (features.has("MaxAgentAttachments"))
+            {
+                max_attach = features["MaxAgentAttachments"].asInteger();
+            }
+        }
+        return max_attach;
+    }
+#endif
     return m_attachment_limit;
 }
 
 S32 LLAgentBenefits::getCreateGroupCost() const
 {
+#if OPENSIM
+    // <FS:Ansariel> OpenSim legacy economy
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        return 0;
+    }
+#endif
     return m_create_group_cost;
 }
 
 S32 LLAgentBenefits::getGroupMembershipLimit() const
 {
+#if OPENSIM
+    // <FS:Ansariel> OpenSim legacy economy
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        return gMaxAgentGroups;
+    }
+#endif
     return m_group_membership_limit;
 }
 
 S32 LLAgentBenefits::getPicksLimit() const
 {
+#if OPENSIM
+    // <FS:Ansariel> OpenSim legacy economy
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        constexpr S32 MAX_OPENSIM_PICKS_FALLBACK =
+            20; // [FIRE-35276] Freeze on OpenSim (default agreed with Ubit Umarov) (originally by Hecklezz)
+
+        S32 max_profile_picks = MAX_OPENSIM_PICKS_FALLBACK;
+
+        if (gAgent.getRegion())
+        {
+            LLSD features;
+            gAgent.getRegion()->getSimulatorFeatures(features);
+            if (features.has("MaxProfilePicks"))
+            {
+                max_profile_picks = features["MaxProfilePicks"].asInteger();
+            }
+        }
+        return max_profile_picks;
+    }
+#endif
     return m_picks_limit;
 }
 
 S32 LLAgentBenefits::getSoundUploadCost() const
 {
+#if OPENSIM
+    // <FS:Ansariel> OpenSim legacy economy
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        return LLGlobalEconomy::getInstance()->getPriceUpload();
+    }
+#endif
     return m_sound_upload_cost;
 }
 
 S32 LLAgentBenefits::getTextureUploadCost() const
 {
+#if OPENSIM
+    // <FS:Ansariel> OpenSim legacy economy
+    if (LLGridManager::getInstance()->isInOpenSim())
+    {
+        return LLGlobalEconomy::getInstance()->getPriceUpload();
+    }
+#endif
     return m_texture_upload_cost;
 }
 
@@ -212,7 +312,8 @@ S32 LLAgentBenefits::get2KTextureUploadCost(S32 area) const
 {
     if (m_2k_texture_upload_cost.empty())
     {
-        return m_texture_upload_cost;
+        // <FS:Ansariel> OpenSim legacy economy
+        return getTextureUploadCost();
     }
     return m_2k_texture_upload_cost[0];
 }

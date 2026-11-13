@@ -27,14 +27,14 @@
 
 #include "linden_common.h"
 #include "../llurlentry.h"
-#include "../lluictrl.h"
-//#include "llurlentry_stub.cpp"
+//#include "../lluictrl.h"
+// #include "llurlentry_stub.cpp"
 #include "lltut.h"
-#include "../lluicolortable.h"
-#include "../llrender/lluiimage.h"
-#include "../llmessage/llexperiencecache.h"
+//#include "../lluicolortable.h"
+//#include "../llrender/lluiimage.h"
+//#include "../llmessage/llexperiencecache.h"
 
-#include <boost/regex.hpp>
+//#include <boost/regex.hpp>
 
 #if LL_WINDOWS
 // because something pulls in window and lldxdiag dependencies which in turn need wbemuuid.lib
@@ -90,6 +90,9 @@ S32 LLUIImage::getHeight() const
     return 0;
 }
 |*==========================================================================*/
+
+// Used in llwindow.lib(llwindowwin32.obj) and llmessage.lib(llexperiencecache.obj)
+LLControlGroup gSavedSettings("test_settings");
 
 namespace tut
 {

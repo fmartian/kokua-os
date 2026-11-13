@@ -33,6 +33,7 @@
 #include <map>
 #include "lleventcoro.h"
 #include "llcoros.h"
+#include <boost/signals2.hpp>
 
 struct LocalTextureData;
 class LLInventoryCallback;
@@ -94,17 +95,36 @@ public:
 
     /*virtual*/ void renderJoints();
 
-    /*virtual*/ bool setVisualParamWeight(const LLVisualParam *which_param, F32 weight);
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    /*virtual*/ bool setVisualParamWeight(const LLVisualParam* which_param, F32 weight, bool upload_bake = false);
+    /*virtual*/ bool setVisualParamWeight(const char* param_name, F32 weight, bool upload_bake = false);
+    /*virtual*/ bool setVisualParamWeight(S32 index, F32 weight, bool upload_bake = false);
+    /*virtual*/ bool setVisualParamWeight(S32 index, S32 type, F32 weight, bool upload_bake = false);
+
+    /*virtual*/ U32 processUpdateMessage(LLMessageSystem*        mesgsys,
+                                         void**                  user_data,
+                                         U32                     block_num,
+                                         const EObjectUpdateType update_type,
+                                         LLDataPacker*           dp);
+#else
+    /*virtual*/ bool setVisualParamWeight(const LLVisualParam* which_param, F32 weight);
     /*virtual*/ bool setVisualParamWeight(const char* param_name, F32 weight);
     /*virtual*/ bool setVisualParamWeight(S32 index, F32 weight);
     /*virtual*/ bool setVisualParamWeight(S32 index, S32 type, F32 weight);
+#endif
     /*virtual*/ void updateVisualParams();
     void writeWearablesToAvatar();
     /*virtual*/ void idleUpdateAppearanceAnimation();
 
 private:
     // helper function. Passed in param is assumed to be in avatar's parameter list.
-    bool setParamWeight(const LLViewerVisualParam *param, F32 weight);
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    bool setParamWeight(const LLViewerVisualParam* param, F32 weight, bool upload_bake = false);
+#else
+    bool setParamWeight(const LLViewerVisualParam* param, F32 weight);
+#endif
 
     std::mutex          mJointMapMutex; // getJoint gets used from mesh thread
 
@@ -228,14 +248,32 @@ public:
     LLAvatarAppearanceDefines::ETextureIndex getBakedTE(const LLViewerTexLayerSet* layerset ) const;
     // SUNSHINE CLEANUP - dead? or update to just call request appearance update?
     void                forceBakeAllTextures(bool slam_for_debug = false);
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    void                setNewBakedTexture(LLAvatarAppearanceDefines::EBakedTextureIndex i, const LLUUID& uuid);
+    void                setNewBakedTexture(LLAvatarAppearanceDefines::ETextureIndex i, const LLUUID& uuid);
+    void                setCachedBakedTexture(LLAvatarAppearanceDefines::ETextureIndex i, const LLUUID& uuid);
+    static void         processRebakeAvatarTextures(LLMessageSystem* msg, void**);
+    bool                isBakedTextureFinal(const LLAvatarAppearanceDefines::EBakedTextureIndex index) const;
+#endif
 protected:
     /*virtual*/ void    removeMissingBakedTextures();
+#if OPENSIM
+private:
+    // <FS:Ansariel> [Legacy Bake]
+    /*virtual*/ bool    hasPendingBakedUploads() const;
+#endif
 
     //--------------------------------------------------------------------
     // Layers
     //--------------------------------------------------------------------
 public:
-    void                requestLayerSetUpdate(LLAvatarAppearanceDefines::ETextureIndex i);
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    void                 requestLayerSetUploads();
+    void                 requestLayerSetUpload(LLAvatarAppearanceDefines::EBakedTextureIndex i);
+#endif
+    void                 requestLayerSetUpdate(LLAvatarAppearanceDefines::ETextureIndex i);
     LLViewerTexLayerSet* getLayerSet(LLAvatarAppearanceDefines::EBakedTextureIndex baked_index) const;
     LLViewerTexLayerSet* getLayerSet(LLAvatarAppearanceDefines::ETextureIndex index) const;
 
@@ -244,7 +282,11 @@ public:
     // Composites
     //--------------------------------------------------------------------
 public:
+#if OPENSIM
+    /* virtual */ void invalidateComposite(LLTexLayerSet* layerset, bool upload_bake = false);
+#else
     /* virtual */ void  invalidateComposite(LLTexLayerSet* layerset);
+#endif
     /* virtual */ void  invalidateAll();
     /* virtual */ void  setCompositeUpdatesEnabled(bool b); // only works for self
     /* virtual */ void  setCompositeUpdatesEnabled(U32 index, bool b);
@@ -286,7 +328,11 @@ protected:
  **/
 
 public:
-    void                wearableUpdated(LLWearableType::EType type);
+#if OPENSIM
+    void wearableUpdated(LLWearableType::EType type, bool upload_result = false);
+#else
+    void wearableUpdated(LLWearableType::EType type);
+#endif
 protected:
     U32 getNumWearables(LLAvatarAppearanceDefines::ETextureIndex i) const;
 
@@ -397,7 +443,14 @@ public:
     const std::string       debugDumpLocalTextureDataInfo(const LLViewerTexLayerSet* layerset) const; // Lists out state of this particular baked texture layer
     const std::string       debugDumpAllLocalTextureDataInfo() const; // Lists out which baked textures are at highest LOD
     void                    sendViewerAppearanceChangeMetrics(); // send data associated with completing a change.
+#if OPENSIM
+    // <FS:Ansariel> [Legacy Bake]
+    void                    checkForUnsupportedServerBakeAppearance();
+#endif
 private:
+#if OPENSIM
+    void                    checkBOMRebakeRequired();
+#endif
     LLFrameTimer            mDebugSelfLoadTimer;
     F32                     mDebugTimeWearablesLoaded;
     F32                     mDebugTimeAvatarVisible;
